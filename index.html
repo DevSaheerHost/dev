@@ -1376,7 +1376,7 @@
           <div class="avatar-frame__hud">
             <span class="avatar-hud__item">ID<em>:: RIHAN_TECH_SPEC</em></span>
             <span class="avatar-hud__sep">|</span>
-            <span class="avatar-hud__item">LVL<em>:: EXPERT</em></span>
+            <span class="avatar-hud__item">LVL<em>:: BEGINNER</em></span>
           </div>
         </div>
       </div><!-- /.hero__avatar-col -->
@@ -1566,29 +1566,29 @@
 
     /* ── Data ────────────────────────────────────────────────────── */
     const hwSkillsData = [
-      { name: 'CPU / EMMC Reballing',       pct: 95 },
-      { name: 'Micro-Soldering (0201 SMD)', pct: 98 },
-      { name: 'Short Circuit Tracing',       pct: 96 },
-      { name: 'Logic Board Diagnostics',    pct: 97 },
-      { name: 'SMD Component Rework',       pct: 94 },
-      { name: 'Liquid Damage Restoration',  pct: 90 },
-      { name: 'Charging IC / PMIC Repair',  pct: 93 },
+      { name: 'CPU / EMMC Reballing',       pct: 9 },
+      { name: 'Micro-Soldering (0201 SMD)', pct: 34 },
+      { name: 'Short Circuit Tracing',       pct: 2 },
+      { name: 'Logic Board Diagnostics',    pct: 13 },
+      { name: 'SMD Component Rework',       pct: 1 },
+      { name: 'Liquid Damage Restoration',  pct: 0 },
+      { name: 'Charging IC / PMIC Repair',  pct: 1 },
     ];
 
     const swSkillsData = [
-      { name: 'Firmware Flashing & Restore', pct: 97 },
-      { name: 'NAND / EMMC Data Recovery',   pct: 92 },
-      { name: 'iCloud Activation Bypass',    pct: 88 },
-      { name: 'Baseband Repair (IMEI)',      pct: 91 },
-      { name: 'Pattern / Password Unlock',   pct: 96 },
-      { name: 'DFU & EDL Mode Recovery',     pct: 95 },
+      { name: 'Firmware Flashing & Restore', pct: 40 },
+      { name: 'NAND / EMMC Data Recovery',   pct: 2 },
+      { name: 'iCloud Activation Bypass',    pct: 8 },
+      { name: 'Baseband Repair (IMEI)',      pct: 1 },
+      { name: 'Pattern / Password Unlock',   pct: 6 },
+      { name: 'DFU & EDL Mode Recovery',     pct: 0 },
     ];
 
     const expertiseTags = [
-      'iPhone X–16 Series', 'Samsung Galaxy Flagships', 'OnePlus / Oppo',
-      'Xiaomi / Redmi', 'iPad Logic Board', 'MacBook Logic Board',
-      'BGA Rework Station', 'JCID / JC Programmer', 'DC Power Supply Analysis',
-      'Thermal Camera Diagnosis', 'Ultrasonic Cleaning', 'ESD-Safe Protocols',
+      'iPhone 5s-8 Series', 'Samsung Galaxy J2', 'OnePlus / Oppo',
+      'Xiaomi / Redmi', 'iPad battery', 'Nokia 1.1 Button Replacing',
+      'Soldering Rework Station', 'DC Power Supply Analysis',
+      'Thermal Camera Testing', 'Ultra Wide Cleaning', 'ESD-Safe Protocols',
     ];
 
     const galleryData = [
@@ -1784,10 +1784,10 @@
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animateCounter($('#statDevices'), 2500, '+');
-            animateCounter($('#statSuccess'), 97,   '%');
-            animateCounter($('#statExp'),     2,    '+');
-            animateCounter($('#statBrands'),  20,   '+');
+            animateCounter($('#statDevices'), 25, '+');
+            animateCounter($('#statSuccess'), 4,   '%');
+            animateCounter($('#statExp'),     1,    '+');
+            animateCounter($('#statBrands'),  3,   '+');
             observer.disconnect();
           }
         });
