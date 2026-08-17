@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<!-- HTML -->
+<!-- The Mobile Device Container -->
+<div class="mobile-device">
+  
+  <!-- Status Bar (Time, Battery, Signal) -->
+  <div class="status-bar">
+    <span id="clock">12:00</span>
+    <span>🔋 100%</span>
+  </div>
+
+  <!-- Home Screen (App Grid) -->
+  <div class="home-screen" id="homeScreen">
+    
+    <!-- Calculator App Icon -->
+    <div class="app-icon" onclick="openApp('calculatorApp')">
+      <div class="icon-img" style="background: #e67e22;">=</div>
+      <span>Calc</span>
+    </div>
+
+    <!-- Notes App Icon -->
+    <div class="app-icon" onclick="openApp('notesApp')">
+      <div class="icon-img" style="background: #f1c40f;">📝</div>
+      <span>Notes</span>
+    </div>
+
+  </div>
+
+  <!-- Apps Container (Hidden by default) -->
+  
+  <!-- Calculator App -->
+  <div class="app-window" id="calculatorApp">
+    <div class="app-header">
+      <h2>Calculator</h2>
+    </div>
+    <div class="app-content">
+      <p>Calculator goes here...</p>
+    </div>
+  </div>
+
+  <!-- Notes App -->
+  <div class="app-window" id="notesApp">
+    <div class="app-header">
+      <h2>Notes</h2>
+    </div>
+    <div class="app-content">
+      <p>Your notes go here...</p>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation (Home Button) -->
+  <div class="bottom-nav">
+    <button class="home-btn" onclick="goHome()"></button>
+  </div>
+
+</div>
+
+
+
+<script src="./main.js"></script>
+</body>
+
+</html>

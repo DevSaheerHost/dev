@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Web OS</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <!-- index.html -->
+  <div id="mobileOS" class="device-frame">
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+      <span id="sbTime">9:41</span>
+      <span class="sb-icons">
+        <span>••••</span>
+        <span>📶</span>
+        <span id="sbBattery">🔋</span>
+      </span>
+    </div>
+
+    <!-- Edit mode bar (shown while jiggling icons) -->
+    <div class="edit-mode-bar" id="editModeBar">
+      <button id="editModeDoneBtn">Done</button>
+    </div>
+
+    <!-- Hidden file input for app installation — lives outside the home
+         screen entirely so home-screen re-layouts (mine or any app's)
+         never destroy it or its attached listener. -->
+    <input type="file" id="appInstallerInput" accept=".json" style="display: none;">
+
+    <!-- Home Screen: a swipeable stack of pages. Pages are (re)built by
+         SystemOS.renderHomeScreen() from the registry; this static markup
+         just gives it a valid starting point (and the Install button a
+         home) before any JS has run. -->
+    <div id="homeScreen">
+      <div class="home-pages" id="homePages">
+        <div class="home-page">
+          <div class="app-icon no-uninstall" id="installNewAppBtn">
+            <div class="icon-box" style="background: #2ecc71;">➕</div>
+            <span>Install</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-dots" id="pageDots"></div>
+
+    <!-- App Container (Empty by default) -->
+    <div id="appContainer" class="app-window hidden">
+      <div class="app-header">
+        <button class="header-close" id="closeAppBtn" title="Close">✕</button>
+        <h2 id="activeAppTitle">App</h2>
+        <span class="header-spacer"></span>
+      </div>
+
+      <!-- This is where the app's HTML will be injected -->
+      <div id="activeAppContent" class="app-body"></div>
+    </div>
+
+    <!-- Home indicator: always present. Single tap closes the current app;
+         double-tap opens the App Switcher, from the home screen or from
+         inside any app. -->
+    <div class="home-indicator" id="homeIndicator" title="Tap: go home · Double-tap: recent apps"></div>
+
+    <!-- App Switcher overlay -->
+    <div class="app-switcher" id="appSwitcher">
+      <div class="switcher-header">
+        <span class="switcher-title">Recent Apps</span>
+        <button class="switcher-clear" id="switcherClearBtn">Clear All</button>
+      </div>
+      <div class="switcher-cards" id="switcherCards"></div>
+      <div class="switcher-empty" id="switcherEmpty">No recent apps</div>
+    </div>
+
+    <!-- OS-level toast -->
+    <div class="os-toast" id="osToast"></div>
+
+    <!-- OS-level confirm modal -->
+    <div class="os-modal-bg" id="osModalBg">
+      <div class="os-modal">
+        <div class="os-modal-msg">
+          <h3 id="osModalTitle">Are you sure?</h3>
+          <p id="osModalMsg"></p>
+        </div>
+        <div class="os-modal-actions">
+          <button id="osModalCancel">Cancel</button>
+          <button id="osModalConfirm" class="destructive">Remove</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <script src="./main.js"></script>
+  <script src="./app.js"></script>
+</body>
+
+</html>

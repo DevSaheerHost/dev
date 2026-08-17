@@ -1,0 +1,80 @@
+/* style.css (Minimal for layout) */
+.device-frame {
+  width: 375px; height: 812px;
+  background: #2c3e50;
+  border-radius: 40px; border: 12px solid #111;
+  position: relative; overflow: hidden;
+  color: white; font-family: sans-serif;
+}
+.grid-layout {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 40px 20px; gap: 20px;
+}
+.app-icon {
+  display: flex; flex-direction: column; align-items: center; cursor: pointer;
+}
+.icon-box {
+  width: 50px; height: 50px; border-radius: 12px;
+  display: flex; justify-content: center; align-items: center; font-size: 20px;
+}
+.app-window {
+  position: absolute; 
+  top: 0; 
+  left: 0;
+  width: 100%; 
+  height: 100%;
+  background: white; 
+  color: black;
+  transition: transform 0.3s;
+  
+  /* NEW: Flexbox setup to separate header and body */
+  display: flex;
+  flex-direction: column;
+}
+.app-window.hidden { transform: translateY(100%); }
+.app-header {
+  display: flex; justify-content: space-between; padding: 20px; background: #eee;
+}
+.app-body {
+  /* NEW: Takes up remaining space and allows scrolling */
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  
+  /* Removing default padding so apps can control their own layout */
+  padding: 0; 
+}
+
+
+
+/* Dark Mode Global Styles */
+body.dark-mode .app-window,
+body.dark-mode .app-body,
+body.dark-mode .set-page {
+  background: #121212 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .app-header {
+  background: #1e1e1e !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+body.dark-mode .set-item {
+  background: #1e1e1e !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+body.dark-mode input,
+body.dark-mode textarea {
+  background: #2c2c2c !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .app-icon span {
+  color: #ffffff !important;
+}

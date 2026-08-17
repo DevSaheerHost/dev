@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <!-- index.html -->
+<div id="mobileOS" class="device-frame">
+  
+  <!-- Home Screen where icons will be injected -->
+  <div id="homeScreen" class="grid-layout">
+        <!-- Add this hidden file input somewhere inside your HTML body -->
+    <input type="file" id="appInstallerInput" accept=".json" style="display: none;">
+    
+    <!-- Add an 'Install App' button to your Home Screen grid -->
+    <div class="app-icon" id="installNewAppBtn">
+      <div class="icon-box" style="background: #2ecc71;">➕</div>
+      <span style="font-size: 12px; margin-top: 5px;">Install</span>
+    </div>
+  </div>
+
+  <!-- App Container (Empty by default) -->
+  <div id="appContainer" class="app-window hidden">
+    <div class="app-header">
+      <h2 id="activeAppTitle">App</h2>
+      <button onclick="SystemOS.closeApp()">Close</button>
+    </div>
+    
+    <!-- This is where the app's HTML will be injected -->
+    <div id="activeAppContent" class="app-body">
+      
+    </div>
+    
+
+
+  </div>
+
+</div>
+
+
+<script src="./main.js"></script>
+<script src="./app.js"></script>
+</body>
+
+</html>
