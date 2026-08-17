@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/audio-visualizer/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/inverter-wiring/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/nodejs-game/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/qr-file-transfer/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/qr-generator/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/stock-os/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/uno-multimeter/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlabs.vercel.app/xyz-mixed/</loc>
+  </url>
+
+</urlset>
