@@ -280,6 +280,7 @@ const SystemOS = {
 
   renderPageDots: function() {
     const dotsContainer = document.getElementById('pageDots');
+    if (!dotsContainer) return;
     const pages = document.querySelectorAll('#homePages .home-page');
     const pagesEl = document.getElementById('homePages');
     const currentIdx = pagesEl ? Math.round(pagesEl.scrollLeft / Math.max(pagesEl.clientWidth, 1)) : 0;
