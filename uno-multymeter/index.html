@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UNO Q Live Current Monitor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  body { background:#0d1117; color:#e6edf3; font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin:0; padding:16px; }
+  h1 { font-size:18px; font-weight:600; margin:0 0 4px; }
+  .sub { color:#8b949e; font-size:13px; margin-bottom:16px; }
+  .stats { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:10px; padding:12px 16px; min-width:110px; }
+  .card .label { color:#8b949e; font-size:12px; }
+  .card .value { font-size:22px; font-weight:700; margin-top:2px; }
+  .value.current { color:#3fb950; }
+  .value.voltage { color:#58a6ff; }
+  .value.power   { color:#d29922; }
+  canvas { background:#0d1117; border-radius:10px; }
+  #status { position:fixed; top:16px; right:16px; font-size:12px; padding:4px 10px; border-radius:12px; }
+  .connected { background:#1a7f37; color:#fff; }
+  .disconnected { background:#a40e26; color:#fff; }
+</style>
+</head>
+<body>
+<div id="status" class="disconnected">connecting...</div>
+<h1>⚡ UNO Q Live Current Monitor</h1>
+<div class="sub">INA226 · streaming over WebSocket</div>
+
+<div class="stats">
+  <div class="card"><div class="label">Current</div><div class="value current" id="curVal">-- mA</div></div>
+  <div class="card"><div class="label">Voltage</div><div class="value voltage" id="volVal">-- V</div></div>
+  <div class="card"><div class="label">Peak Current</div><div class="value power" id="peakVal">-- mA</div></div>
+</div>
+
+<canvas id="chart" height="90"></canvas>
+
+<script>
+
+const MAX_POINTS = 300; // ~9 seconds of history at 30ms interval
+const labels = [];
+const currentData = [];
+const voltageData = [];
+let peak = 0;
+
+const ctx = document.getElementById('chart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Current (mA)',
+        data: currentData,
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63,185,80,0.08)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.25,
+        yAxisID: 'y',
+        fill: true,
+      },
+      {
+        label: 'Voltage (V)',
+        data: voltageData,
+        borderColor: '#58a6ff',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.25,
+        yAxisID: 'y1',
+      },
+    ],
+  },
+  options: {
+    animation: false,
+    responsive: true,
+    interaction: { mode: 'nearest', intersect: false },
+    scales: {
+      x: { display: false },
+      y: { position: 'left', title: { display: true, text: 'mA', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+      y1: { position: 'right', title: { display: true, text: 'V', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { display: false } },
+    },
+    plugins: { legend: { labels: { color: '#e6edf3' } } },
+  },
+});
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}`);
+  const statusEl = document.getElementById('status');
+
+  ws.onopen = () => { statusEl.textContent = 'live'; statusEl.className = 'connected'; };
+  ws.onclose = () => { statusEl.textContent = 'reconnecting...'; statusEl.className = 'disconnected'; setTimeout(connect, 1000); };
+  ws.onerror = () => ws.close();
+
+  ws.onmessage = (ev) => {
+    const { t, mA, V } = JSON.parse(ev.data);
+    if (typeof mA !== 'number') return;
+
+    peak = Math.max(peak, mA);
+    document.getElementById('curVal').textContent = mA.toFixed(1) + ' mA';
+    document.getElementById('volVal').textContent = V.toFixed(3) + ' V';
+    document.getElementById('peakVal').textContent = peak.toFixed(1) + ' mA';
+
+    labels.push(t);
+    currentData.push(mA);
+    voltageData.push(V);
+    if (labels.length > MAX_POINTS) {
+      labels.shift(); currentData.shift(); voltageData.shift();
+    }
+    chart.update('none');
+  };
+}
+connect();
+</script>
+</body>
+</html>
