@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PartMatch — Mobile Repair Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Industrial/Utilitarian with sharp accents
+   ============================================================ */
+:root {
+  --bg:        #0d0d0d;
+  --surface:   #161616;
+  --card:      #1e1e1e;
+  --border:    #2a2a2a;
+  --accent:    #f0c040;
+  --accent2:   #40c0f0;
+  --danger:    #f05060;
+  --success:   #40d090;
+  --text:      #f0ede8;
+  --muted:     #888;
+  --mono:      'Space Mono', monospace;
+  --sans:      'Syne', sans-serif;
+  --radius:    6px;
+  --transition: 160ms cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Noise overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ── Layout ── */
+#app { position: relative; z-index: 1; }
+
+.container { max-width: 680px; margin: 0 auto; padding: 0 16px; }
+
+/* ── Header ── */
+header {
+  padding: 20px 16px 0;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.logo span { color: var(--muted); }
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.nav-tab {
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  transition: var(--transition);
+}
+
+.nav-tab.active, .nav-tab:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ── Hero / Search ── */
+.hero {
+  padding: 40px 16px 24px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.hero-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.hero h1 {
+  font-family: var(--sans);
+  font-size: clamp(26px, 6vw, 40px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin-bottom: 28px;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+  display: block;
+}
+
+/* ── Search Box ── */
+.search-wrap {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 54px 16px 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 600;
+  transition: var(--transition);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.search-input::placeholder { color: var(--muted); font-weight: 400; }
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(240,192,64,.12);
+}
+
+.search-icon {
+  position: absolute;
+  right: 18px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+  font-size: 18px;
+}
+
+/* ── Autocomplete dropdown ── */
+.autocomplete {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+
+.autocomplete.open { display: block; }
+
+.ac-item {
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition);
+  border-bottom: 1px solid var(--border);
+}
+
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.selected { background: rgba(240,192,64,.08); }
+
+.ac-item-brand {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent2);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* ── Stats bar ── */
+.stats-bar {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-chip strong { color: var(--accent); font-size: 13px; }
+
+/* ============================================================
+   PAGES
+   ============================================================ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Results Page ── */
+#page-results { padding: 0 16px 80px; max-width: 680px; margin: 0 auto; }
+
+.results-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.results-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.results-title span {
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+.results-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Part Card ── */
+.part-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.part-card:hover { border-color: rgba(240,192,64,.3); }
+
+.part-card-header {
+  padding: 16px 18px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.part-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.badge-display   { background: rgba(64,192,240,.15); color: var(--accent2); }
+.badge-glass     { background: rgba(240,192,64,.15);  color: var(--accent); }
+.badge-battery   { background: rgba(64,208,144,.15);  color: var(--success); }
+.badge-housing   { background: rgba(240,80,96,.15);   color: var(--danger); }
+
+.part-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.part-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.part-price {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.part-card-body {
+  border-top: 1px solid var(--border);
+  padding: 14px 18px;
+}
+
+.compat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.compat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compat-chip {
+  padding: 5px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.compat-chip.current { border-color: var(--accent); color: var(--accent); }
+.compat-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+
+/* ── Empty / Loading ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+  opacity: .4;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.empty-state p { color: var(--muted); font-size: 14px; }
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+}
+
+.loading-dots span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: .2s; }
+.loading-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: .2; transform: scale(.8); }
+  50%       { opacity: 1;  transform: scale(1.2); }
+}
+
+/* ============================================================
+   ADMIN PAGE
+   ============================================================ */
+#page-admin { padding: 0 16px 80px; max-width: 680px; margin: 0 auto; }
+
+.admin-section { margin-bottom: 32px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ── Forms ── */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.form-row { margin-bottom: 14px; }
+.form-row label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(64,192,240,.1);
+}
+
+.form-select { cursor: pointer; }
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-primary   { background: var(--accent);  color: var(--bg); }
+.btn-primary:hover   { background: #ffd060; }
+
+.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--muted); }
+
+.btn-danger    { background: rgba(240,80,96,.15); color: var(--danger); border: 1px solid rgba(240,80,96,.3); }
+.btn-danger:hover    { background: rgba(240,80,96,.25); }
+
+.btn-success   { background: rgba(64,208,144,.15); color: var(--success); border: 1px solid rgba(64,208,144,.3); }
+.btn-success:hover   { background: rgba(64,208,144,.25); }
+
+.btn-sm { padding: 6px 12px; font-size: 10px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ── Data Tables ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,.02); }
+
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .25s ease;
+  white-space: nowrap;
+  max-width: 90vw;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#toast.success { border-color: var(--success); color: var(--success); }
+#toast.error   { border-color: var(--danger);  color: var(--danger); }
+#toast.info    { border-color: var(--accent2); color: var(--accent2); }
+
+/* ── Cache indicator ── */
+.cache-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.cache-hit  { background: rgba(64,208,144,.1); color: var(--success); }
+.cache-miss { background: rgba(64,192,240,.1); color: var(--accent2); }
+
+/* ── Responsive tweaks ── */
+@media (max-width: 480px) {
+  .hero h1 { font-size: 26px; }
+  .form-row-2 { grid-template-columns: 1fr; }
+  .nav-tab { padding: 6px 10px; font-size: 10px; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Upload Banner ── */
+#upload-banner {
+  position: fixed;
+  bottom: 70px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px 12px 16px;
+  background: var(--card);
+  border: 1.5px solid var(--accent);
+  border-radius: 40px;
+  box-shadow: 0 4px 30px rgba(240,192,64,.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  white-space: nowrap;
+  max-width: 90vw;
+}
+
+#upload-banner.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.upload-spinner {
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(240,192,64,.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.upload-banner-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .05em;
+  color: var(--text);
+}
+
+.upload-banner-text strong {
+  color: var(--accent);
+}
+
+.upload-banner-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+#fb-error-modal {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+#fb-error-modal.open { display: flex; }
+
+.fb-error-card {
+  background: var(--card);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 0 60px rgba(240,80,96,.15);
+}
+
+.fb-error-card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: var(--danger);
+}
+
+.fb-error-card p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.fb-rules-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  line-height: 1.9;
+  margin-bottom: 20px;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.fb-error-steps {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  line-height: 2;
+}
+
+.fb-error-steps strong { color: var(--text); }
+
+.fb-error-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<!-- Upload Banner -->
+<div id="upload-banner">
+  <div class="upload-spinner"></div>
+  <div>
+    <div class="upload-banner-text" id="upload-banner-msg"><strong>Uploading…</strong></div>
+    <div class="upload-banner-sub">Do not close or refresh the app</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FIREBASE ERROR MODAL
+     ============================================================ -->
+<div id="fb-error-modal">
+  <div class="fb-error-card">
+    <h3 id="fb-error-title">⚠ Firebase Connection Failed</h3>
+    <p id="fb-error-desc">Your Firebase Realtime Database is blocking requests. Follow the steps below to fix it.</p>
+
+    <div id="fb-rules-section">
+      <div class="fb-error-steps">
+        <strong>1.</strong> Go to <strong>Firebase Console</strong> → your project<br>
+        <strong>2.</strong> Click <strong>Realtime Database</strong> → <strong>Rules</strong> tab<br>
+        <strong>3.</strong> Replace the rules with this and click <strong>Publish</strong>:
+      </div>
+      <div class="fb-rules-block">{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">⚠ These are open dev rules. Add auth rules before going live.</p>
+    </div>
+
+    <div class="fb-error-actions">
+      <button class="btn btn-primary" onclick="retryConnection()">↺ Retry Connection</button>
+      <button class="btn btn-secondary" onclick="switchToDemo()">Use Demo Mode</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="app">
+
+  <header>
+    <div class="logo">Part<span>Match</span></div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('search')">Search</button>
+      <button class="nav-tab" onclick="showPage('admin')">Admin</button>
+    </nav>
+  </header>
+
+  <!-- ── Search Page ── -->
+  <div id="page-search" class="page active">
+    <div class="hero">
+      <div class="hero-label">Mobile Repair Intelligence</div>
+      <h1>Find compatible<em>parts instantly.</em></h1>
+      <div class="search-wrap">
+        <input
+          type="text"
+          class="search-input"
+          id="main-search"
+          placeholder="Search phone model (e.g. Realme 5)…"
+          autocomplete="off"
+          oninput="handleSearch(this.value)"
+        >
+        <span class="search-icon">⌕</span>
+        <div class="autocomplete" id="autocomplete"></div>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-chip"><strong id="stat-models">0</strong> models</div>
+      <div class="stat-chip"><strong id="stat-parts">0</strong> parts</div>
+      <div class="stat-chip" id="stat-cache"><strong>●</strong> live</div>
+    </div>
+
+    <!-- Results -->
+    <div id="page-results" class="page active">
+      <div id="results-container">
+        <div class="empty-state">
+          <span class="empty-icon">🔍</span>
+          <h3>Search a phone model</h3>
+          <p>Type a brand or model name above to find compatible parts and cross-reference models.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Admin Page ── -->
+  <div id="page-admin" class="page">
+
+    <!-- Add Part -->
+    <div class="admin-section" style="padding-top:24px">
+      <div class="section-header">
+        <span class="section-title">Add / Edit Part</span>
+        <button class="btn btn-sm btn-secondary" onclick="clearPartForm()">Clear</button>
+      </div>
+      <div class="form-card">
+        <input type="hidden" id="edit-part-id">
+        <div class="form-row">
+          <label>Part Name</label>
+          <input class="form-input" id="part-name" placeholder="e.g. Realme 5 LCD Display Assembly">
+        </div>
+        <div class="form-row-2">
+          <div class="form-row" style="margin:0">
+            <label>Part Type</label>
+            <select class="form-select" id="part-type">
+              <option value="display">Display</option>
+              <option value="glass">Glass</option>
+              <option value="battery">Battery</option>
+              <option value="housing">Housing</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin:0">
+            <label>Price (USD)</label>
+            <input class="form-input" id="part-price" type="number" placeholder="12.99">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Compatible Models (comma-separated)</label>
+          <textarea class="form-textarea" id="part-models" placeholder="Realme 5, Realme 5i, Realme 5s"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Notes</label>
+          <input class="form-input" id="part-notes" placeholder="Optional notes about the part">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="savePart()">Save Part</button>
+      </div>
+    </div>
+
+    <!-- Parts List -->
+    <div class="admin-section">
+      <div class="section-header">
+        <span class="section-title">All Parts <span id="parts-count" style="color:var(--muted)"></span></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-success" onclick="seedSampleData()">Seed Sample</button>
+          <button class="btn btn-sm btn-secondary" onclick="exportData()">Export JSON</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Part</th>
+              <th>Type</th>
+              <th>Price</th>
+              <th>Models</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="parts-table-body">
+            <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No parts yet. Add one above or seed sample data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cache Controls -->
+    <div class="admin-section">
+      <div class="section-header">
+        <span class="section-title">Cache Controls</span>
+      </div>
+      <div class="form-card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-secondary" onclick="showCacheStats()">View Cache Stats</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllCache()">Clear All Cache</button>
+        <div id="cache-info" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+  </div><!-- /admin -->
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ============================================================
+   ① DATABASE STRUCTURE DESIGN
+   ============================================================
+   Firebase Realtime DB layout:
+
+   partmatch/
+   ├── parts/
+   │   └── {partId}/
+   │       ├── name:      "Realme 5 LCD Display Assembly"
+   │       ├── type:      "display"           // display|glass|battery|housing
+   │       ├── sku:       "RLM5-LCD-001"
+   │       ├── price:     12.99
+   │       ├── notes:     "OEM quality"
+   │       ├── models:    { "realme_5": true, "realme_5i": true, "realme_5s": true }
+   │       └── updatedAt: 1712000000000
+   │
+   └── models/
+       └── {modelKey}/                        // key = normalized model name
+           ├── name:     "Realme 5"           // display name
+           ├── brand:    "Realme"
+           └── parts:   { "{partId}": true, "{partId2}": true }
+
+   WHY THIS STRUCTURE:
+   - Flat nodes = fast reads (no deep nesting)
+   - models/{key}/parts = O(1) lookup for "which parts fit this model?"
+   - parts/{id}/models = O(1) lookup for "which models use this part?"
+   - Both sides of M:M stored explicitly (denormalized) — reads >> writes in repair shops
+   - Firebase indexes: add ".indexOn": ["type", "sku"] in rules for query speed
+
+   FIREBASE RULES (paste into Firebase Console → Rules):
+   {
+     "rules": {
+       "partmatch": {
+         "parts": {
+           ".indexOn": ["type", "sku", "updatedAt"],
+           "$partId": { ".read": true, ".write": "auth != null" }
+         },
+         "models": {
+           ".indexOn": ["brand"],
+           "$modelKey": { ".read": true, ".write": "auth != null" }
+         }
+       }
+     }
+   }
+============================================================ */
+
+/* ============================================================
+   ② CONFIGURATION & STATE
+   ============================================================ */
+const CONFIG = {
+  CACHE_TTL:      5 * 60 * 1000,   // 5 minutes per model
+  FULL_TTL:      15 * 60 * 1000,   // 15 minutes for full dataset
+  CACHE_PREFIX:  'pm_',
+  DB_PATH:       'partmatch',
+};
+
+let DB_URL = '';        // Firebase base URL
+let DEMO_MODE = false;  // true = localStorage only
+
+// In-memory index for instant search
+let searchIndex = {};   // modelKey → { name, brand, partIds[] }
+let partsCache  = {};   // partId  → part object
+let allLoaded   = false;
+
+/* ============================================================
+   ③ LOCALSTORAGE CACHE LAYER
+   ============================================================ */
+const Cache = {
+  key(k)       { return CONFIG.CACHE_PREFIX + k; },
+  get(k) {
+    try {
+      const raw = localStorage.getItem(this.key(k));
+      if (!raw) return null;
+      const { data, ts, ttl } = JSON.parse(raw);
+      if (Date.now() - ts > ttl) { this.del(k); return null; }
+      return data;
+    } catch { return null; }
+  },
+  set(k, data, ttl = CONFIG.CACHE_TTL) {
+    try {
+      localStorage.setItem(this.key(k), JSON.stringify({ data, ts: Date.now(), ttl }));
+    } catch (e) {
+      // Quota exceeded → evict oldest entries
+      this.evictOldest();
+      try { localStorage.setItem(this.key(k), JSON.stringify({ data, ts: Date.now(), ttl })); } catch {}
+    }
+  },
+  del(k)       { localStorage.removeItem(this.key(k)); },
+  delPattern(prefix) {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(CONFIG.CACHE_PREFIX + prefix))
+      .forEach(k => localStorage.removeItem(k));
+  },
+  evictOldest() {
+    const entries = Object.keys(localStorage)
+      .filter(k => k.startsWith(CONFIG.CACHE_PREFIX))
+      .map(k => {
+        try { return { k, ts: JSON.parse(localStorage.getItem(k)).ts }; }
+        catch { return { k, ts: 0 }; }
+      })
+      .sort((a, b) => a.ts - b.ts);
+    // Remove oldest 25%
+    entries.slice(0, Math.ceil(entries.length / 4))
+           .forEach(e => localStorage.removeItem(e.k));
+  },
+  stats() {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(CONFIG.CACHE_PREFIX));
+    let totalBytes = 0;
+    keys.forEach(k => { totalBytes += (localStorage.getItem(k) || '').length * 2; });
+    return { count: keys.length, sizeKB: (totalBytes / 1024).toFixed(1) };
+  }
+};
+
+/* ============================================================
+   ④ FIREBASE REST API WRAPPER (no SDK needed)
+   ============================================================
+   Uses Firebase REST API so there's zero SDK dependency.
+   Endpoints: GET/PUT/PATCH/DELETE on {DB_URL}/{path}.json
+============================================================ */
+const FB = {
+  _url(path) { return `${DB_URL}/${CONFIG.DB_PATH}/${path}.json`; },
+
+  async _req(path, options = {}) {
+    let r;
+    try {
+      r = await fetch(this._url(path), options);
+    } catch (netErr) {
+      // TypeError: Failed to fetch → network/CORS blocked
+      showFirebaseError('NETWORK');
+      throw netErr;
+    }
+    if (!r.ok) {
+      if (r.status === 401 || r.status === 403) showFirebaseError('PERMISSION');
+      throw new Error(`Firebase ${r.status} on ${path}`);
+    }
+    // Firebase returns "null" as JSON for empty nodes — treat as null
+    return r.json().catch(() => null);
+  },
+
+  async get(path) {
+    if (DEMO_MODE) return this._demoGet(path);
+    return this._req(path);
+  },
+  async set(path, data) {
+    if (DEMO_MODE) return this._demoSet(path, data);
+    return this._req(path, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  },
+  async patch(path, data) {
+    if (DEMO_MODE) return this._demoPatch(path, data);
+    return this._req(path, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  },
+  async delete(path) {
+    if (DEMO_MODE) return this._demoDelete(path);
+    return this._req(path, { method: 'DELETE' });
+  },
+  async push(path, data) {
+    if (DEMO_MODE) return this._demoPush(path, data);
+    return this._req(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  },
+
+  /* ── Demo Mode: mirror Firebase structure in localStorage ── */
+  _store() {
+    const raw = localStorage.getItem('pm_demo_db');
+    return raw ? JSON.parse(raw) : { parts: {}, models: {} };
+  },
+  _save(db) { localStorage.setItem('pm_demo_db', JSON.stringify(db)); },
+  _demoGet(path) {
+    const db = this._store();
+    const parts = path.split('/').filter(Boolean);
+    let cur = db;
+    for (const p of parts) { cur = cur?.[p]; }
+    return Promise.resolve(cur ?? null);
+  },
+  _demoSet(path, data) {
+    const db = this._store();
+    const parts = path.split('/').filter(Boolean);
+    let cur = db;
+    for (let i = 0; i < parts.length - 1; i++) {
+      cur[parts[i]] = cur[parts[i]] || {};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = data;
+    this._save(db);
+    return Promise.resolve(data);
+  },
+  _demoPatch(path, data) {
+    const db = this._store();
+    const parts = path.split('/').filter(Boolean);
+    let cur = db;
+    for (let i = 0; i < parts.length - 1; i++) {
+      cur[parts[i]] = cur[parts[i]] || {};
+      cur = cur[parts[i]];
+    }
+    const leaf = parts[parts.length - 1];
+    cur[leaf] = Object.assign(cur[leaf] || {}, data);
+    this._save(db);
+    return Promise.resolve(cur[leaf]);
+  },
+  _demoDelete(path) {
+    const db = this._store();
+    const parts = path.split('/').filter(Boolean);
+    let cur = db;
+    for (let i = 0; i < parts.length - 1; i++) { cur = cur?.[parts[i]]; }
+    if (cur) delete cur[parts[parts.length - 1]];
+    this._save(db);
+    return Promise.resolve(true);
+  },
+  _demoPush(path, data) {
+    const id = '-' + Math.random().toString(36).substr(2, 16);
+    this._demoSet(path + '/' + id, data);
+    return Promise.resolve({ name: id });
+  }
+};
+
+/* ============================================================
+   ⑤ CRUD OPERATIONS
+   ============================================================ */
+
+// Normalize model name to a safe DB key
+function modelKey(name) {
+  return name.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+}
+
+// ── CREATE / UPDATE a part ──
+let _isSeedingBatch = false;  // true when seedSampleData is running
+
+async function savePart(_silent = false) {
+  const id    = document.getElementById('edit-part-id').value;
+  const name  = document.getElementById('part-name').value.trim();
+  const type  = document.getElementById('part-type').value;
+  const price = parseFloat(document.getElementById('part-price').value) || 0;
+  const notes = document.getElementById('part-notes').value.trim();
+  const rawModels = document.getElementById('part-models').value;
+
+  if (!name) { toast('Part name is required', 'error'); return; }
+
+  const modelsList = rawModels.split(',').map(m => m.trim()).filter(Boolean);
+  if (!modelsList.length) { toast('Add at least one compatible model', 'error'); return; }
+
+  const modelsMap = {};
+  modelsList.forEach(m => { modelsMap[modelKey(m)] = true; });
+
+  const partData = { name, type, price, notes, models: modelsMap, updatedAt: Date.now() };
+
+  lockSaveBtn();
+  const isEdit = !!id;
+  if (!_isSeedingBatch) UploadBanner.show(isEdit ? 'Updating part…' : 'Saving new part…');
+
+  try {
+    let partId = id;
+    if (id) {
+      if (!_isSeedingBatch) UploadBanner.update('Updating part data…');
+      await FB.patch(`parts/${id}`, partData);
+      const old = partsCache[id];
+      if (old?.models) {
+        if (!_isSeedingBatch) UploadBanner.update('Removing old links…');
+        for (const mk of Object.keys(old.models)) {
+          await FB.delete(`models/${mk}/parts/${id}`);
+        }
+      }
+    } else {
+      if (!_isSeedingBatch) UploadBanner.update('Creating part…');
+      const res = await FB.push('parts', partData);
+      partId = res.name;
+    }
+
+    let step = 0;
+    for (const m of modelsList) {
+      step++;
+      if (!_isSeedingBatch) UploadBanner.update(`Linking model ${step}/${modelsList.length}…`);
+      const mk = modelKey(m);
+      await FB.patch(`models/${mk}`, { name: m, brand: m.split(' ')[0] });
+      await FB.patch(`models/${mk}/parts`, { [partId]: true });
+    }
+
+    Cache.delPattern('model_');
+    Cache.delPattern('full_');
+    Cache.del('full_dataset');
+    allLoaded = false;
+
+    if (!_isSeedingBatch) {
+      UploadBanner.hide();
+      unlockSaveBtn();
+      toast(isEdit ? 'Part updated ✓' : 'Part added ✓', 'success');
+      clearPartForm();
+      await loadAllData();
+      renderPartsTable();
+    }
+  } catch (e) {
+    if (!_isSeedingBatch) {
+      UploadBanner.hide();
+      unlockSaveBtn();
+    }
+    toast('Error: ' + e.message, 'error');
+    console.error(e);
+  }
+}
+
+// ── DELETE a part ──
+async function deletePart(partId) {
+  if (!confirm('Delete this part? This cannot be undone.')) return;
+
+  try {
+    const part = partsCache[partId];
+
+    // Remove part→model links
+    if (part?.models) {
+      for (const mk of Object.keys(part.models)) {
+        await FB.delete(`models/${mk}/parts/${partId}`);
+      }
+    }
+
+    // Delete the part itself
+    await FB.delete(`parts/${partId}`);
+
+    // Invalidate caches
+    Cache.delPattern('model_');
+    Cache.del('full_dataset');
+    allLoaded = false;
+
+    toast('Part deleted', 'info');
+    await loadAllData();
+    renderPartsTable();
+  } catch (e) {
+    toast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+// ── LOAD ALL data into memory ──
+async function loadAllData(force = false) {
+  // Try full dataset cache first
+  if (!force) {
+    const cached = Cache.get('full_dataset');
+    if (cached) {
+      partsCache  = cached.parts  || {};
+      searchIndex = cached.models || {};
+      allLoaded   = true;
+      updateStats(true);
+      return true;
+    }
+  }
+
+  try {
+    showLoading(true);
+    const [rawParts, rawModels] = await Promise.all([
+      FB.get('parts'),
+      FB.get('models')
+    ]);
+
+    partsCache  = rawParts  || {};
+    searchIndex = rawModels || {};
+    allLoaded   = true;
+
+    Cache.set('full_dataset', { parts: partsCache, models: searchIndex }, CONFIG.FULL_TTL);
+    updateStats(false);
+    showLoading(false);
+    return true;
+  } catch (e) {
+    showLoading(false);
+    toast('Could not load data: ' + e.message, 'error');
+    return false;
+  }
+}
+
+// ── READ a single model's parts ──
+async function getPartsForModel(name) {
+  const mk = modelKey(name);
+  const cacheKey = 'model_' + mk;
+
+  // 1. Check localStorage cache
+  const cached = Cache.get(cacheKey);
+  if (cached) return { parts: cached, fromCache: true };
+
+  // 2. Load from in-memory index (already loaded)
+  if (allLoaded && searchIndex[mk]) {
+    const modelData = searchIndex[mk];
+    const partIds = Object.keys(modelData.parts || {});
+    const parts = partIds.map(id => ({ id, ...partsCache[id] })).filter(p => p.name);
+    Cache.set(cacheKey, parts);
+    return { parts, fromCache: false };
+  }
+
+  // 3. Fallback: fetch directly from Firebase
+  try {
+    const modelData = await FB.get(`models/${mk}`);
+    if (!modelData) return { parts: [], fromCache: false };
+    const partIds = Object.keys(modelData.parts || {});
+    const parts = await Promise.all(
+      partIds.map(async id => {
+        const p = await FB.get(`parts/${id}`);
+        return p ? { id, ...p } : null;
+      })
+    );
+    const valid = parts.filter(Boolean);
+    Cache.set(cacheKey, valid);
+    return { parts: valid, fromCache: false };
+  } catch (e) {
+    return { parts: [], fromCache: false };
+  }
+}
+
+/* ============================================================
+   ⑥ SEARCH ALGORITHM — Trie-like prefix + fuzzy match
+   ============================================================ */
+function searchModels(query) {
+  if (!query || query.length < 1) return [];
+  const q = query.toLowerCase().trim();
+  const results = [];
+
+  for (const [mk, data] of Object.entries(searchIndex)) {
+    if (!data?.name) continue;
+    const name  = data.name.toLowerCase();
+    const brand = (data.brand || '').toLowerCase();
+
+    let score = 0;
+    if (name === q)                            score = 100;  // exact
+    else if (name.startsWith(q))               score = 80;   // prefix
+    else if (brand.startsWith(q))              score = 70;
+    else if (name.includes(q))                 score = 50;   // substring
+    else if (fuzzyMatch(name, q))              score = 20;   // fuzzy
+
+    if (score > 0) results.push({ key: mk, name: data.name, brand: data.brand, score });
+  }
+
+  return results.sort((a, b) => b.score - a.score).slice(0, 8);
+}
+
+// Simple fuzzy: all chars of query present in order
+function fuzzyMatch(str, query) {
+  let si = 0;
+  for (const ch of query) {
+    si = str.indexOf(ch, si);
+    if (si === -1) return false;
+    si++;
+  }
+  return true;
+}
+
+/* ============================================================
+   ⑦ UI — SEARCH INTERACTION
+   ============================================================ */
+let searchTimeout;
+
+function handleSearch(value) {
+  clearTimeout(searchTimeout);
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    closeAutocomplete();
+    showEmptyState();
+    return;
+  }
+
+  // Instant autocomplete from in-memory index
+  const suggestions = searchModels(trimmed);
+  renderAutocomplete(suggestions, trimmed);
+
+  // Debounced full results
+  searchTimeout = setTimeout(() => {
+    if (suggestions.length === 1) {
+      selectModel(suggestions[0].name);
+    }
+  }, 600);
+}
+
+function renderAutocomplete(results, query) {
+  const el = document.getElementById('autocomplete');
+  if (!results.length) { el.classList.remove('open'); return; }
+
+  el.innerHTML = results.map((r, i) => `
+    <div class="ac-item" onclick="selectModel('${escHtml(r.name)}')" data-index="${i}">
+      <div>
+        <div class="ac-item-brand">${escHtml(r.brand || '')}</div>
+        <div>${highlight(r.name, query)}</div>
+      </div>
+    </div>
+  `).join('');
+
+  el.classList.add('open');
+}
+
+function highlight(text, query) {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return escHtml(text);
+  return escHtml(text.slice(0, idx))
+       + `<strong style="color:var(--accent)">${escHtml(text.slice(idx, idx + query.length))}</strong>`
+       + escHtml(text.slice(idx + query.length));
+}
+
+function closeAutocomplete() {
+  document.getElementById('autocomplete').classList.remove('open');
+}
+
+async function selectModel(name) {
+  document.getElementById('main-search').value = name;
+  closeAutocomplete();
+  showLoading(true);
+
+  const { parts, fromCache } = await getPartsForModel(name);
+  renderResults(name, parts, fromCache);
+  showLoading(false);
+}
+
+function renderResults(modelName, parts, fromCache) {
+  const container = document.getElementById('results-container');
+
+  if (!parts.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">📦</span>
+        <h3>No parts found</h3>
+        <p>No compatible parts for "<strong>${escHtml(modelName)}</strong>" yet. Add them in the Admin panel.</p>
+      </div>`;
+    return;
+  }
+
+  const cacheLabel = fromCache
+    ? `<span class="cache-pill cache-hit">● cached</span>`
+    : `<span class="cache-pill cache-miss">↓ live</span>`;
+
+  const cards = parts.map(p => renderPartCard(p, modelName)).join('');
+
+  container.innerHTML = `
+    <div class="results-header">
+      <div class="results-title">Results for <span>${escHtml(modelName)}</span></div>
+      <div class="results-meta">${parts.length} part${parts.length > 1 ? 's' : ''} ${cacheLabel}</div>
+    </div>
+    ${cards}
+  `;
+}
+
+function renderPartCard(part, currentModel) {
+  const badgeClass = { display: 'badge-display', glass: 'badge-glass', battery: 'badge-battery', housing: 'badge-housing' }[part.type] || 'badge-display';
+  const compatModels = Object.keys(part.models || {});
+
+  const chips = compatModels.map(mk => {
+    const data = searchIndex[mk];
+    const displayName = data?.name || mk;
+    const isCurrent = modelKey(currentModel) === mk;
+    return `<span class="compat-chip ${isCurrent ? 'current' : ''}" onclick="selectModel('${escHtml(displayName)}')">${escHtml(displayName)}</span>`;
+  }).join('');
+
+  return `
+    <div class="part-card">
+      <div class="part-card-header">
+        <div>
+          <div class="part-type-badge ${badgeClass}">${part.type || 'part'}</div>
+          <div class="part-name">${escHtml(part.name)}</div>
+          ${part.notes ? `<div class="part-id" style="margin-top:4px;color:var(--muted)">${escHtml(part.notes)}</div>` : ''}
+        </div>
+        <div class="part-price">${part.price ? '$' + parseFloat(part.price).toFixed(2) : '—'}</div>
+      </div>
+      ${compatModels.length > 1 ? `
+      <div class="part-card-body">
+        <div class="compat-label">Also fits (${compatModels.length} models)</div>
+        <div class="compat-chips">${chips}</div>
+      </div>` : ''}
+    </div>`;
+}
+
+function showEmptyState() {
+  document.getElementById('results-container').innerHTML = `
+    <div class="empty-state">
+      <span class="empty-icon">🔍</span>
+      <h3>Search a phone model</h3>
+      <p>Type a brand or model name above to find compatible parts and cross-reference models.</p>
+    </div>`;
+}
+
+function showLoading(show) {
+  if (show) {
+    document.getElementById('results-container').innerHTML = `
+      <div class="loading-dots"><span></span><span></span><span></span></div>`;
+  }
+}
+
+/* ============================================================
+   ⑧ ADMIN UI
+   ============================================================ */
+function renderPartsTable() {
+  const tbody = document.getElementById('parts-table-body');
+  const entries = Object.entries(partsCache);
+  document.getElementById('parts-count').textContent = `(${entries.length})`;
+
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No parts yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = entries.map(([id, p]) => {
+    const modelCount = Object.keys(p.models || {}).length;
+    const badgeClass = { display: 'badge-display', glass: 'badge-glass', battery: 'badge-battery', housing: 'badge-housing' }[p.type] || 'badge-display';
+    return `
+      <tr>
+        <td style="max-width:160px;font-size:12px;font-weight:600">${escHtml(p.name || '')}</td>
+        <td><span class="part-type-badge ${badgeClass}" style="font-size:9px">${p.type}</span></td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--accent)">${p.price ? '$'+parseFloat(p.price).toFixed(2) : '—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${modelCount} model${modelCount !== 1 ? 's' : ''}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm btn-secondary" onclick="editPart('${id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePart('${id}')" style="margin-left:4px">Del</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function editPart(id) {
+  const p = partsCache[id];
+  if (!p) return;
+  document.getElementById('edit-part-id').value = id;
+  document.getElementById('part-name').value    = p.name || '';
+  document.getElementById('part-type').value    = p.type || 'display';
+  document.getElementById('part-price').value   = p.price || '';
+  document.getElementById('part-notes').value   = p.notes || '';
+
+  // Reconstruct model names from index
+  const modelNames = Object.keys(p.models || {}).map(mk => searchIndex[mk]?.name || mk);
+  document.getElementById('part-models').value = modelNames.join(', ');
+
+  showPage('admin');
+  document.getElementById('part-name').focus();
+  toast('Editing part — make changes and Save', 'info');
+}
+
+function clearPartForm() {
+  ['edit-part-id','part-name','part-notes','part-models','part-price'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('part-type').value = 'display';
+}
+
+function updateStats(fromCache) {
+  document.getElementById('stat-models').textContent = Object.keys(searchIndex).length;
+  document.getElementById('stat-parts').textContent  = Object.keys(partsCache).length;
+  const chip = document.getElementById('stat-cache');
+  chip.innerHTML = fromCache
+    ? `<strong style="color:var(--success)">●</strong> cached`
+    : `<strong style="color:var(--accent2)">●</strong> live`;
+}
+
+/* ============================================================
+   ⑨ SEED SAMPLE DATA
+   ============================================================ */
+async function seedSampleData() {
+  const sampleParts = [
+    { name: 'Realme 5 / 5i / 5s LCD Display Assembly', type: 'display', price: 14.99, notes: 'OEM Quality, with frame', models: ['Realme 5', 'Realme 5i', 'Realme 5s'] },
+    { name: 'Realme 5 Touch Glass Digitizer', type: 'glass', price: 6.50, notes: 'Gorilla Glass equivalent', models: ['Realme 5', 'Realme 5i'] },
+    { name: 'Samsung Galaxy A52 / A52s AMOLED', type: 'display', price: 38.00, notes: 'AMOLED with fingerprint', models: ['Samsung A52', 'Samsung A52s'] },
+    { name: 'Xiaomi Redmi Note 9 / 9S Screen', type: 'display', price: 18.99, notes: 'IPS panel', models: ['Redmi Note 9', 'Redmi Note 9S', 'Redmi Note 9 Pro'] },
+    { name: 'Redmi Note 9 Battery BN54', type: 'battery', price: 8.99, notes: '5020mAh original capacity', models: ['Redmi Note 9', 'Redmi Note 9S'] },
+    { name: 'iPhone 12 / 12 Pro OLED Screen', type: 'display', price: 79.99, notes: 'OLED aftermarket grade A', models: ['iPhone 12', 'iPhone 12 Pro'] },
+    { name: 'Samsung A51 Display + Frame', type: 'display', price: 28.00, notes: 'With pre-installed frame', models: ['Samsung A51', 'Samsung A51 5G'] },
+    { name: 'Oppo A9 2020 / A5 2020 Screen', type: 'display', price: 16.50, notes: 'Same panel as Realme 5', models: ['Oppo A9 2020', 'Oppo A5 2020', 'Realme 5'] },
+  ];
+
+  const total = sampleParts.length;
+  lockSaveBtn();
+  _isSeedingBatch = true;
+  UploadBanner.show(`Seeding 1 of ${total}…`);
+
+  for (let i = 0; i < sampleParts.length; i++) {
+    const p = sampleParts[i];
+    UploadBanner.update(`Seeding ${i + 1} / ${total} — ${p.name.split('/')[0].trim()}`);
+    document.getElementById('part-name').value   = p.name;
+    document.getElementById('part-type').value   = p.type;
+    document.getElementById('part-price').value  = p.price;
+    document.getElementById('part-notes').value  = p.notes;
+    document.getElementById('part-models').value = p.models.join(', ');
+    document.getElementById('edit-part-id').value = '';
+    await savePart();
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  _isSeedingBatch = false;
+  UploadBanner.hide();
+  unlockSaveBtn();
+  Cache.del('full_dataset');
+  allLoaded = false;
+  await loadAllData(true);
+  renderPartsTable();
+  toast('Sample data seeded ✓', 'success');
+  clearPartForm();
+}
+
+/* ============================================================
+   ⑩ UTILITIES
+   ============================================================ */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Upload Banner ── */
+const UploadBanner = {
+  show(msg = 'Uploading…') {
+    document.getElementById('upload-banner-msg').innerHTML = `<strong>${msg}</strong>`;
+    document.getElementById('upload-banner').classList.add('show');
+  },
+  update(msg) {
+    document.getElementById('upload-banner-msg').innerHTML = `<strong>${msg}</strong>`;
+  },
+  hide() {
+    document.getElementById('upload-banner').classList.remove('show');
+  }
+};
+
+/* ── Button lock helpers (prevent duplicate saves) ── */
+function lockSaveBtn() {
+  const btn = document.querySelector('[onclick="savePart()"]');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.45'; btn.style.cursor = 'not-allowed'; }
+  const seed = document.querySelector('[onclick="seedSampleData()"]');
+  if (seed) { seed.disabled = true; seed.style.opacity = '.45'; seed.style.cursor = 'not-allowed'; }
+}
+
+function unlockSaveBtn() {
+  const btn = document.querySelector('[onclick="savePart()"]');
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
+  const seed = document.querySelector('[onclick="seedSampleData()"]');
+  if (seed) { seed.disabled = false; seed.style.opacity = ''; seed.style.cursor = ''; }
+}
+
+let toastTimer;
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+  if (name === 'search') {
+    document.getElementById('page-search').classList.add('active');
+    document.getElementById('page-results').classList.add('active');
+    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  } else {
+    document.getElementById('page-admin').classList.add('active');
+    document.querySelectorAll('.nav-tab')[1].classList.add('active');
+    renderPartsTable();
+  }
+}
+
+function showCacheStats() {
+  const s = Cache.stats();
+  document.getElementById('cache-info').textContent = `${s.count} keys · ${s.sizeKB} KB used`;
+}
+
+function clearAllCache() {
+  Cache.delPattern('');
+  allLoaded = false;
+  toast('Cache cleared', 'info');
+  document.getElementById('cache-info').textContent = 'Cache cleared';
+  loadAllData(true);
+}
+
+function exportData() {
+  const data = { parts: partsCache, models: searchIndex };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'partmatch-export.json' });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Close autocomplete on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeAutocomplete();
+});
+
+/* ============================================================
+   ⑪ FIREBASE ERROR HANDLING & CONNECTION
+   ============================================================ */
+function showFirebaseError(type) {
+  const modal = document.getElementById('fb-error-modal');
+  const title = document.getElementById('fb-error-title');
+  const desc  = document.getElementById('fb-error-desc');
+  const rules = document.getElementById('fb-rules-section');
+
+  if (type === 'NETWORK') {
+    title.textContent = '⚠ Failed to Fetch — Network Blocked';
+    desc.innerHTML = `The browser couldn't reach Firebase at all. This is almost always a <strong style="color:var(--accent)">Firebase Database Rules</strong> issue on new projects, or a CORS block. Fix the rules below, then retry.`;
+    rules.style.display = 'block';
+  } else if (type === 'PERMISSION') {
+    title.textContent = '⚠ Permission Denied (401/403)';
+    desc.innerHTML = `Firebase rejected the request. Your database rules are denying access. Update them below.`;
+    rules.style.display = 'block';
+  } else {
+    title.textContent = '⚠ Firebase Error';
+    desc.innerHTML = `Something went wrong connecting to Firebase.`;
+    rules.style.display = 'block';
+  }
+
+  modal.classList.add('open');
+}
+
+function hideFirebaseError() {
+  document.getElementById('fb-error-modal').classList.remove('open');
+}
+
+async function retryConnection() {
+  hideFirebaseError();
+  Cache.del('full_dataset');
+  allLoaded = false;
+  const ok = await loadAllData(true);
+  if (ok) {
+    toast('Connected to Firebase ✓', 'success');
+    renderPartsTable();
+  }
+}
+
+function switchToDemo() {
+  DEMO_MODE = true;
+  hideFirebaseError();
+  Cache.del('full_dataset');
+  allLoaded = false;
+  toast('Switched to Demo Mode (localStorage only)', 'info');
+  loadAllData(true).then(() => renderPartsTable());
+}
+
+/* ============================================================
+   ⑫ FIREBASE CONFIG & AUTO-LAUNCH
+   ============================================================ */
+DB_URL = 'https://whatsapp-5-ef2ad-default-rtdb.firebaseio.com';
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadAllData().then(() => renderPartsTable());
+});
+</script>
+</body>
+</html>

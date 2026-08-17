@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="theme-color" content="#f0c040">
+
+<link rel="manifest" href="/manifest.json">
+
+<!-- iOS support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="PartMatch">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<title>PartMatch — Mobile Repair Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0d0d; --surface:#161616; --card:#1e1e1e; --border:#2a2a2a;
+  --accent:#f0c040; --accent2:#40c0f0; --danger:#f05060; --success:#40d090;
+  --text:#f0ede8; --muted:#888;
+  --mono:'Space Mono',monospace; --sans:'Syne',sans-serif;
+  --radius:6px; --tr:160ms cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")}
+#app{position:relative;z-index:1;padding-bottom:40px}
+
+/* ── Header ── */
+header{padding:16px 16px 0;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.logo{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.logo span{color:var(--muted)}
+.nav-tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;flex:1;max-width:320px}
+.nav-tab{flex:1;padding:6px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;background:none;color:var(--muted);transition:var(--tr);white-space:nowrap}
+.nav-tab.active,.nav-tab:hover{background:var(--accent);color:var(--bg)}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:var(--tr);border:2px solid transparent}
+.user-avatar:hover{box-shadow:0 0 0 3px rgba(240,192,64,.3)}
+
+/* ── Auth Screen ── */
+#auth-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:400px;width:100%}
+.auth-logo{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+.auth-tagline{font-size:21px;font-weight:800;margin-bottom:22px}
+.auth-tabs{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+.auth-tab{flex:1;padding:10px;text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:none;background:none;color:var(--muted);transition:var(--tr)}
+.auth-tab.active{background:var(--accent);color:var(--bg)}
+.auth-field{margin-bottom:13px}
+.auth-field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.auth-input{width:100%;padding:11px 13px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:var(--tr);-webkit-appearance:none}
+.auth-input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(64,192,240,.1)}
+.auth-error{background:rgba(240,80,96,.1);border:1px solid rgba(240,80,96,.3);border-radius:var(--radius);padding:9px 13px;font-family:var(--mono);font-size:11px;color:var(--danger);margin-bottom:13px;display:none}
+.auth-error.show{display:block}
+
+/* ── Pages ── */
+.page{display:none}.page.active{display:block}
+.pg{max-width:720px;margin:0 auto;padding:0 16px}
+
+/* ── Hero ── */
+.hero{padding:28px 16px 18px;max-width:720px;margin:0 auto}
+.hero-label{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+.hero h1{font-size:clamp(23px,5.5vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--accent);display:block}
+.search-wrap{position:relative}
+.search-input{width:100%;padding:14px 50px 14px 17px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:16px;font-weight:600;transition:var(--tr);outline:none;-webkit-appearance:none}
+.search-input::placeholder{color:var(--muted);font-weight:400}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,192,64,.12)}
+.search-icon{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:17px}
+.autocomplete{position:absolute;top:calc(100% + 5px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;z-index:100;display:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.autocomplete.open{display:block}
+.ac-item{padding:11px 15px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;transition:var(--tr);border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}.ac-item:hover{background:rgba(240,192,64,.08)}
+.ac-brand{font-family:var(--mono);font-size:10px;color:var(--accent2);letter-spacing:.1em;text-transform:uppercase}
+
+/* ── Recent Searches ── */
+.recent-searches{padding:0 16px 14px;max-width:720px;margin:0 auto}
+.recent-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.recent-chips{display:flex;flex-wrap:wrap;gap:5px}
+.recent-chip{padding:4px 11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:var(--tr);color:var(--muted)}
+.recent-chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Stats Bar ── */
+.stats-bar{max-width:720px;margin:0 auto;padding:0 16px 18px;display:flex;gap:7px;flex-wrap:wrap}
+.stat-chip{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.stat-chip strong{color:var(--accent);font-size:12px}
+
+/* ── Results ── */
+#results-wrap{padding:0 16px 80px;max-width:720px;margin:0 auto}
+.results-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.results-title{font-size:16px;font-weight:700}
+.results-title span{color:var(--accent);font-family:var(--mono)}
+.results-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ── Part Card ── */
+.part-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:9px;overflow:hidden;transition:var(--tr)}
+.part-card:hover{border-color:rgba(240,192,64,.25)}
+.part-card-header{padding:13px 15px 11px;display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.part-card-main{flex:1;min-width:0}
+.part-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
+.part-type-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.badge-display{background:rgba(64,192,240,.15);color:var(--accent2)}
+.badge-glass{background:rgba(240,192,64,.15);color:var(--accent)}
+.badge-battery{background:rgba(64,208,144,.15);color:var(--success)}
+.badge-housing{background:rgba(240,80,96,.15);color:var(--danger)}
+.part-name{font-size:14px;font-weight:700;line-height:1.3}
+.part-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px}
+.part-price{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent)}
+.edit-card-btn{display:flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:4px;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--muted);transition:var(--tr);flex-shrink:0}
+.edit-card-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(240,192,64,.08)}
+.part-card-body{border-top:1px solid var(--border);padding:11px 15px}
+.compat-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.compat-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.compat-chip{padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:var(--tr);color:var(--text)}
+.compat-chip.current{border-color:var(--accent);color:var(--accent)}
+.compat-chip:hover{border-color:var(--accent2);color:var(--accent2)}
+.part-added-by{display:flex;align-items:center;gap:7px;padding-top:8px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--muted);flex-wrap:wrap}
+.by-av{width:17px;height:17px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--accent);flex-shrink:0}
+
+/* ── Loading / Empty ── */
+.empty-state{text-align:center;padding:48px 20px}
+.empty-icon{font-size:42px;display:block;margin-bottom:12px;opacity:.4}
+.empty-state h3{font-size:16px;font-weight:700;margin-bottom:5px}
+.empty-state p{color:var(--muted);font-size:13px}
+.loading-dots{display:flex;justify-content:center;gap:8px;padding:40px}
+.loading-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dp 1.2s ease-in-out infinite}
+.loading-dots span:nth-child(2){animation-delay:.2s}.loading-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* ── Admin ── */
+.admin-subtabs{display:flex;border-bottom:1px solid var(--border);padding-top:18px}
+.admin-subtab{padding:9px 16px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;transition:var(--tr);border-bottom:2px solid transparent;margin-bottom:-1px}
+.admin-subtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.admin-subpage{display:none}.admin-subpage.active{display:block}
+.admin-section{margin-bottom:26px;padding-top:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-title{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent)}
+
+/* ── Forms ── */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.form-row{margin-bottom:11px}
+.form-row label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:var(--tr);-webkit-appearance:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(64,192,240,.1)}
+.form-select{cursor:pointer}
+.form-textarea{resize:vertical;min-height:68px;font-family:var(--mono);font-size:12px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border:none;border-radius:var(--radius);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;cursor:pointer;transition:var(--tr);white-space:nowrap}
+.btn-primary{background:var(--accent);color:var(--bg)}.btn-primary:hover{background:#ffd060}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--muted)}
+.btn-danger{background:rgba(240,80,96,.12);color:var(--danger);border:1px solid rgba(240,80,96,.3)}.btn-danger:hover{background:rgba(240,80,96,.22)}
+.btn-success{background:rgba(64,208,144,.12);color:var(--success);border:1px solid rgba(64,208,144,.3)}.btn-success:hover{background:rgba(64,208,144,.22)}
+.btn-sm{padding:5px 10px;font-size:10px}.btn-full{width:100%;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* ── Table ── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 11px;border-bottom:1px solid var(--border)}
+.data-table td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}.data-table tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ── Activity Log ── */
+.act-item{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.act-item:last-child{border-bottom:none}
+.act-icon{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px}
+.a-create{background:rgba(64,208,144,.15)}.a-update{background:rgba(240,192,64,.15)}.a-delete{background:rgba(240,80,96,.15)}
+.act-title{font-size:13px;font-weight:600}.act-title strong{color:var(--accent)}
+.act-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── Profile ── */
+.profile-header{padding:24px 16px 16px;max-width:720px;margin:0 auto;display:flex;align-items:center;gap:16px}
+.profile-av{width:60px;height:60px;border-radius:50%;background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.profile-info h2{font-size:19px;font-weight:800}
+.p-email{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.p-since{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:720px;margin:0 auto;padding:0 16px 16px}
+.p-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.p-stat-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)}
+.p-stat-lbl{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.profile-subtabs{display:flex;border-bottom:1px solid var(--border);max-width:720px;margin:0 auto;padding:0 16px}
+.p-subtab{padding:9px 14px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;transition:var(--tr);border-bottom:2px solid transparent;margin-bottom:-1px}
+.p-subtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.p-subpage{display:none;padding:14px 16px 60px;max-width:720px;margin:0 auto}
+.p-subpage.active{display:block}
+.sh-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.sh-item:last-child{border-bottom:none}
+.sh-q{font-size:14px;font-weight:600;cursor:pointer}.sh-q:hover{color:var(--accent)}
+.sh-t{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.cache-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-family:var(--mono);font-size:10px}
+.cache-hit{background:rgba(64,208,144,.1);color:var(--success)}.cache-miss{background:rgba(64,192,240,.1);color:var(--accent2)}
+
+/* ── Upload Banner ── */
+#upload-banner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);z-index:500;display:flex;align-items:center;gap:11px;padding:10px 18px 10px 13px;background:var(--card);border:1.5px solid var(--accent);border-radius:40px;box-shadow:0 4px 30px rgba(240,192,64,.2);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;white-space:nowrap;max-width:92vw}
+#upload-banner.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.up-spin{width:16px;height:16px;border-radius:50%;flex-shrink:0;border:2.5px solid rgba(240,192,64,.25);border-top-color:var(--accent);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.up-txt{font-family:var(--mono);font-size:11px;letter-spacing:.04em}
+.up-txt strong{color:var(--accent)}
+.up-sub{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* ── Firebase Error Modal ── */
+#fb-error-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#fb-error-modal.open{display:flex}
+.fb-card{background:var(--card);border:1px solid var(--danger);border-radius:var(--radius);padding:24px;max-width:440px;width:100%;box-shadow:0 0 60px rgba(240,80,96,.15)}
+.fb-card h3{font-size:16px;font-weight:800;margin-bottom:5px;color:var(--danger)}
+.fb-card p{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.fb-rules{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:11px 13px;font-family:var(--mono);font-size:11px;color:var(--accent);line-height:1.9;margin-bottom:16px;white-space:pre;overflow-x:auto}
+.fb-acts{display:flex;gap:9px;flex-wrap:wrap}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:9px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.05em;z-index:600;opacity:0;pointer-events:none;transition:all .22s ease;white-space:nowrap;max-width:92vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{border-color:var(--success);color:var(--success)}
+#toast.error{border-color:var(--danger);color:var(--danger)}
+#toast.info{border-color:var(--accent2);color:var(--accent2)}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@media(max-width:480px){.hero h1{font-size:22px}.form-row-2{grid-template-columns:1fr}.profile-stats{grid-template-columns:repeat(3,1fr)}.p-stat-val{font-size:17px}}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">PartMatch</div>
+    <div class="auth-tagline">Sign in to continue</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login"  onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab"        id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div id="field-uname" class="auth-field" style="display:none">
+      <label>Username</label>
+      <input class="auth-input" id="auth-uname" placeholder="e.g. john_tech" autocomplete="off">
+    </div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input class="auth-input" id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" id="auth-btn" onclick="submitAuth()">Sign In</button>
+  </div>
+</div>
+
+<!-- FIREBASE ERROR MODAL -->
+<div id="fb-error-modal">
+  <div class="fb-card">
+    <h3 id="fb-err-title">⚠ Connection Failed</h3>
+    <p id="fb-err-desc">Fix your Firebase Database Rules then retry.</p>
+    <div class="fb-rules">{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px">⚠ Open dev rules — tighten with auth before going live.</p>
+    <div class="fb-acts">
+      <button class="btn btn-primary" onclick="retryConn()">↺ Retry</button>
+      <button class="btn btn-secondary" onclick="goDemo()">Demo Mode</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD BANNER -->
+<div id="upload-banner">
+  <div class="up-spin"></div>
+  <div>
+    <div class="up-txt" id="up-msg"><strong>Uploading…</strong></div>
+    <div class="up-sub">Do not close or refresh the app</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+  <header>
+    <div class="logo">Part<span>Match</span></div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('search')">Search</button>
+      <button class="nav-tab"        onclick="showPage('admin')">Admin</button>
+      <button class="nav-tab"        onclick="showPage('profile')">Profile</button>
+    </nav>
+    <div class="user-avatar" id="hdr-av" onclick="showPage('profile')" title="Profile">?</div>
+  </header>
+
+  <!-- ═══ SEARCH PAGE ═══ -->
+  <div id="page-search" class="page active">
+    <div class="hero">
+      <div class="hero-label">Mobile Repair Intelligence</div>
+      <h1>Find compatible<em>parts instantly.</em></h1>
+      <div class="search-wrap">
+        <input type="text" class="search-input" id="main-search"
+          placeholder="Search phone model (e.g. Realme 5)…"
+          autocomplete="off" oninput="handleSearch(this.value)">
+        <span class="search-icon">⌕</span>
+        <div class="autocomplete" id="autocomplete"></div>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><strong id="s-models">0</strong> models</div>
+      <div class="stat-chip"><strong id="s-parts">0</strong> parts</div>
+      <div class="stat-chip" id="s-cache"><strong>●</strong> live</div>
+    </div>
+    <div class="recent-searches" id="recent-wrap" style="display:none">
+      <div class="recent-label">Your recent searches</div>
+      <div class="recent-chips" id="recent-chips"></div>
+    </div>
+    <div id="results-wrap">
+      <div class="empty-state">
+        <span class="empty-icon">🔍</span>
+        <h3>Search a phone model</h3>
+        <p>Type a model name above to find compatible parts.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ADMIN PAGE ═══ -->
+  <div id="page-admin" class="page">
+    <div class="pg">
+      <div class="admin-subtabs">
+        <button class="admin-subtab active" onclick="switchAdminTab('parts')">Parts</button>
+        <button class="admin-subtab"        onclick="switchAdminTab('activity')">Activity Log</button>
+      </div>
+
+      <div id="admin-parts" class="admin-subpage active">
+        <div class="admin-section">
+          <div class="section-header">
+            <span class="section-title" id="form-lbl">Add Part</span>
+            <button class="btn btn-sm btn-secondary" onclick="clearForm()">Clear</button>
+          </div>
+          <div class="form-card">
+            <input type="hidden" id="eid">
+            <div class="form-row">
+              <label>Part Name</label>
+              <input class="form-input" id="f-name" placeholder="e.g. Realme 5 LCD Display Assembly">
+            </div>
+            <div class="form-row-2">
+              <div class="form-row" style="margin:0">
+                <label>Type</label>
+                <select class="form-select" id="f-type">
+                  <option value="display">Display</option>
+                  <option value="glass">Glass</option>
+                  <option value="battery">Battery</option>
+                  <option value="housing">Housing</option>
+                </select>
+              </div>
+              <div class="form-row" style="margin:0">
+                <label>Price (USD)</label>
+                <input class="form-input" id="f-price" type="number" step="0.01" placeholder="12.99">
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Compatible Models (comma-separated)</label>
+              <textarea class="form-textarea" id="f-models" placeholder="Realme 5, Realme 5i, Realme 5s"></textarea>
+            </div>
+            <div class="form-row">
+              <label>Notes</label>
+              <input class="form-input" id="f-notes" placeholder="Optional notes">
+            </div>
+            <button class="btn btn-primary btn-full" id="save-btn" onclick="savePart()">Save Part</button>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="section-header">
+            <span class="section-title">All Parts <span id="p-count" style="color:var(--muted)"></span></span>
+            <div style="display:flex;gap:7px">
+              <button class="btn btn-sm btn-success" id="seed-btn" onclick="seedSample()">Seed Sample</button>
+              <button class="btn btn-sm btn-secondary" onclick="exportData()">Export</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Part</th><th>Type</th><th>Price</th><th>Models</th><th>Added by</th><th>Edited by</th><th></th></tr></thead>
+              <tbody id="parts-tbody">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No parts yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="section-header"><span class="section-title">Cache</span></div>
+          <div class="form-card" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="cacheStats()">Stats</button>
+            <button class="btn btn-danger btn-sm" onclick="clearCache()">Clear Cache</button>
+            <span id="cache-info" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div><!-- /admin-parts -->
+
+      <div id="admin-activity" class="admin-subpage">
+        <div class="admin-section" style="padding-top:6px">
+          <div class="section-header">
+            <span class="section-title">All Activity</span>
+            <button class="btn btn-sm btn-secondary" onclick="loadActivityLog()">↺ Refresh</button>
+          </div>
+          <div class="table-wrap" id="act-log-wrap">
+            <div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--mono);font-size:12px">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-admin -->
+
+  <!-- ═══ PROFILE PAGE ═══ -->
+  <div id="page-profile" class="page">
+    <div class="profile-header">
+      <div class="profile-av" id="pr-av">?</div>
+      <div class="profile-info">
+        <h2 id="pr-name">—</h2>
+        <div class="p-email" id="pr-email">—</div>
+        <div class="p-since" id="pr-joined">—</div>
+        <div class="p-since" id="pr-seen" style="margin-top:1px">—</div>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="p-stat"><div class="p-stat-val" id="ps-added">0</div><div class="p-stat-lbl">Added</div></div>
+      <div class="p-stat"><div class="p-stat-val" id="ps-edited">0</div><div class="p-stat-lbl">Edits</div></div>
+      <div class="p-stat"><div class="p-stat-val" id="ps-searches">0</div><div class="p-stat-lbl">Searches</div></div>
+    </div>
+    <div class="profile-subtabs">
+      <button class="p-subtab active" onclick="switchPTab('searches')">Searches</button>
+      <button class="p-subtab"        onclick="switchPTab('myact')">My Activity</button>
+      <button class="p-subtab"        onclick="switchPTab('account')">Account</button>
+    </div>
+    <div id="pt-searches" class="p-subpage active">
+      <div id="sh-list"><div style="color:var(--muted);font-family:var(--mono);font-size:12px">No searches yet.</div></div>
+    </div>
+    <div id="pt-myact" class="p-subpage">
+      <div class="table-wrap" id="my-act-wrap">
+        <div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--mono);font-size:12px">Loading…</div>
+      </div>
+    </div>
+    <div id="pt-account" class="p-subpage">
+      <div class="form-card" style="margin-bottom:12px">
+        <div class="form-row" style="margin-bottom:0">
+          <label>Update Username</label>
+          <div style="display:flex;gap:8px;margin-top:5px">
+            <input class="form-input" id="new-uname" placeholder="New username" style="flex:1">
+            <button class="btn btn-primary" onclick="updateUname()">Save</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-full" onclick="doSignOut()">Sign Out</button>
+    </div>
+  </div><!-- /page-profile -->
+
+</div><!-- /app -->
+
+<script>
+/* ============================================================
+   CONFIG & STATE
+   ============================================================ */
+const CFG = {
+  DB:       'https://whatsapp-5-ef2ad-default-rtdb.firebaseio.com',
+  PATH:     'partmatch',
+  AKEY:     'AIzaSyBV3CNqsmKPqJUu0ujkx5yBRMOvR-vzKoU',
+  ABASE:    'https://identitytoolkit.googleapis.com/v1/accounts',
+  TTL:      5  * 60 * 1000,
+  FTTL:     15 * 60 * 1000,
+  CP:       'pm_',
+};
+let cu = null;           // currentUser
+let SI = {};             // searchIndex
+let PC = {};             // partsCache
+let loaded = false;
+let DEMO = false;
+let _seeding = false;
+let _authMode = 'login';
+
+/* ============================================================
+   CACHE
+   ============================================================ */
+const C = {
+  k:k=>CFG.CP+k,
+  get(k){try{const r=localStorage.getItem(this.k(k));if(!r)return null;const{data,ts,ttl}=JSON.parse(r);if(Date.now()-ts>ttl){this.del(k);return null}return data}catch{return null}},
+  set(k,d,t=CFG.TTL){try{localStorage.setItem(this.k(k),JSON.stringify({data:d,ts:Date.now(),ttl:t}))}catch{this.evict();try{localStorage.setItem(this.k(k),JSON.stringify({data:d,ts:Date.now(),ttl:t}))}catch{}}},
+  del(k){localStorage.removeItem(this.k(k))},
+  dp(p){Object.keys(localStorage).filter(k=>k.startsWith(CFG.CP+p)).forEach(k=>localStorage.removeItem(k))},
+  evict(){Object.keys(localStorage).filter(k=>k.startsWith(CFG.CP)).map(k=>{try{return{k,ts:JSON.parse(localStorage.getItem(k)).ts}}catch{return{k,ts:0}}}).sort((a,b)=>a.ts-b.ts).slice(0,5).forEach(e=>localStorage.removeItem(e.k))},
+  stats(){const ks=Object.keys(localStorage).filter(k=>k.startsWith(CFG.CP));const kb=ks.reduce((s,k)=>s+(localStorage.getItem(k)||'').length*2,0)/1024;return{count:ks.length,sizeKB:kb.toFixed(1)}}
+};
+
+/* ============================================================
+   FIREBASE REST
+   ============================================================ */
+const FB = {
+  u(p){return`${CFG.DB}/${CFG.PATH}/${p}.json`},
+  async r(p,o={}){let r;try{r=await fetch(this.u(p),o)}catch(e){showFBErr('NETWORK');throw e}if(!r.ok){if(r.status===401||r.status===403)showFBErr('PERM');throw new Error('Firebase '+r.status)}return r.json().catch(()=>null)},
+  get(p){return DEMO?D.get(p):this.r(p)},
+  set(p,d){return DEMO?D.set(p,d):this.r(p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})},
+  patch(p,d){return DEMO?D.patch(p,d):this.r(p,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})},
+  del(p){return DEMO?D.del(p):this.r(p,{method:'DELETE'})},
+  push(p,d){return DEMO?D.push(p,d):this.r(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}
+};
+const D={
+  _s(){try{return JSON.parse(localStorage.getItem('pm_ddb')||'{}')}catch{return{}}},
+  _w(db){localStorage.setItem('pm_ddb',JSON.stringify(db))},
+  get(p){const db=this._s(),ks=p.split('/').filter(Boolean);let c=db;for(const k of ks)c=c?.[k];return Promise.resolve(c??null)},
+  set(p,d){const db=this._s(),ks=p.split('/').filter(Boolean);let c=db;for(let i=0;i<ks.length-1;i++){c[ks[i]]=c[ks[i]]||{};c=c[ks[i]]}c[ks[ks.length-1]]=d;this._w(db);return Promise.resolve(d)},
+  patch(p,d){const db=this._s(),ks=p.split('/').filter(Boolean);let c=db;for(let i=0;i<ks.length-1;i++){c[ks[i]]=c[ks[i]]||{};c=c[ks[i]]}const l=ks[ks.length-1];c[l]=Object.assign(c[l]||{},d);this._w(db);return Promise.resolve(c[l])},
+  del(p){const db=this._s(),ks=p.split('/').filter(Boolean);let c=db;for(let i=0;i<ks.length-1;i++)c=c?.[ks[i]];if(c)delete c[ks[ks.length-1]];this._w(db);return Promise.resolve(true)},
+  push(p,d){const id='-'+Math.random().toString(36).substr(2,16);this.set(p+'/'+id,d);return Promise.resolve({name:id})}
+};
+
+/* ============================================================
+   AUTH (Firebase REST — no SDK)
+   ============================================================ */
+const Auth={
+  async signUp(email,pass,uname){
+    const r=await fetch(`${CFG.ABASE}:signUp?key=${CFG.AKEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
+    const d=await r.json();if(d.error)throw new Error(this.fm(d.error.message));
+    await FB.set(`users/${d.localId}`,{username:uname,email,createdAt:Date.now(),lastSeen:Date.now(),searches:[]});
+    const user={uid:d.localId,username:uname,email,idToken:d.idToken,createdAt:Date.now(),searches:[]};
+    this.save(user);return user;
+  },
+  async signIn(email,pass){
+    const r=await fetch(`${CFG.ABASE}:signInWithPassword?key=${CFG.AKEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
+    const d=await r.json();if(d.error)throw new Error(this.fm(d.error.message));
+    const prof=await FB.get(`users/${d.localId}`).catch(()=>null);
+    const uname=prof?.username||email.split('@')[0];
+    const searches=prof?.searches||[];
+    await FB.patch(`users/${d.localId}`,{lastSeen:Date.now()}).catch(()=>{});
+    const user={uid:d.localId,username:uname,email,idToken:d.idToken,createdAt:prof?.createdAt||Date.now(),searches};
+    this.save(user);return user;
+  },
+  signOut(){localStorage.removeItem('pm_sess');cu=null;document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';switchAuthTab('login')},
+  save(u){localStorage.setItem('pm_sess',JSON.stringify(u));cu=u},
+  load(){try{return JSON.parse(localStorage.getItem('pm_sess'))}catch{return null}},
+  fm(c){return({'EMAIL_EXISTS':'Email already registered.','EMAIL_NOT_FOUND':'No account with that email.','INVALID_PASSWORD':'Incorrect password.','INVALID_LOGIN_CREDENTIALS':'Incorrect email or password.','WEAK_PASSWORD':'Password must be 6+ characters.','INVALID_EMAIL':'Enter a valid email address.','TOO_MANY_ATTEMPTS_TRY_LATER':'Too many attempts. Try later.'}[c]||c)}
+};
+
+/* ============================================================
+   USER TRACKING
+   ============================================================ */
+const UT={
+  async recordSearch(q){
+    if(!cu||!q.trim())return;
+    const updated=[{query:q.trim(),at:Date.now()},...(cu.searches||[]).filter(s=>s.query.toLowerCase()!==q.trim().toLowerCase())].slice(0,10);
+    cu.searches=updated;Auth.save(cu);
+    FB.patch(`users/${cu.uid}`,{searches:updated,lastSearch:q.trim(),lastSeen:Date.now()}).catch(()=>{});
+    renderRecentSearches();
+  },
+  bump(){if(cu)FB.patch(`users/${cu.uid}`,{lastSeen:Date.now()}).catch(()=>{});}
+};
+
+/* ============================================================
+   AUDIT LOG
+   ============================================================ */
+const Audit={
+  async log(action,pid,pname){
+    if(!cu)return;
+    FB.push('audit',{action,partId:pid,partName:pname,uid:cu.uid,username:cu.username,at:Date.now()}).catch(()=>{});
+  },
+  async getAll(){const d=await FB.get('audit');if(!d)return[];return Object.values(d).sort((a,b)=>b.at-a.at)},
+  async getMine(){if(!cu)return[];const all=await this.getAll();return all.filter(e=>e.uid===cu.uid)}
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function mk(n){return n.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function timeAgo(ts){if(!ts)return'—';const d=Date.now()-ts;if(d<60000)return'just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago'}
+
+/* ============================================================
+   CRUD
+   ============================================================ */
+async function savePart(){
+  const id=document.getElementById('eid').value;
+  const name=document.getElementById('f-name').value.trim();
+  const type=document.getElementById('f-type').value;
+  const price=parseFloat(document.getElementById('f-price').value)||0;
+  const notes=document.getElementById('f-notes').value.trim();
+  const rawM=document.getElementById('f-models').value;
+  if(!name){toast('Part name is required','error');return}
+  const mList=rawM.split(',').map(m=>m.trim()).filter(Boolean);
+  if(!mList.length){toast('Add at least one compatible model','error');return}
+  const mMap={};mList.forEach(m=>{mMap[mk(m)]=true});
+  const who=cu?{uid:cu.uid,username:cu.username,at:Date.now()}:null;
+  const isEdit=!!id;
+  const existing=isEdit?PC[id]:{};
+  const pd={name,type,price,notes,models:mMap,updatedAt:Date.now(),
+    addedBy:isEdit?(existing?.addedBy||who):who,
+    editedBy:isEdit?who:null};
+  lock(true);
+  if(!_seeding)UB.show(isEdit?'Updating part…':'Saving part…');
+  try{
+    let pid=id;
+    if(isEdit){
+      if(!_seeding)UB.update('Patching data…');
+      await FB.patch(`parts/${id}`,pd);
+      if(existing?.models){if(!_seeding)UB.update('Removing old links…');for(const k of Object.keys(existing.models))await FB.del(`models/${k}/parts/${id}`);}
+    }else{
+      if(!_seeding)UB.update('Creating part…');
+      const res=await FB.push('parts',pd);pid=res.name;
+    }
+    for(let i=0;i<mList.length;i++){
+      const m=mList[i],k=mk(m);
+      if(!_seeding)UB.update(`Linking model ${i+1}/${mList.length}…`);
+      await FB.patch(`models/${k}`,{name:m,brand:m.split(' ')[0]});
+      await FB.patch(`models/${k}/parts`,{[pid]:true});
+    }
+    await Audit.log(isEdit?'update':'create',pid,name);
+    C.dp('model_');C.dp('full_');C.del('full_ds');loaded=false;
+    if(!_seeding){UB.hide();lock(false);toast(isEdit?'Part updated ✓':'Part added ✓','success');clearForm();await loadAll();renderTable();}
+  }catch(e){
+    if(!_seeding){UB.hide();lock(false);}
+    if(!_seeding)toast('Error: '+e.message,'error');
+    console.error(e);
+  }
+}
+
+async function deletePart(pid){
+  const p=PC[pid];
+  const eb=p?.editedBy?.username?` (last edited by @${p.editedBy.username})`:'';
+  if(!confirm(`Delete "${p?.name||pid}"?${eb}\n\nThis cannot be undone.`))return;
+  try{
+    if(p?.models)for(const k of Object.keys(p.models))await FB.del(`models/${k}/parts/${pid}`);
+    await Audit.log('delete',pid,p?.name||pid);
+    await FB.del(`parts/${pid}`);
+    C.dp('model_');C.del('full_ds');loaded=false;
+    toast('Part deleted','info');await loadAll();renderTable();
+  }catch(e){toast('Delete failed: '+e.message,'error')}
+}
+
+async function loadAll(force=false){
+  if(!force){const c=C.get('full_ds');if(c){PC=c.parts||{};SI=c.models||{};loaded=true;updateStats(true);return true}}
+  try{
+    showLoad(true);
+    const[rp,rm]=await Promise.all([FB.get('parts'),FB.get('models')]);
+    PC=rp||{};SI=rm||{};loaded=true;
+    C.set('full_ds',{parts:PC,models:SI},CFG.FTTL);
+    updateStats(false);showLoad(false);return true;
+  }catch(e){showLoad(false);toast('Load error: '+e.message,'error');return false}
+}
+
+async function getPartsFor(name){
+  const k=mk(name),ck='model_'+k;
+  const c=C.get(ck);if(c)return{parts:c,fromCache:true};
+  if(loaded&&SI[k]){const ids=Object.keys(SI[k].parts||{});const parts=ids.map(id=>({id,...PC[id]})).filter(p=>p.name);C.set(ck,parts);return{parts,fromCache:false}}
+  try{
+    const md=await FB.get(`models/${k}`);if(!md)return{parts:[],fromCache:false};
+    const ids=Object.keys(md.parts||{});
+    const parts=(await Promise.all(ids.map(async id=>{const p=await FB.get(`parts/${id}`);return p?{id,...p}:null}))).filter(Boolean);
+    C.set(ck,parts);return{parts,fromCache:false};
+  }catch{return{parts:[],fromCache:false}}
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+function searchModels(q){
+  if(!q)return[];const ql=q.toLowerCase().trim(),out=[];
+  for(const[k,d]of Object.entries(SI)){
+    if(!d?.name)continue;const n=d.name.toLowerCase(),b=(d.brand||'').toLowerCase();
+    let s=0;if(n===ql)s=100;else if(n.startsWith(ql))s=80;else if(b.startsWith(ql))s=70;else if(n.includes(ql))s=50;else if(fuzzy(n,ql))s=20;
+    if(s>0)out.push({key:k,name:d.name,brand:d.brand||'',score:s});
+  }
+  return out.sort((a,b)=>b.score-a.score).slice(0,8);
+}
+function fuzzy(s,q){let i=0;for(const c of q){i=s.indexOf(c,i);if(i===-1)return false;i++}return true}
+
+let _st;
+function handleSearch(v){
+  clearTimeout(_st);
+  if(!v.trim()){closeAC();showEmpty();return}
+  const sg=searchModels(v);renderAC(sg,v);
+  _st=setTimeout(()=>{if(sg.length===1)selectModel(sg[0].name)},600);
+}
+function renderAC(res,q){
+  const el=document.getElementById('autocomplete');
+  if(!res.length){el.classList.remove('open');return}
+  el.innerHTML=res.map(r=>`<div class="ac-item" onclick="selectModel('${esc(r.name)}')"><div><div class="ac-brand">${esc(r.brand)}</div><div>${hl(r.name,q)}</div></div></div>`).join('');
+  el.classList.add('open');
+}
+function hl(t,q){const i=t.toLowerCase().indexOf(q.toLowerCase());if(i===-1)return esc(t);return esc(t.slice(0,i))+`<strong style="color:var(--accent)">${esc(t.slice(i,i+q.length))}</strong>`+esc(t.slice(i+q.length))}
+function closeAC(){document.getElementById('autocomplete').classList.remove('open')}
+
+async function selectModel(name){
+  document.getElementById('main-search').value=name;closeAC();
+  showLoad(true);
+  await UT.recordSearch(name);
+  const{parts,fromCache}=await getPartsFor(name);
+  renderResults(name,parts,fromCache);showLoad(false);
+}
+
+function renderResults(mn,parts,fromCache){
+  const w=document.getElementById('results-wrap');
+  if(!parts.length){w.innerHTML=`<div class="empty-state"><span class="empty-icon">📦</span><h3>No parts found</h3><p>No compatible parts for "<strong>${esc(mn)}</strong>" yet.<br>Add them in the Admin panel.</p></div>`;return}
+  const pill=fromCache?`<span class="cache-pill cache-hit">● cached</span>`:`<span class="cache-pill cache-miss">↓ live</span>`;
+  w.innerHTML=`<div class="results-header"><div class="results-title">Results for <span>${esc(mn)}</span></div><div class="results-meta">${parts.length} part${parts.length>1?'s':''} ${pill}</div></div>${parts.map(p=>cardHTML(p,mn)).join('')}`;
+}
+
+function cardHTML(part,curModel){
+  const bc={display:'badge-display',glass:'badge-glass',battery:'badge-battery',housing:'badge-housing'}[part.type]||'badge-display';
+  const cks=Object.keys(part.models||{});
+  const chips=cks.map(k=>{const d=SI[k],dn=d?.name||k,cur=mk(curModel)===k;return`<span class="compat-chip ${cur?'current':''}" onclick="selectModel('${esc(dn)}')">${esc(dn)}</span>`}).join('');
+  const ab=part.addedBy?.username?`<div class="part-added-by">
+    <span class="by-av">${part.addedBy.username[0].toUpperCase()}</span>
+    <span>Added by <strong style="color:var(--text)">@${esc(part.addedBy.username)}</strong> · ${timeAgo(part.addedBy.at)}</span>
+    ${part.editedBy?.username?`<span>· Edited by <strong style="color:var(--text)">@${esc(part.editedBy.username)}</strong> · ${timeAgo(part.editedBy.at)}</span>`:''}
+  </div>`:'';
+  const eb=cu?`<div class="edit-card-btn" onclick="editPart('${part.id}')" title="Edit">✎</div>`:'';
+  return`<div class="part-card">
+    <div class="part-card-header">
+      <div class="part-card-main">
+        <div class="part-type-badge ${bc}">${part.type||'part'}</div>
+        <div class="part-name">${esc(part.name)}</div>
+        ${part.notes?`<div class="part-meta">${esc(part.notes)}</div>`:''}
+      </div>
+      <div class="part-card-right">
+        <div class="part-price">${part.price?'$'+parseFloat(part.price).toFixed(2):'—'}</div>
+        ${eb}
+      </div>
+    </div>
+    ${cks.length>0||ab?`<div class="part-card-body">
+      ${cks.length>0?`<div class="compat-label">Compatible models (${cks.length})</div><div class="compat-chips">${chips}</div>`:''}
+      ${ab}
+    </div>`:''}
+  </div>`;
+}
+
+function showEmpty(){document.getElementById('results-wrap').innerHTML=`<div class="empty-state"><span class="empty-icon">🔍</span><h3>Search a phone model</h3><p>Type a model name above to find compatible parts.</p></div>`}
+function showLoad(s){if(s)document.getElementById('results-wrap').innerHTML=`<div class="loading-dots"><span></span><span></span><span></span></div>`}
+
+function renderRecentSearches(){
+  const s=cu?.searches||[];
+  if(!s.length){document.getElementById('recent-wrap').style.display='none';return}
+  document.getElementById('recent-wrap').style.display='block';
+  document.getElementById('recent-chips').innerHTML=s.slice(0,6).map(x=>`<span class="recent-chip" onclick="selectModel('${esc(x.query)}')">${esc(x.query)}</span>`).join('');
+}
+
+/* ============================================================
+   ADMIN UI
+   ============================================================ */
+function renderTable(){
+  const tb=document.getElementById('parts-tbody');
+  const es=Object.entries(PC);
+  document.getElementById('p-count').textContent=`(${es.length})`;
+  if(!es.length){tb.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">No parts yet.</td></tr>`;return}
+  tb.innerHTML=es.map(([id,p])=>{
+    const mc=Object.keys(p.models||{}).length;
+    const bc={display:'badge-display',glass:'badge-glass',battery:'badge-battery',housing:'badge-housing'}[p.type]||'badge-display';
+    return`<tr>
+      <td style="max-width:130px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name||'')}</td>
+      <td><span class="part-type-badge ${bc}" style="font-size:9px">${p.type}</span></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--accent)">${p.price?'$'+parseFloat(p.price).toFixed(2):'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${mc}m</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${p.addedBy?.username?'@'+esc(p.addedBy.username):'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${p.editedBy?.username?'@'+esc(p.editedBy.username)+'<br><span style="font-size:9px">'+timeAgo(p.editedBy.at)+'</span>':'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="editPart('${id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deletePart('${id}')" style="margin-left:4px">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editPart(id){
+  const p=PC[id];if(!p)return;
+  document.getElementById('eid').value=id;
+  document.getElementById('f-name').value=p.name||'';
+  document.getElementById('f-type').value=p.type||'display';
+  document.getElementById('f-price').value=p.price||'';
+  document.getElementById('f-notes').value=p.notes||'';
+  document.getElementById('f-models').value=Object.keys(p.models||{}).map(k=>SI[k]?.name||k).join(', ');
+  document.getElementById('form-lbl').textContent='Edit Part';
+  showPage('admin');switchAdminTab('parts');
+  document.getElementById('f-name').focus();
+  toast('Editing — make changes and Save','info');
+}
+
+function clearForm(){
+  ['eid','f-name','f-notes','f-models','f-price'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type').value='display';
+  document.getElementById('form-lbl').textContent='Add Part';
+}
+
+function updateStats(fc){
+  document.getElementById('s-models').textContent=Object.keys(SI).length;
+  document.getElementById('s-parts').textContent=Object.keys(PC).length;
+  document.getElementById('s-cache').innerHTML=fc?`<strong style="color:var(--success)">●</strong> cached`:`<strong style="color:var(--accent2)">●</strong> live`;
+}
+
+async function loadActivityLog(){
+  const w=document.getElementById('act-log-wrap');
+  w.innerHTML=`<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--mono);font-size:12px">Loading…</div>`;
+  try{
+    const es=await Audit.getAll();
+    if(!es.length){w.innerHTML=`<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--mono);font-size:12px">No activity yet.</div>`;return}
+    w.innerHTML=es.slice(0,50).map(e=>{
+      const ic={create:'➕',update:'✏️',delete:'🗑️'}[e.action]||'●';
+      const cl={create:'a-create',update:'a-update',delete:'a-delete'}[e.action]||'a-update';
+      return`<div class="act-item"><div class="act-icon ${cl}">${ic}</div><div><div class="act-title"><strong>@${esc(e.username||'unknown')}</strong> ${e.action}d <strong>${esc(e.partName||e.partId||'')}</strong></div><div class="act-meta">${timeAgo(e.at)} · ${new Date(e.at).toLocaleString()}</div></div></div>`;
+    }).join('');
+  }catch(e){w.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;font-family:var(--mono);font-size:12px">Error: ${esc(e.message)}</div>`}
+}
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+async function renderProfile(){
+  if(!cu)return;
+  const ini=cu.username[0].toUpperCase();
+  document.getElementById('pr-av').textContent=ini;
+  document.getElementById('hdr-av').textContent=ini;
+  document.getElementById('pr-name').textContent='@'+cu.username;
+  document.getElementById('pr-email').textContent=cu.email;
+  document.getElementById('pr-joined').textContent='Joined '+new Date(cu.createdAt||Date.now()).toLocaleDateString();
+  const prof=await FB.get(`users/${cu.uid}`).catch(()=>null);
+  document.getElementById('pr-seen').textContent=prof?.lastSeen?'Last seen '+timeAgo(prof.lastSeen):'';
+  const searches=cu.searches||[];
+  document.getElementById('ps-searches').textContent=searches.length;
+  renderSH(searches);
+  try{
+    const mine=await Audit.getMine();
+    document.getElementById('ps-added').textContent=mine.filter(e=>e.action==='create').length;
+    document.getElementById('ps-edited').textContent=mine.filter(e=>e.action==='update').length;
+    renderMyAct(mine);
+  }catch{}
+}
+
+function renderSH(searches){
+  const el=document.getElementById('sh-list');
+  if(!searches.length){el.innerHTML=`<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:16px 0">No searches yet.</div>`;return}
+  el.innerHTML=searches.map(s=>`<div class="sh-item"><div class="sh-q" onclick="showPage('search');selectModel('${esc(s.query)}')">${esc(s.query)}</div><div class="sh-t">${timeAgo(s.at)}</div></div>`).join('');
+}
+
+function renderMyAct(es){
+  const w=document.getElementById('my-act-wrap');
+  if(!es.length){w.innerHTML=`<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--mono);font-size:12px">No activity yet.</div>`;return}
+  w.innerHTML=es.slice(0,30).map(e=>{
+    const ic={create:'➕',update:'✏️',delete:'🗑️'}[e.action]||'●';
+    const cl={create:'a-create',update:'a-update',delete:'a-delete'}[e.action]||'a-update';
+    return`<div class="act-item"><div class="act-icon ${cl}">${ic}</div><div><div class="act-title">${e.action}d <strong>${esc(e.partName||e.partId||'')}</strong></div><div class="act-meta">${timeAgo(e.at)} · ${new Date(e.at).toLocaleString()}</div></div></div>`;
+  }).join('');
+}
+
+async function updateUname(){
+  const v=document.getElementById('new-uname').value.trim();
+  if(!v||v.length<3){toast('3+ characters required','error');return}
+  if(!/^[a-zA-Z0-9_]+$/.test(v)){toast('Letters, numbers, underscores only','error');return}
+  try{
+    await FB.patch(`users/${cu.uid}`,{username:v});
+    cu.username=v;Auth.save(cu);renderProfile();
+    document.getElementById('new-uname').value='';
+    toast('Username updated ✓','success');
+  }catch(e){toast('Failed: '+e.message,'error')}
+}
+
+function doSignOut(){Auth.signOut()}
+
+/* ============================================================
+   SEED DATA
+   ============================================================ */
+async function seedSample(){
+  const samps=[
+    {name:'Realme 5 / 5i / 5s LCD Display Assembly',type:'display',price:14.99,notes:'OEM Quality, with frame',models:['Realme 5','Realme 5i','Realme 5s']},
+    {name:'Realme 5 Touch Glass Digitizer',type:'glass',price:6.50,notes:'Gorilla Glass equiv',models:['Realme 5','Realme 5i']},
+    {name:'Samsung Galaxy A52 / A52s AMOLED',type:'display',price:38.00,notes:'AMOLED with fingerprint',models:['Samsung A52','Samsung A52s']},
+    {name:'Xiaomi Redmi Note 9 / 9S Screen',type:'display',price:18.99,notes:'IPS panel',models:['Redmi Note 9','Redmi Note 9S','Redmi Note 9 Pro']},
+    {name:'Redmi Note 9 Battery BN54',type:'battery',price:8.99,notes:'5020mAh original capacity',models:['Redmi Note 9','Redmi Note 9S']},
+    {name:'iPhone 12 / 12 Pro OLED Screen',type:'display',price:79.99,notes:'OLED aftermarket grade A',models:['iPhone 12','iPhone 12 Pro']},
+    {name:'Samsung A51 Display + Frame',type:'display',price:28.00,notes:'With pre-installed frame',models:['Samsung A51','Samsung A51 5G']},
+    {name:'Oppo A9 2020 / A5 2020 Screen',type:'display',price:16.50,notes:'Same panel as Realme 5',models:['Oppo A9 2020','Oppo A5 2020','Realme 5']},
+  ];
+  lock(true);_seeding=true;UB.show(`Seeding 1 of ${samps.length}…`);
+  for(let i=0;i<samps.length;i++){
+    const s=samps[i];UB.update(`Seeding ${i+1} / ${samps.length} — ${s.name.split('/')[0].trim()}`);
+    document.getElementById('f-name').value=s.name;document.getElementById('f-type').value=s.type;
+    document.getElementById('f-price').value=s.price;document.getElementById('f-notes').value=s.notes;
+    document.getElementById('f-models').value=s.models.join(', ');document.getElementById('eid').value='';
+    await savePart();await new Promise(r=>setTimeout(r,80));
+  }
+  _seeding=false;UB.hide();lock(false);C.del('full_ds');loaded=false;
+  await loadAll(true);renderTable();toast('Sample data seeded ✓','success');clearForm();
+}
+
+/* ============================================================
+   AUTH UI
+   ============================================================ */
+function switchAuthTab(m){
+  _authMode=m;
+  document.getElementById('tab-login').classList.toggle('active',m==='login');
+  document.getElementById('tab-signup').classList.toggle('active',m==='signup');
+  document.getElementById('field-uname').style.display=m==='signup'?'block':'none';
+  document.getElementById('auth-btn').textContent=m==='login'?'Sign In':'Create Account';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+async function submitAuth(){
+  const btn=document.getElementById('auth-btn');
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-pass').value;
+  const uname=document.getElementById('auth-uname').value.trim();
+  if(!email||!pass){showAE('Fill in all fields.');return}
+  if(_authMode==='signup'&&!uname){showAE('Username is required.');return}
+  if(_authMode==='signup'&&uname.length<3){showAE('Username must be 3+ characters.');return}
+  if(_authMode==='signup'&&!/^[a-zA-Z0-9_]+$/.test(uname)){showAE('Username: letters, numbers, underscores only.');return}
+  btn.disabled=true;btn.textContent=_authMode==='login'?'Signing in…':'Creating account…';
+  document.getElementById('auth-error').classList.remove('show');
+  try{
+    const user=_authMode==='login'?await Auth.signIn(email,pass):await Auth.signUp(email,pass,uname);
+    launch(user);
+  }catch(e){
+    showAE(e.message);
+    btn.disabled=false;btn.textContent=_authMode==='login'?'Sign In':'Create Account';
+  }
+}
+function showAE(m){const el=document.getElementById('auth-error');el.textContent=m;el.classList.add('show')}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('auth-screen').style.display!=='none')submitAuth()});
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`page-${n}`).classList.add('active');
+  const idx={search:0,admin:1,profile:2}[n];
+  document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
+  if(n==='admin'){renderTable()}
+  if(n==='profile'){renderProfile()}
+}
+function switchAdminTab(t){
+  document.querySelectorAll('.admin-subtab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.admin-subpage').forEach(x=>x.classList.remove('active'));
+  document.getElementById(`admin-${t}`).classList.add('active');
+  document.querySelectorAll('.admin-subtab')[['parts','activity'].indexOf(t)]?.classList.add('active');
+  if(t==='activity')loadActivityLog();
+}
+function switchPTab(t){
+  document.querySelectorAll('.p-subtab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.p-subpage').forEach(x=>x.classList.remove('active'));
+  document.getElementById(`pt-${t}`).classList.add('active');
+  document.querySelectorAll('.p-subtab')[['searches','myact','account'].indexOf(t)]?.classList.add('active');
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const UB={
+  show(m){document.getElementById('up-msg').innerHTML=`<strong>${m}</strong>`;document.getElementById('upload-banner').classList.add('show')},
+  update(m){document.getElementById('up-msg').innerHTML=`<strong>${m}</strong>`},
+  hide(){document.getElementById('upload-banner').classList.remove('show')}
+};
+function lock(on){
+  ['save-btn','seed-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=on});
+}
+let _tt;
+function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className=`show ${t}`;clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3000)}
+function cacheStats(){const s=C.stats();document.getElementById('cache-info').textContent=`${s.count} keys · ${s.sizeKB} KB`}
+function clearCache(){C.dp('');loaded=false;toast('Cache cleared','info');loadAll(true)}
+function exportData(){const blob=new Blob([JSON.stringify({parts:PC,models:SI},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);Object.assign(document.createElement('a'),{href:url,download:'partmatch.json'}).click();URL.revokeObjectURL(url)}
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeAC()});
+
+/* ============================================================
+   FIREBASE ERROR
+   ============================================================ */
+function showFBErr(t){
+  const ti=document.getElementById('fb-err-title'),de=document.getElementById('fb-err-desc');
+  if(t==='NETWORK'){ti.textContent='⚠ Failed to Fetch';de.innerHTML=`Couldn't reach Firebase. Usually a <strong style="color:var(--accent)">Database Rules</strong> issue. Set rules to open (below) then retry.`}
+  else{ti.textContent='⚠ Permission Denied';de.innerHTML='Firebase rejected the request. Update your Database Rules.'}
+  document.getElementById('fb-error-modal').classList.add('open');
+}
+async function retryConn(){
+  document.getElementById('fb-error-modal').classList.remove('open');
+  C.del('full_ds');loaded=false;
+  const ok=await loadAll(true);if(ok){toast('Connected ✓','success');renderTable();}
+}
+function goDemo(){DEMO=true;document.getElementById('fb-error-modal').classList.remove('open');C.del('full_ds');loaded=false;toast('Demo Mode','info');loadAll(true).then(()=>renderTable())}
+
+/* ============================================================
+   LAUNCH
+   ============================================================ */
+function launch(user){
+  cu=user;
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  const ini=(user.username||'?')[0].toUpperCase();
+  document.getElementById('hdr-av').textContent=ini;
+  loadAll().then(()=>{renderTable();renderRecentSearches()});
+  UT.bump();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=Auth.load();
+  if(saved?.uid)launch(saved);
+});
+</script>
+</body>
+</html>

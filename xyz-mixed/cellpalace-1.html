@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CellPalace – Mobile & Laptop Experts | Electronic City</title>
+  <meta name="description" content="CellPalace – Expert mobile repair, laptop service, and premium accessories in Electronic City, Bengaluru." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =============================================
+       CSS CUSTOM PROPERTIES
+    ============================================= */
+    :root {
+      --red: #E8001C;
+      --red-glow: #FF1F3A;
+      --red-deep: #B8001A;
+      --blue: #005BFF;
+      --blue-glow: #1A6FFF;
+      --blue-dark: #003EBB;
+      --white: #FFFFFF;
+      --off-white: #F5F6FA;
+      --gray-100: #ECEEF5;
+      --gray-200: #D8DAE8;
+      --gray-400: #8A8FA8;
+      --gray-600: #4A4E6A;
+      --dark: #0D0E18;
+      --font-display: 'Barlow Condensed', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow-card-hover: 0 8px 40px rgba(0,0,0,0.14);
+      --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--off-white);
+      color: var(--gray-600);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* =============================================
+       ANNOUNCEMENT BAR
+    ============================================= */
+    .announcement-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: linear-gradient(90deg, var(--red-deep) 0%, var(--red) 40%, var(--blue) 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 10px 16px;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+    }
+
+    .announcement-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 40px,
+        rgba(255,255,255,0.04) 40px,
+        rgba(255,255,255,0.04) 41px
+      );
+    }
+
+    .announcement-bar__inner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .announcement-bar__text strong { font-weight: 700; }
+
+    .announcement-bar__close {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.18);
+      border: none;
+      color: white;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition);
+    }
+
+    .announcement-bar__close:hover { background: rgba(255,255,255,0.32); }
+
+    /* =============================================
+       HEADER / NAV
+    ============================================= */
+    .header {
+      position: sticky;
+      top: 42px;
+      z-index: 999;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      transition: box-shadow var(--transition);
+    }
+
+    .header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+
+    .header__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo__icon {
+      width: 38px;
+      height: 38px;
+      background: var(--dark);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo__icon::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      background: var(--red);
+      border-radius: 50%;
+    }
+
+    .logo__wordmark {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .logo__cell {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: var(--dark);
+      letter-spacing: -0.01em;
+    }
+
+    .logo__palace {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-top: -3px;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav__link {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      transition: color var(--transition), background var(--transition);
+      white-space: nowrap;
+    }
+
+    .nav__link:hover {
+      color: var(--blue);
+      background: rgba(0,91,255,0.06);
+    }
+
+    .nav__actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #25D366;
+      color: white;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+      white-space: nowrap;
+      box-shadow: 0 2px 12px rgba(37,211,102,0.35);
+    }
+
+    .btn-whatsapp:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37,211,102,0.4);
+    }
+
+    .btn-whatsapp svg { flex-shrink: 0; }
+
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--dark);
+      border-radius: 2px;
+      transition: transform var(--transition), opacity var(--transition);
+    }
+
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile Menu */
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      background: white;
+      border-top: 1px solid var(--gray-200);
+      padding: 16px 20px 20px;
+      gap: 4px;
+    }
+
+    .mobile-menu.open { display: flex; }
+
+    .mobile-menu .nav__link {
+      font-size: 1rem;
+      padding: 11px 14px;
+      display: block;
+      border-radius: var(--radius-sm);
+    }
+
+    .mobile-menu .btn-whatsapp {
+      margin-top: 10px;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    /* =============================================
+       HERO SECTION
+    ============================================= */
+    .hero {
+      position: relative;
+      background: var(--dark);
+      overflow: hidden;
+      min-height: 92vh;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Tech grid background */
+    .hero__bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,91,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,91,255,0.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    .hero__bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 70% at 60% 50%,
+        rgba(232,0,28,0.18) 0%,
+        rgba(0,91,255,0.14) 40%,
+        transparent 70%
+      );
+    }
+
+    /* Glowing orbs */
+    .hero__orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    .hero__orb--red {
+      width: 500px; height: 500px;
+      top: -100px; right: -80px;
+      background: rgba(232,0,28,0.22);
+      animation: orb-pulse 6s ease-in-out infinite alternate;
+    }
+
+    .hero__orb--blue {
+      width: 400px; height: 400px;
+      bottom: -80px; left: -60px;
+      background: rgba(0,91,255,0.2);
+      animation: orb-pulse 8s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes orb-pulse {
+      from { transform: scale(1) translate(0,0); }
+      to   { transform: scale(1.1) translate(20px, -20px); }
+    }
+
+    .hero__inner {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 20px 80px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(232,0,28,0.12);
+      border: 1px solid rgba(232,0,28,0.35);
+      color: #FF4D63;
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+
+    .hero__badge::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--red-glow);
+      box-shadow: 0 0 8px var(--red-glow);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    .hero__headline {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      color: var(--white);
+      margin-bottom: 22px;
+    }
+
+    .hero__headline .accent-red { color: var(--red-glow); }
+    .hero__headline .accent-blue { color: #5B9BFF; }
+
+    .hero__sub {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.6);
+      max-width: 440px;
+      margin-bottom: 36px;
+      line-height: 1.65;
+    }
+
+    .hero__cta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--red);
+      color: white;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 14px 26px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+      box-shadow: 0 4px 20px rgba(232,0,28,0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(232,0,28,0.5);
+      filter: brightness(1.08);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 14px 26px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.32);
+      transform: translateY(-2px);
+    }
+
+    /* Hero phone mockup */
+    .hero__visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero__mockup-wrap {
+      position: relative;
+      width: 260px;
+    }
+
+    .hero__phone {
+      width: 220px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .hero__phone-frame {
+      background: linear-gradient(145deg, #1A1D2E, #0D0F1A);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 36px;
+      padding: 14px 10px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 30px 60px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .hero__phone-screen {
+      background: linear-gradient(160deg, #0D0F1A 0%, #1A1F40 100%);
+      border-radius: 26px;
+      aspect-ratio: 9/16;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .hero__phone-screen::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 22px;
+      background: #0D0F1A;
+      border-radius: 0 0 14px 14px;
+    }
+
+    .phone-icon-wrap {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, var(--red), var(--blue));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30px rgba(232,0,28,0.4);
+      animation: icon-float 3s ease-in-out infinite;
+    }
+
+    @keyframes icon-float {
+      0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}
+    }
+
+    .phone-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .phone-stat__num {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.8rem;
+      color: white;
+      line-height: 1;
+    }
+
+    .phone-stat__label {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Floating badges on mockup */
+    .hero__float-badge {
+      position: absolute;
+      background: rgba(255,255,255,0.95);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--dark);
+      white-space: nowrap;
+      animation: badge-float 4s ease-in-out infinite;
+    }
+
+    .hero__float-badge--1 {
+      top: 30px; left: -60px;
+      animation-delay: -2s;
+    }
+
+    .hero__float-badge--2 {
+      bottom: 40px; right: -50px;
+      animation-delay: -1s;
+    }
+
+    .hero__float-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #25D366;
+      box-shadow: 0 0 6px #25D366;
+      flex-shrink: 0;
+    }
+
+    .hero__float-badge .dot-red {
+      background: var(--red);
+      box-shadow: 0 0 6px var(--red);
+    }
+
+    @keyframes badge-float {
+      0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-6px) rotate(1deg);}
+    }
+
+    /* =============================================
+       SECTION SHARED
+    ============================================= */
+    .section { padding: 88px 20px; }
+    .section--alt { background: var(--white); }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .section__label {
+      display: inline-block;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--blue);
+      background: rgba(0,91,255,0.08);
+      border: 1px solid rgba(0,91,255,0.18);
+      padding: 5px 12px;
+      border-radius: 100px;
+      margin-bottom: 14px;
+    }
+
+    .section__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      color: var(--dark);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+    }
+
+    .section__title span { color: var(--red); }
+
+    .section__sub {
+      font-size: 1rem;
+      color: var(--gray-400);
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    .section__head { margin-bottom: 52px; }
+
+    /* =============================================
+       SERVICES GRID
+    ============================================= */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .service-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 36px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+      cursor: default;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--red), var(--blue));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+
+    .service-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: var(--gray-100);
+    }
+
+    .service-card:hover::before { transform: scaleX(1); }
+
+    .service-card__icon {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, var(--off-white), var(--gray-100));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+
+    .service-card:hover .service-card__icon {
+      background: linear-gradient(135deg, rgba(0,91,255,0.08), rgba(232,0,28,0.08));
+      box-shadow: 0 4px 16px rgba(0,91,255,0.12);
+    }
+
+    .service-card__title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.5rem;
+      color: var(--dark);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .service-card__desc {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.65;
+      margin-bottom: 20px;
+    }
+
+    .service-card__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: var(--gray-100);
+      color: var(--gray-600);
+      letter-spacing: 0.03em;
+    }
+
+    /* =============================================
+       OFFERS SECTION
+    ============================================= */
+    .offers-section {
+      background: var(--dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .offers-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    .offers-section .section__label {
+      color: #FF4D63;
+      background: rgba(232,0,28,0.12);
+      border-color: rgba(232,0,28,0.3);
+    }
+
+    .offers-section .section__title { color: var(--white); }
+    .offers-section .section__sub { color: rgba(255,255,255,0.5); }
+
+    .offers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .offer-card {
+      position: relative;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-lg);
+      padding: 30px 24px;
+      overflow: hidden;
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
+    }
+
+    .offer-card:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .offer-card::after {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      opacity: 0.15;
+    }
+
+    .offer-card--red::after { background: var(--red-glow); }
+    .offer-card--blue::after { background: var(--blue); }
+    .offer-card--green::after { background: #00E676; }
+
+    .offer-card__discount {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 2.8rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .offer-card--red .offer-card__discount { color: var(--red-glow); }
+    .offer-card--blue .offer-card__discount { color: #5B9BFF; }
+    .offer-card--green .offer-card__discount { color: #00E676; }
+
+    .offer-card__unit {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .offer-card__title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--white);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .offer-card__desc {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .offer-card__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
+
+    .offer-card--red .offer-card__badge {
+      background: rgba(232,0,28,0.18);
+      color: #FF4D63;
+      border: 1px solid rgba(232,0,28,0.3);
+    }
+
+    .offer-card--blue .offer-card__badge {
+      background: rgba(0,91,255,0.18);
+      color: #7EB3FF;
+      border: 1px solid rgba(0,91,255,0.3);
+    }
+
+    .offer-card--green .offer-card__badge {
+      background: rgba(0,230,118,0.14);
+      color: #4DFFAB;
+      border: 1px solid rgba(0,230,118,0.25);
+    }
+
+    /* =============================================
+       STORE INFO
+    ============================================= */
+    .store-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .hours-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .hours-card__header {
+      background: linear-gradient(135deg, var(--dark), #1A1F40);
+      padding: 22px 26px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hours-icon {
+      width: 42px; height: 42px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hours-card__header-text h3 {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: white;
+    }
+
+    .hours-card__header-text p {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .hours-card__body { padding: 22px 26px; }
+
+    .hours-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .hours-row:last-child { border-bottom: none; }
+
+    .hours-row__day {
+      font-weight: 500;
+      color: var(--gray-600);
+      font-size: 0.9rem;
+    }
+
+    .hours-row__time {
+      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--dark);
+    }
+
+    .open-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,200,83,0.1);
+      border: 1px solid rgba(0,200,83,0.25);
+      color: #00A854;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 100px;
+      letter-spacing: 0.05em;
+    }
+
+    .open-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #00C853;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #00C853;
+      animation: blink 1.4s infinite;
+    }
+
+    /* Reviews widget */
+    .reviews-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .reviews-card__header {
+      padding: 22px 26px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .reviews-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .google-g {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.1rem;
+    }
+
+    .reviews-card__score {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 3.2rem;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .reviews-card__stars { display: flex; gap: 3px; margin: 6px 0; }
+
+    .star { font-size: 1.2rem; }
+    .star--full { color: #FFC107; }
+    .star--partial { position: relative; color: var(--gray-200); }
+    .star--partial::after {
+      content: '★';
+      position: absolute;
+      left: 0; top: 0;
+      width: 70%;
+      overflow: hidden;
+      color: #FFC107;
+    }
+
+    .reviews-card__count {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+    }
+
+    .review-item {
+      padding: 18px 26px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .review-item:last-child { border-bottom: none; }
+
+    .review-item__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .reviewer-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .reviewer-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--dark);
+    }
+
+    .reviewer-date {
+      font-size: 0.75rem;
+      color: var(--gray-400);
+    }
+
+    .review-text {
+      font-size: 0.84rem;
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+
+    .reviews-card__footer {
+      padding: 14px 26px;
+      background: var(--off-white);
+      text-align: center;
+    }
+
+    .btn-google-review {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--blue);
+      transition: opacity var(--transition);
+    }
+
+    .btn-google-review:hover { opacity: 0.75; }
+
+    /* =============================================
+       CONTACT SECTION
+    ============================================= */
+    .contact-section { background: var(--white); }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .contact-info { display: flex; flex-direction: column; gap: 20px; }
+
+    .contact-card {
+      background: var(--off-white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: box-shadow var(--transition);
+    }
+
+    .contact-card:hover { box-shadow: var(--shadow-card); }
+
+    .contact-card__icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .contact-card__icon--red { background: rgba(232,0,28,0.1); }
+    .contact-card__icon--blue { background: rgba(0,91,255,0.1); }
+    .contact-card__icon--green { background: rgba(37,211,102,0.1); }
+
+    .contact-card__label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 4px;
+    }
+
+    .contact-card__value {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--dark);
+      line-height: 1.55;
+    }
+
+    .contact-card__value a {
+      color: var(--blue);
+      transition: color var(--transition);
+    }
+    .contact-card__value a:hover { color: var(--blue-dark); }
+
+    .map-wrap {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-card);
+      height: 380px;
+      background: var(--gray-100);
+      position: relative;
+    }
+
+    .map-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Map placeholder when blocked */
+    .map-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #EEF0F8, #E2E4F0);
+      color: var(--gray-400);
+      font-size: 0.9rem;
+    }
+
+    .map-placeholder svg { opacity: 0.4; }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    .footer {
+      background: var(--dark);
+      padding: 60px 20px 0;
+    }
+
+    .footer__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer__top {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 40px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .footer__brand .logo__cell { color: white; }
+    .footer__brand .logo__palace { color: var(--red-glow); }
+
+    .footer__tagline {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 14px;
+      max-width: 280px;
+      line-height: 1.65;
+    }
+
+    .footer__social {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .social-btn {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition);
+      cursor: pointer;
+    }
+
+    .social-btn:hover { background: rgba(255,255,255,0.14); }
+
+    .footer__col-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1rem;
+      color: white;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .footer__links { display: flex; flex-direction: column; gap: 10px; }
+
+    .footer__link {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.45);
+      transition: color var(--transition);
+    }
+
+    .footer__link:hover { color: rgba(255,255,255,0.85); }
+
+    .footer__bottom {
+      padding: 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer__copy {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .footer__phone a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--red-glow);
+      transition: opacity var(--transition);
+    }
+
+    .footer__phone a:hover { opacity: 0.8; }
+
+    /* =============================================
+       FLOATING WHATSAPP BUTTON
+    ============================================= */
+    .fab-whatsapp {
+      position: fixed;
+      bottom: 28px;
+      right: 24px;
+      z-index: 998;
+      background: #25D366;
+      color: white;
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 24px rgba(37,211,102,0.45);
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor: pointer;
+    }
+
+    .fab-whatsapp:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 32px rgba(37,211,102,0.55);
+    }
+
+    .fab-whatsapp::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(37,211,102,0.35);
+      animation: fab-ring 2s ease-out infinite;
+    }
+
+    @keyframes fab-ring {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* =============================================
+       SCROLL ANIMATIONS
+    ============================================= */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
+    /* =============================================
+       RESPONSIVE — TABLET
+    ============================================= */
+    @media (max-width: 1024px) {
+      .hero__inner { grid-template-columns: 1fr; gap: 50px; text-align: center; }
+      .hero__badge, .hero__cta { margin-left: auto; margin-right: auto; }
+      .hero__sub { margin-left: auto; margin-right: auto; }
+      .hero__visual { display: none; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .offers-grid { grid-template-columns: 1fr 1fr; }
+      .store-info-grid { grid-template-columns: 1fr; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .footer__top { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .nav__links, .nav__actions .btn-whatsapp { display: none; }
+      .hamburger { display: flex; }
+      .section { padding: 64px 20px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .offers-grid { grid-template-columns: 1fr; }
+      .hero { min-height: 85vh; }
+      .hero__inner { padding: 60px 20px 60px; }
+    }
+
+    @media (max-width: 540px) {
+      .footer__top { grid-template-columns: 1fr; }
+      .hero__cta { flex-direction: column; width: 100%; }
+      .btn-primary, .btn-secondary { justify-content: center; width: 100%; }
+      .hero__headline { font-size: 2.6rem; }
+      .footer__bottom { justify-content: center; text-align: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ==========================================
+       ANNOUNCEMENT BAR
+  =========================================== -->
+  <div class="announcement-bar" id="announcementBar">
+    <div class="announcement-bar__inner">
+      <span class="announcement-bar__text">
+        🔥 <strong>Special Offers &amp; Discounts</strong> available on Mobile Displays and Accessories!
+      </span>
+      <button class="announcement-bar__close" id="closeBar" aria-label="Close announcement">✕</button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       HEADER
+  =========================================== -->
+  <header class="header" id="header">
+    <div class="header__inner">
+      <!-- Logo -->
+      <a href="#home" class="logo">
+        <div class="logo__icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="2" width="14" height="20" rx="3" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="18" r="1.5" fill="white"/>
+            <line x1="9" y1="6" x2="15" y2="6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="logo__wordmark">
+          <span class="logo__cell">CellPalace</span>
+          <span class="logo__palace">Electronic City</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav>
+        <ul class="nav__links">
+          <li><a href="#home" class="nav__link">Home</a></li>
+          <li><a href="#services" class="nav__link">Services</a></li>
+          <li><a href="#offers" class="nav__link">Offers</a></li>
+          <li><a href="#contact" class="nav__link">Contact</a></li>
+        </ul>
+      </nav>
+
+      <!-- Actions -->
+      <div class="nav__actions">
+        <a href="https://wa.me/917899192266" target="_blank" rel="noopener" class="btn-whatsapp">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.533 5.85L.057 23.25l5.562-1.459A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.899 0-3.669-.516-5.188-1.411l-.372-.221-3.301.866.881-3.218-.242-.379A9.954 9.954 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
+          </svg>
+          WhatsApp Us
+        </a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu" id="mobileMenu">
+      <a href="#home" class="nav__link" data-mobile-link>Home</a>
+      <a href="#services" class="nav__link" data-mobile-link>Services</a>
+      <a href="#offers" class="nav__link" data-mobile-link>Offers</a>
+      <a href="#contact" class="nav__link" data-mobile-link>Contact</a>
+      <a href="https://wa.me/917899192266" target="_blank" rel="noopener" class="btn-whatsapp">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.533 5.85L.057 23.25l5.562-1.459A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.899 0-3.669-.516-5.188-1.411l-.372-.221-3.301.866.881-3.218-.242-.379A9.954 9.954 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
+        </svg>
+        WhatsApp Us
+      </a>
+    </nav>
+  </header>
+
+  <!-- ==========================================
+       HERO SECTION
+  =========================================== -->
+  <section class="hero" id="home">
+    <div class="hero__bg"></div>
+    <div class="hero__orb hero__orb--red"></div>
+    <div class="hero__orb hero__orb--blue"></div>
+
+    <div class="hero__inner">
+      <div class="hero__content">
+        <div class="hero__badge">Trusted since 2019 · Electronic City</div>
+        <h1 class="hero__headline">
+          Expert <span class="accent-red">Mobile</span> &amp;<br/>
+          <span class="accent-blue">Laptop</span> Services<br/>
+          in Electronic City
+        </h1>
+        <p class="hero__sub">
+          Certified repairs, premium accessories, and lightning-fast turnaround.
+          Your one-stop tech destination in Bengaluru.
+        </p>
+        <div class="hero__cta">
+          <a href="tel:+917899192266" class="btn-primary">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            Call +91 7899192266
+          </a>
+          <a href="https://maps.google.com/?q=Ananth+Nagar+Phase+2,+Electronic+City,+Bengaluru" target="_blank" rel="noopener" class="btn-secondary">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Get Directions
+          </a>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="hero__mockup-wrap">
+          <div class="hero__phone">
+            <div class="hero__phone-frame">
+              <div class="hero__phone-screen">
+                <div class="phone-icon-wrap">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+                    <rect x="5" y="2" width="14" height="20" rx="3"/>
+                    <circle cx="12" cy="17" r="1"/>
+                  </svg>
+                </div>
+                <div class="phone-stat">
+                  <span class="phone-stat__num">500+</span>
+                  <span class="phone-stat__label">Devices Repaired</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hero__float-badge hero__float-badge--1">
+            <span class="dot"></span>
+            Open Today · 10AM–10PM
+          </div>
+          <div class="hero__float-badge hero__float-badge--2">
+            <span class="dot dot-red"></span>
+            Certified Technicians
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SERVICES SECTION
+  =========================================== -->
+  <section class="section section--alt" id="services">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="section__label">What We Do</span>
+        <h2 class="section__title">Our <span>Services</span></h2>
+        <p class="section__sub">From cracked screens to slow laptops — we handle every device with care and expertise.</p>
+      </div>
+
+      <div class="services-grid">
+        <!-- Card 1 -->
+        <div class="service-card reveal reveal-delay-1">
+          <div class="service-card__icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="3"/>
+              <circle cx="12" cy="17" r="1"/>
+              <line x1="9" y1="6" x2="15" y2="6"/>
+            </svg>
+          </div>
+          <h3 class="service-card__title">Mobile Repair</h3>
+          <p class="service-card__desc">Expert repair for all major brands. Cracked screens, battery replacements, software issues — solved fast.</p>
+          <div class="service-card__tags">
+            <span class="tag">Screen Replacement</span>
+            <span class="tag">Battery Swap</span>
+            <span class="tag">Water Damage</span>
+            <span class="tag">Charging Port</span>
+            <span class="tag">Software Fix</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="service-card reveal reveal-delay-2">
+          <div class="service-card__icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <polyline points="8 21 12 17 16 21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <h3 class="service-card__title">Laptop Service</h3>
+          <p class="service-card__desc">Complete laptop diagnosis and repair. Speed upgrades, OS reinstalls, keyboard fixes, and cooling solutions.</p>
+          <div class="service-card__tags">
+            <span class="tag">Display Repair</span>
+            <span class="tag">SSD Upgrade</span>
+            <span class="tag">RAM Upgrade</span>
+            <span class="tag">OS Install</span>
+            <span class="tag">Thermal Paste</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="service-card reveal reveal-delay-3">
+          <div class="service-card__icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C3AFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+          </div>
+          <h3 class="service-card__title">Premium Accessories</h3>
+          <p class="service-card__desc">Top-quality cases, chargers, earphones, screen guards, and smart gadgets at unbeatable prices.</p>
+          <div class="service-card__tags">
+            <span class="tag">Phone Cases</span>
+            <span class="tag">Earphones</span>
+            <span class="tag">Chargers</span>
+            <span class="tag">Screen Guards</span>
+            <span class="tag">Power Banks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       OFFERS SECTION
+  =========================================== -->
+  <section class="section offers-section" id="offers">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="section__label">Hot Deals</span>
+        <h2 class="section__title" style="color:white;">Current <span>Offers</span></h2>
+        <p class="section__sub">Limited-time deals crafted to save you money without compromising on quality.</p>
+      </div>
+
+      <div class="offers-grid">
+        <!-- Offer 1 -->
+        <div class="offer-card offer-card--red reveal reveal-delay-1">
+          <div class="offer-card__discount">10<span class="offer-card__unit">%</span></div>
+          <h3 class="offer-card__title">Screen Replacement Discount</h3>
+          <p class="offer-card__desc">Get 10% off on all mobile display replacements. Original OEM and aftermarket options available.</p>
+          <span class="offer-card__badge">📱 All Brands Covered</span>
+        </div>
+
+        <!-- Offer 2 -->
+        <div class="offer-card offer-card--blue reveal reveal-delay-2">
+          <div class="offer-card__discount">COMBO<span class="offer-card__unit"></span></div>
+          <h3 class="offer-card__title">Charger + Earphone Bundle</h3>
+          <p class="offer-card__desc">Buy any premium charger and get a pair of earphones at a special bundled price. Mix and match!</p>
+          <span class="offer-card__badge">🎧 Save Up to ₹299</span>
+        </div>
+
+        <!-- Offer 3 -->
+        <div class="offer-card offer-card--green reveal reveal-delay-3">
+          <div class="offer-card__discount">FREE<span class="offer-card__unit"></span></div>
+          <h3 class="offer-card__title">Screen Guard with Any Repair</h3>
+          <p class="offer-card__desc">Get a free tempered glass screen guard installed with any mobile or laptop repair service.</p>
+          <span class="offer-card__badge">🛡️ Worth ₹199 Free</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       STORE INFO SECTION
+  =========================================== -->
+  <section class="section section--alt" id="store-info">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="section__label">Store Info</span>
+        <h2 class="section__title">Hours &amp; <span>Reviews</span></h2>
+        <p class="section__sub">We're open every day. Come visit us or check what our customers say!</p>
+      </div>
+
+      <div class="store-info-grid">
+        <!-- Hours -->
+        <div class="hours-card reveal reveal-delay-1">
+          <div class="hours-card__header">
+            <div class="hours-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="hours-card__header-text">
+              <h3>Shop Timings</h3>
+              <p>Open all 7 days of the week</p>
+            </div>
+            <span class="open-badge" style="margin-left:auto;">Open Now</span>
+          </div>
+          <div class="hours-card__body">
+            <div class="hours-row">
+              <span class="hours-row__day">Monday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day">Tuesday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day">Wednesday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day">Thursday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day">Friday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day">Saturday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+            <div class="hours-row">
+              <span class="hours-row__day" style="color:var(--blue);font-weight:700;">Sunday</span>
+              <span class="hours-row__time">10:00 AM – 10:00 PM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="reviews-card reveal reveal-delay-2">
+          <div class="reviews-card__header">
+            <div class="reviews-brand">
+              <div class="google-g">
+                <span style="background: linear-gradient(135deg,#4285F4,#EA4335,#FBBC04,#34A853);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">G</span>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:0.88rem;color:var(--dark);">Google Reviews</div>
+                <div style="font-size:0.75rem;color:var(--gray-400);">CellPalace · Electronic City</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="reviews-card__score">3.7</div>
+              <div class="reviews-card__stars">
+                <span class="star star--full">★</span>
+                <span class="star star--full">★</span>
+                <span class="star star--full">★</span>
+                <span class="star star--partial">★</span>
+                <span class="star" style="color:var(--gray-200);">★</span>
+              </div>
+              <div class="reviews-card__count">Based on 48 reviews</div>
+            </div>
+          </div>
+
+          <!-- Sample reviews -->
+          <div class="review-item">
+            <div class="review-item__header">
+              <div class="reviewer-avatar" style="background:linear-gradient(135deg,#FF5722,#FF9800);">R</div>
+              <div>
+                <div class="reviewer-name">Rahul M.</div>
+                <div class="reviewer-date">2 weeks ago · ★★★★☆</div>
+              </div>
+            </div>
+            <p class="review-text">Got my phone screen replaced here. Quick service, good price. The technician was knowledgeable and finished within an hour.</p>
+          </div>
+
+          <div class="review-item">
+            <div class="review-item__header">
+              <div class="reviewer-avatar" style="background:linear-gradient(135deg,#3F51B5,#7986CB);">P</div>
+              <div>
+                <div class="reviewer-name">Priya K.</div>
+                <div class="reviewer-date">1 month ago · ★★★★★</div>
+              </div>
+            </div>
+            <p class="review-text">Best accessories shop in Electronic City! Great collection of phone cases and earphones at reasonable prices. Will definitely visit again.</p>
+          </div>
+
+          <div class="reviews-card__footer">
+            <a href="https://g.page/r/cellpalace-review" target="_blank" class="btn-google-review">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+              View all reviews on Google →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       CONTACT SECTION
+  =========================================== -->
+  <section class="section contact-section" id="contact">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="section__label">Find Us</span>
+        <h2 class="section__title">Get in <span>Touch</span></h2>
+        <p class="section__sub">We're always here to help. Drop by the store or reach us instantly via call or WhatsApp.</p>
+      </div>
+
+      <div class="contact-grid">
+        <!-- Info -->
+        <div class="contact-info">
+          <div class="contact-card reveal reveal-delay-1">
+            <div class="contact-card__icon contact-card__icon--red">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-card__label">Our Address</div>
+              <div class="contact-card__value">Ananth Nagar Phase 2, Phase 1, Kammasandra,<br>Electronic City, Bengaluru, Karnataka 560100</div>
+            </div>
+          </div>
+
+          <div class="contact-card reveal reveal-delay-2">
+            <div class="contact-card__icon contact-card__icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-card__label">Phone</div>
+              <div class="contact-card__value">
+                <a href="tel:+917899192266">+91 78991 92266</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-card reveal reveal-delay-3">
+            <div class="contact-card__icon contact-card__icon--green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.533 5.85L.057 23.25l5.562-1.459A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.899 0-3.669-.516-5.188-1.411l-.372-.221-3.301.866.881-3.218-.242-.379A9.954 9.954 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-card__label">WhatsApp</div>
+              <div class="contact-card__value">
+                <a href="https://wa.me/917899192266" target="_blank" rel="noopener">Chat on WhatsApp →</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-card reveal">
+            <div class="contact-card__icon contact-card__icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact-card__label">Store Hours</div>
+              <div class="contact-card__value">Monday to Sunday<br><strong>10:00 AM – 10:00 PM</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrap reveal reveal-delay-2">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.4!2d77.6688!3d12.8399!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae6b96a4e6e15b%3A0x0!2sAnanth+Nagar+Phase+2%2C+Electronic+City%2C+Bengaluru!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="CellPalace Location Map">
+          </iframe>
+          <div class="map-placeholder" id="mapPlaceholder" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>Map — Electronic City, Bengaluru</span>
+            <a href="https://maps.google.com/?q=Ananth+Nagar+Phase+2,+Electronic+City,+Bengaluru" target="_blank" style="color:var(--blue);font-weight:600;font-size:0.85rem;">Open in Google Maps →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       FOOTER
+  =========================================== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__top">
+        <!-- Brand -->
+        <div class="footer__brand">
+          <div class="logo">
+            <div class="logo__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="5" y="2" width="14" height="20" rx="3" stroke="white" stroke-width="2"/>
+                <circle cx="12" cy="18" r="1.5" fill="white"/>
+              </svg>
+            </div>
+            <div class="logo__wordmark">
+              <span class="logo__cell">CellPalace</span>
+              <span class="logo__palace">Electronic City</span>
+            </div>
+          </div>
+          <p class="footer__tagline">Your trusted tech partner in Electronic City, Bengaluru. Expert repairs, genuine accessories, and unmatched service.</p>
+          <div class="footer__social">
+            <a href="https://wa.me/917899192266" target="_blank" class="social-btn" aria-label="WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.533 5.85L.057 23.25l5.562-1.459A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.899 0-3.669-.516-5.188-1.411l-.372-.221-3.301.866.881-3.218-.242-.379A9.954 9.954 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
+              </svg>
+            </a>
+            <a href="tel:+917899192266" class="social-btn" aria-label="Call us">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h4 class="footer__col-title">Quick Links</h4>
+          <ul class="footer__links">
+            <li><a href="#home" class="footer__link">Home</a></li>
+            <li><a href="#services" class="footer__link">Services</a></li>
+            <li><a href="#offers" class="footer__link">Current Offers</a></li>
+            <li><a href="#store-info" class="footer__link">Store Hours</a></li>
+            <li><a href="#contact" class="footer__link">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Services -->
+        <div>
+          <h4 class="footer__col-title">Services</h4>
+          <ul class="footer__links">
+            <li><a href="#services" class="footer__link">Mobile Repair</a></li>
+            <li><a href="#services" class="footer__link">Laptop Service</a></li>
+            <li><a href="#services" class="footer__link">Screen Replacement</a></li>
+            <li><a href="#services" class="footer__link">Battery Replacement</a></li>
+            <li><a href="#services" class="footer__link">Premium Accessories</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p class="footer__copy">© 2025 CellPalace. All rights reserved. · Electronic City, Bengaluru</p>
+        <div class="footer__phone">
+          <a href="tel:+917899192266">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            +91 78991 92266
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- FAB WhatsApp -->
+  <a href="https://wa.me/917899192266" target="_blank" rel="noopener" class="fab-whatsapp" aria-label="Chat on WhatsApp">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.533 5.85L.057 23.25l5.562-1.459A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.899 0-3.669-.516-5.188-1.411l-.372-.221-3.301.866.881-3.218-.242-.379A9.954 9.954 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
+    </svg>
+  </a>
+
+  <!-- ==========================================
+       JAVASCRIPT
+  =========================================== -->
+  <script>
+    /* --- Announcement Bar Close --- */
+    const closeBarBtn = document.getElementById('closeBar');
+    const announcementBar = document.getElementById('announcementBar');
+    const header = document.getElementById('header');
+
+    closeBarBtn.addEventListener('click', () => {
+      announcementBar.style.transition = 'opacity 0.3s ease, max-height 0.4s ease, padding 0.3s ease';
+      announcementBar.style.opacity = '0';
+      announcementBar.style.maxHeight = '0';
+      announcementBar.style.padding = '0';
+      announcementBar.style.overflow = 'hidden';
+      // Adjust header top
+      setTimeout(() => {
+        header.style.top = '0';
+        announcementBar.style.display = 'none';
+      }, 400);
+    });
+
+    /* --- Hamburger Toggle --- */
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+
+    // Close mobile menu on link click
+    document.querySelectorAll('[data-mobile-link]').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+
+    /* --- Header Scroll Shadow --- */
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 30) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    /* --- Scroll Reveal --- */
+    const revealEls = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    revealEls.forEach(el => revealObserver.observe(el));
+
+    /* --- Map iframe fallback (CORS policy workaround) --- */
+    const mapIframe = document.querySelector('.map-wrap iframe');
+    const mapPlaceholder = document.getElementById('mapPlaceholder');
+
+    if (mapIframe) {
+      mapIframe.addEventListener('error', () => {
+        mapIframe.style.display = 'none';
+        mapPlaceholder.style.display = 'flex';
+      });
+    }
+
+    /* --- Active nav link highlighting on scroll --- */
+    const sections = document.querySelectorAll('section[id], div[id]');
+    const navLinks = document.querySelectorAll('.nav__link');
+
+    const navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            link.style.color = '';
+            link.style.background = '';
+            if (link.getAttribute('href') === '#' + id) {
+              link.style.color = 'var(--blue)';
+              link.style.background = 'rgba(0,91,255,0.06)';
+            }
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(sec => navObserver.observe(sec));
+  </script>
+</body>
+</html>

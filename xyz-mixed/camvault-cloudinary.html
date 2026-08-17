@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CamVault</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #111116;
+    --border: #1e1e28;
+    --accent: #e8ff47;
+    --red: #ff3b3b;
+    --text: #c8c8d8;
+    --muted: #555566;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:'DM Mono',monospace;
+    height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+    user-select:none;
+  }
+
+  /* Header */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    z-index:10; background:var(--bg);
+  }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; color:var(--accent); }
+  .status-pill { display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:all 0.3s; }
+  .dot.live { background:var(--red); box-shadow:0 0 8px var(--red); animation:pulse 1.2s infinite; }
+  .dot.ready { background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .dot.uploading { background:#4fc3f7; box-shadow:0 0 8px #4fc3f7; animation:pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Mode bar */
+  .mode-bar {
+    display:flex; justify-content:center;
+    background:var(--bg); border-bottom:1px solid var(--border); padding:0 24px;
+  }
+  .mode-tab {
+    flex:1; max-width:110px; padding:10px 0; text-align:center;
+    font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s;
+  }
+  .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* Viewfinder */
+  .viewfinder-wrap { flex:1; position:relative; overflow:hidden; background:#000; }
+  #video { width:100%; height:100%; object-fit:cover; display:block; }
+  .corner { position:absolute; width:22px; height:22px; border-color:var(--accent); border-style:solid; opacity:0.7; }
+  .corner.tl { top:16px; left:16px; border-width:2px 0 0 2px; }
+  .corner.tr { top:16px; right:16px; border-width:2px 2px 0 0; }
+  .corner.bl { bottom:16px; left:16px; border-width:0 0 2px 2px; }
+  .corner.br { bottom:16px; right:16px; border-width:0 2px 2px 0; }
+  .rec-overlay {
+    position:absolute; top:16px; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,59,59,0.15); border:1px solid rgba(255,59,59,0.4);
+    border-radius:20px; padding:4px 12px;
+    font-size:11px; letter-spacing:2px; color:var(--red);
+    opacity:0; transition:opacity 0.3s; pointer-events:none;
+  }
+  .rec-overlay.visible { opacity:1; }
+  .rec-dot { width:6px; height:6px; border-radius:50%; background:var(--red); animation:pulse 1s infinite; }
+  .timer {
+    position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+    font-family:'Bebas Neue',sans-serif; font-size:48px; letter-spacing:4px; color:#fff;
+    text-shadow:0 0 30px rgba(232,255,71,0.3);
+    opacity:0; transition:opacity 0.3s; pointer-events:none;
+  }
+  .timer.visible { opacity:1; }
+  .flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity 0.05s; }
+  .flash.on { opacity:0.7; }
+
+  /* Upload progress bar */
+  .upload-bar {
+    position:absolute; bottom:0; left:0; height:3px;
+    background:var(--accent); width:0%; transition:width 0.3s; pointer-events:none;
+  }
+
+  /* Toast */
+  .toast {
+    position:fixed; top:80px; left:50%; transform:translateX(-50%);
+    background:#1a1a22; border:1px solid var(--border); border-radius:8px;
+    padding:10px 20px; font-size:12px; letter-spacing:0.5px;
+    white-space:nowrap; opacity:0; transition:opacity 0.3s;
+    z-index:100; max-width:90vw; text-align:center;
+  }
+  .toast.success { border-color:var(--accent); color:var(--accent); }
+  .toast.error { border-color:var(--red); color:var(--red); }
+  .toast.info { border-color:var(--muted); color:var(--text); }
+  .toast.show { opacity:1; }
+
+  /* Controls */
+  .controls {
+    padding:20px 24px 32px; background:var(--surface);
+    border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .side-btn {
+    width:52px; height:52px; border-radius:50%;
+    border:1px solid var(--border); background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.15s; flex-shrink:0;
+  }
+  .side-btn:active { transform:scale(0.9); background:#1a1a22; }
+  .side-btn svg { width:22px; height:22px; }
+  .shutter-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+  .shutter-ring {
+    width:84px; height:84px; border-radius:50%; border:2px solid var(--accent);
+    display:flex; align-items:center; justify-content:center; transition:border-color 0.3s;
+  }
+  .shutter-ring.recording { border-color:var(--red); }
+  #shutterBtn {
+    width:66px; height:66px; border-radius:50%; background:#fff; border:none;
+    cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden;
+  }
+  #shutterBtn::after {
+    content:''; position:absolute; inset:0; border-radius:50%;
+    background:rgba(0,0,0,0.1); opacity:0; transition:opacity 0.1s;
+  }
+  #shutterBtn:active::after { opacity:1; }
+  #shutterBtn:active { transform:scale(0.92); }
+  #liveBtn {
+    width:52px; height:52px; border-radius:50%;
+    border:1px solid var(--border); background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all 0.15s; flex-shrink:0;
+  }
+  #liveBtn:active { transform:scale(0.9); }
+  #liveBtn.recording {
+    border-color:var(--red); background:rgba(255,59,59,0.12);
+    box-shadow:0 0 16px rgba(255,59,59,0.25);
+  }
+  .live-icon { width:20px; height:20px; border-radius:4px; background:var(--red); transition:all 0.3s; }
+  #liveBtn.recording .live-icon { border-radius:2px; width:16px; height:16px; }
+
+  /* Config modal */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.88);
+    backdrop-filter:blur(6px); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:28px 24px; width:100%; max-width:400px;
+    max-height:90dvh; overflow-y:auto;
+  }
+  .modal h2 { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:3px; color:var(--accent); margin-bottom:4px; }
+  .cloudinary-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:#3448c5; border-radius:6px; padding:3px 10px;
+    font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#fff;
+    margin-bottom:14px;
+  }
+  .modal p { font-size:12px; color:var(--muted); margin-bottom:18px; line-height:1.7; }
+  .field { margin-bottom:13px; }
+  .field label { display:block; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .field input {
+    width:100%; background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:10px 14px; color:var(--text);
+    font-family:'DM Mono',monospace; font-size:13px; outline:none; transition:border-color 0.2s;
+  }
+  .field input:focus { border-color:var(--accent); }
+  .field small { display:block; font-size:10px; color:var(--muted); margin-top:5px; line-height:1.5; }
+  .modal-btn {
+    width:100%; background:var(--accent); color:#000; border:none;
+    border-radius:10px; padding:14px; font-family:'Bebas Neue',sans-serif;
+    font-size:18px; letter-spacing:3px; cursor:pointer; margin-top:6px; transition:opacity 0.2s;
+  }
+  .modal-btn:active { opacity:0.8; }
+  .skip-link { text-align:center; margin-top:14px; font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; }
+
+  /* Gallery strip */
+  .gallery-strip {
+    display:flex; gap:6px; overflow-x:auto; padding:8px 16px;
+    background:var(--bg); border-top:1px solid var(--border);
+    scrollbar-width:none;
+  }
+  .gallery-strip::-webkit-scrollbar { display:none; }
+  .gallery-thumb {
+    width:48px; height:48px; border-radius:6px; flex-shrink:0;
+    overflow:hidden; border:1px solid var(--border); cursor:pointer;
+    position:relative;
+  }
+  .gallery-thumb img { width:100%; height:100%; object-fit:cover; }
+  .gallery-thumb .type-badge {
+    position:absolute; bottom:2px; right:2px;
+    background:rgba(0,0,0,0.7); border-radius:3px;
+    padding:1px 4px; font-size:8px; color:#fff; letter-spacing:0.5px;
+  }
+  .gallery-thumb a {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s;
+    text-decoration:none; font-size:18px;
+  }
+  .gallery-thumb:hover a { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- Cloudinary Config Modal -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <h2>CamVault</h2>
+    <div class="cloudinary-badge">☁ Cloudinary Storage</div>
+    <p>Enter your Cloudinary credentials. Your Cloud Name is found on the Cloudinary Dashboard homepage.</p>
+    <div class="field">
+      <label>Cloud Name</label>
+      <input id="cloudName" type="text" placeholder="e.g. my-cloud-123">
+      <small>Dashboard → top-left dropdown</small>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input id="apiKey" type="text" placeholder="459687731144159">
+    </div>
+    <div class="field">
+      <label>API Secret</label>
+      <input id="apiSecret" type="password" placeholder="••••••••••••••••••">
+      <small>⚠ Stored in localStorage. Don't share this device.</small>
+    </div>
+    <div class="field">
+      <label>Upload Folder (optional)</label>
+      <input id="uploadFolder" type="text" placeholder="camvault">
+    </div>
+    <button class="modal-btn" onclick="initCloudinary()">CONNECT →</button>
+    <div class="skip-link" onclick="skipCloud()">Skip — save locally only</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">CamVault</div>
+  <div class="status-pill">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">INIT</span>
+  </div>
+</header>
+
+<div class="mode-bar">
+  <div class="mode-tab active" id="tabPhoto" onclick="setMode('photo')">PHOTO</div>
+  <div class="mode-tab" id="tabVideo" onclick="setMode('video')">VIDEO</div>
+  <div class="mode-tab" id="tabLive" onclick="setMode('live')">LIVE</div>
+</div>
+
+<div class="viewfinder-wrap">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+  <div class="rec-overlay" id="recOverlay"><div class="rec-dot"></div><span id="recLabel">REC</span></div>
+  <div class="timer" id="timer">00:00</div>
+  <div class="flash" id="flash"></div>
+  <div class="upload-bar" id="uploadBar"></div>
+</div>
+
+<div class="gallery-strip" id="galleryStrip"></div>
+
+<div class="controls">
+  <div class="side-btn" onclick="switchCamera()" title="Switch Camera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="1.8" stroke-linecap="round">
+      <path d="M20 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="13" r="3"/>
+      <path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+    </svg>
+  </div>
+
+  <div class="shutter-wrap">
+    <div class="shutter-ring" id="shutterRing">
+      <button id="shutterBtn" onclick="onShutter()"></button>
+    </div>
+  </div>
+
+  <div id="liveBtn" onclick="toggleLive()" title="Live Record">
+    <div class="live-icon" id="liveIcon"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+// ── Config ──
+let cfg = { cloudName:'', apiKey:'', apiSecret:'', folder:'camvault' };
+let cloudReady = false;
+
+// ── Camera state ──
+let stream = null;
+let facingMode = 'environment';
+let mode = 'photo';
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let timerInterval = null;
+let elapsed = 0;
+let gallery = []; // { url, type, thumb }
+
+// ── Init ──
+window.onload = () => {
+  const saved = localStorage.getItem('cvCfg');
+  if (saved) {
+    try {
+      cfg = { ...cfg, ...JSON.parse(saved) };
+      document.getElementById('cloudName').value = cfg.cloudName || '';
+      document.getElementById('apiKey').value = cfg.apiKey || '';
+      document.getElementById('apiSecret').value = cfg.apiSecret || '';
+      document.getElementById('uploadFolder').value = cfg.folder || 'camvault';
+    } catch(e) {}
+  }
+};
+
+function initCloudinary() {
+  cfg.cloudName = document.getElementById('cloudName').value.trim();
+  cfg.apiKey = document.getElementById('apiKey').value.trim();
+  cfg.apiSecret = document.getElementById('apiSecret').value.trim();
+  cfg.folder = document.getElementById('uploadFolder').value.trim() || 'camvault';
+  if (!cfg.cloudName || !cfg.apiKey || !cfg.apiSecret) {
+    showToast('Cloud Name, API Key and Secret required', 'error'); return;
+  }
+  cloudReady = true;
+  localStorage.setItem('cvCfg', JSON.stringify(cfg));
+  closeModal();
+  showToast('Cloudinary connected ✓', 'success');
+}
+
+function skipCloud() {
+  cloudReady = false;
+  closeModal();
+  showToast('Local mode — no cloud upload', 'info');
+}
+
+function closeModal() {
+  document.getElementById('configModal').style.display = 'none';
+  startCamera();
+}
+
+// ── Camera ──
+async function startCamera() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width:{ideal:1920}, height:{ideal:1080} },
+      audio: true
+    });
+    document.getElementById('video').srcObject = stream;
+    setStatus('ready');
+  } catch(e) {
+    showToast('Camera error: ' + e.message, 'error'); setStatus('error');
+  }
+}
+
+function switchCamera() {
+  if (isRecording) return;
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+  showToast(facingMode === 'user' ? 'Front camera' : 'Rear camera', 'info');
+}
+
+function setMode(m) {
+  if (isRecording) return;
+  mode = m;
+  ['photo','video','live'].forEach(t => {
+    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1))
+      .classList.toggle('active', t === m);
+  });
+}
+
+// ── Shutter ──
+function onShutter() {
+  if (mode === 'photo') capturePhoto();
+  else if (mode === 'video') toggleVideoRecord();
+  else toggleLive();
+}
+
+// ── Photo Capture ──
+function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const flash = document.getElementById('flash');
+  flash.classList.add('on');
+  setTimeout(() => flash.classList.remove('on'), 150);
+  canvas.toBlob(blob => {
+    if (cloudReady) uploadToCloudinary(blob, 'image', 'Photo');
+    else { downloadLocal(blob, 'photo_' + Date.now() + '.jpg'); showToast('Saved locally', 'info'); }
+  }, 'image/jpeg', 0.93);
+}
+
+// ── Video Record ──
+function toggleVideoRecord() {
+  if (!isRecording) startVideoRecord(); else stopVideoRecord();
+}
+function startVideoRecord() {
+  recordedChunks = [];
+  const mime = getSupportedMime();
+  mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type });
+    if (cloudReady) uploadToCloudinary(blob, 'video', 'Video');
+    else { const ext = blob.type.includes('mp4') ? 'mp4' : 'webm'; downloadLocal(blob, 'video_' + Date.now() + '.' + ext); showToast('Saved locally', 'info'); }
+  };
+  mediaRecorder.start(1000);
+  isRecording = true; updateRecUI(true, 'REC');
+}
+function stopVideoRecord() {
+  mediaRecorder?.stop(); isRecording = false; updateRecUI(false);
+}
+
+// ── Live Record (continuous upload when stopped) ──
+function toggleLive() {
+  if (!isRecording) startLive(); else stopLive();
+}
+function startLive() {
+  if (!cloudReady) { showToast('Connect Cloudinary to use LIVE mode', 'error'); return; }
+  recordedChunks = [];
+  const mime = getSupportedMime();
+  mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type });
+    uploadToCloudinary(blob, 'video', 'Live video');
+  };
+  mediaRecorder.start(1000);
+  isRecording = true;
+  document.getElementById('liveBtn').classList.add('recording');
+  updateRecUI(true, '🔴 LIVE');
+  showToast('Recording — will upload on stop', 'info');
+}
+function stopLive() {
+  mediaRecorder?.stop();
+  isRecording = false;
+  document.getElementById('liveBtn').classList.remove('recording');
+  updateRecUI(false);
+  showToast('Uploading to Cloudinary...', 'info');
+}
+
+// ── Cloudinary Upload (Signed) ──
+async function uploadToCloudinary(blob, resourceType, label) {
+  setStatus('uploading');
+  document.getElementById('uploadBar').style.width = '0%';
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = cfg.folder || 'camvault';
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+    const signature = await sha1(paramsToSign + cfg.apiSecret);
+
+    const fd = new FormData();
+    const ext = resourceType === 'image' ? 'jpg' : (blob.type.includes('mp4') ? 'mp4' : 'webm');
+    fd.append('file', blob, `capture_${timestamp}.${ext}`);
+    fd.append('api_key', cfg.apiKey);
+    fd.append('timestamp', timestamp);
+    fd.append('signature', signature);
+    fd.append('folder', folder);
+
+    const url = `https://api.cloudinary.com/v1_1/${cfg.cloudName}/${resourceType}/upload`;
+
+    // XHR for progress
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = Math.round(e.loaded / e.total * 100);
+          document.getElementById('uploadBar').style.width = pct + '%';
+          document.getElementById('statusText').textContent = pct + '%';
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const res = JSON.parse(xhr.responseText);
+          document.getElementById('uploadBar').style.width = '100%';
+          setTimeout(() => document.getElementById('uploadBar').style.width = '0%', 800);
+          addToGallery(res.secure_url, resourceType, res.public_id);
+          showToast(`${label} uploaded ✓`, 'success');
+          setStatus('ready');
+          resolve(res);
+        } else {
+          const err = JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message || 'Upload failed'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(fd);
+    });
+  } catch(e) {
+    showToast('Upload error: ' + e.message, 'error');
+    setStatus('ready');
+    document.getElementById('uploadBar').style.width = '0%';
+  }
+}
+
+// ── SHA1 for Cloudinary signature ──
+async function sha1(message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── Gallery ──
+function addToGallery(url, type, publicId) {
+  gallery.unshift({ url, type, publicId });
+  const strip = document.getElementById('galleryStrip');
+  const thumb = document.createElement('div');
+  thumb.className = 'gallery-thumb';
+  if (type === 'image') {
+    thumb.innerHTML = `<img src="${url}" loading="lazy"><div class="type-badge">IMG</div><a href="${url}" target="_blank">🔗</a>`;
+  } else {
+    // video thumbnail via Cloudinary transformation
+    const thumbUrl = url.replace('/video/upload/', '/video/upload/so_0,w_120,h_120,c_fill/').replace(/\.(mp4|webm)$/, '.jpg');
+    thumb.innerHTML = `<img src="${thumbUrl}" loading="lazy" onerror="this.style.background='#1e1e28'"><div class="type-badge">VID</div><a href="${url}" target="_blank">🔗</a>`;
+  }
+  strip.prepend(thumb);
+}
+
+// ── Helpers ──
+function getSupportedMime() {
+  const types = ['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+}
+
+function updateRecUI(on, label = 'REC') {
+  document.getElementById('recOverlay').classList.toggle('visible', on);
+  document.getElementById('recLabel').textContent = label;
+  document.getElementById('timer').classList.toggle('visible', on);
+  document.getElementById('shutterRing').classList.toggle('recording', on);
+  if (on) {
+    elapsed = 0;
+    timerInterval = setInterval(() => {
+      elapsed++;
+      const m = String(Math.floor(elapsed/60)).padStart(2,'0');
+      const s = String(elapsed%60).padStart(2,'0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+    }, 1000);
+  } else {
+    clearInterval(timerInterval);
+    document.getElementById('timer').textContent = '00:00';
+  }
+}
+
+function downloadLocal(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function setStatus(s) {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'dot';
+  if (s === 'ready') { dot.classList.add('ready'); txt.textContent = 'READY'; }
+  else if (s === 'uploading') { dot.classList.add('uploading'); txt.textContent = '...'; }
+  else if (s === 'error') { txt.textContent = 'ERROR'; }
+  else { txt.textContent = 'INIT'; }
+}
+
+let toastTimer;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>

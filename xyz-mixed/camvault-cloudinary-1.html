@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CamVault</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0c; --surface:#111116; --surface2:#16161e;
+  --border:#1e1e28; --accent:#e8ff47; --red:#ff3b3b;
+  --blue:#4fc3f7; --text:#c8c8d8; --muted:#555566;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg);z-index:10;flex-shrink:0;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.status-pill{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:all .3s;}
+.dot.ready{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.dot.uploading{background:var(--blue);box-shadow:0 0 8px var(--blue);animation:pulse .8s infinite;}
+.dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.gallery-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .15s;}
+.gallery-btn:active{transform:scale(.9);}
+.gallery-btn svg{width:18px;height:18px;}
+.gallery-count{position:absolute;top:-5px;right:-5px;background:var(--accent);color:#000;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:500;}
+
+/* Mode bar */
+.mode-bar{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mode-tab{flex:1;padding:9px 0;text-align:center;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Viewfinder */
+.viewfinder-wrap{flex:1;position:relative;overflow:hidden;background:#000;min-height:0;}
+#video{width:100%;height:100%;object-fit:cover;display:block;}
+.corner{position:absolute;width:20px;height:20px;border-color:var(--accent);border-style:solid;opacity:.6;}
+.corner.tl{top:14px;left:14px;border-width:2px 0 0 2px;}
+.corner.tr{top:14px;right:14px;border-width:2px 2px 0 0;}
+.corner.bl{bottom:14px;left:14px;border-width:0 0 2px 2px;}
+.corner.br{bottom:14px;right:14px;border-width:0 2px 2px 0;}
+.rec-overlay{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);border-radius:20px;padding:4px 12px;font-size:11px;letter-spacing:2px;color:var(--red);opacity:0;transition:opacity .3s;pointer-events:none;}
+.rec-overlay.visible{opacity:1;}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1s infinite;}
+.vtimer{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;color:#fff;text-shadow:0 0 24px rgba(232,255,71,.35);opacity:0;transition:opacity .3s;pointer-events:none;}
+.vtimer.visible{opacity:1;}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .05s;}
+.flash.on{opacity:.7;}
+.upload-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);width:0%;transition:width .25s;pointer-events:none;}
+
+/* Controls */
+.controls{padding:18px 24px 28px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;}
+.side-btn{width:50px;height:50px;border-radius:50%;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.side-btn:active{transform:scale(.9);background:var(--surface2);}
+.side-btn svg{width:20px;height:20px;}
+.shutter-ring{width:80px;height:80px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;transition:border-color .3s;}
+.shutter-ring.recording{border-color:var(--red);}
+#shutterBtn{width:62px;height:62px;border-radius:50%;background:#fff;border:none;cursor:pointer;transition:all .15s;}
+#shutterBtn:active{transform:scale(.91);}
+#liveBtn{width:50px;height:50px;border-radius:50%;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
+#liveBtn:active{transform:scale(.9);}
+#liveBtn.recording{border-color:var(--red);background:rgba(255,59,59,.12);box-shadow:0 0 14px rgba(255,59,59,.25);}
+.live-icon{width:20px;height:20px;border-radius:4px;background:var(--red);transition:all .3s;}
+#liveBtn.recording .live-icon{border-radius:2px;width:16px;height:16px;}
+
+/* Toast */
+.toast{position:fixed;top:74px;left:50%;transform:translateX(-50%);background:#1a1a22;border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;letter-spacing:.5px;white-space:nowrap;opacity:0;transition:opacity .3s;z-index:999;max-width:90vw;text-align:center;}
+.toast.success{border-color:var(--accent);color:var(--accent);}
+.toast.error{border-color:var(--red);color:var(--red);}
+.toast.info{border-color:var(--muted);color:var(--text);}
+.toast.show{opacity:1;}
+
+/* Gallery Panel */
+.gallery-panel{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);}
+.gallery-panel.open{transform:translateY(0);}
+.gallery-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.gallery-title-row{display:flex;flex-direction:column;gap:2px;}
+.gallery-title-row h2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--accent);}
+.gallery-sub{font-size:10px;color:var(--muted);letter-spacing:1px;}
+.gallery-header-right{display:flex;align-items:center;gap:8px;}
+.gallery-filter{display:flex;background:var(--surface);border-radius:8px;border:1px solid var(--border);overflow:hidden;}
+.filter-btn{padding:6px 12px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .15s;border:none;background:transparent;}
+.filter-btn.active{background:var(--accent);color:#000;}
+.icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.icon-btn:active{transform:scale(.9);}
+.icon-btn svg{width:17px;height:17px;}
+.icon-btn.red{border-color:rgba(255,59,59,.4);}
+.icon-btn.red:active{background:rgba(255,59,59,.15);}
+.icon-btn.yellow{border-color:rgba(232,255,71,.3);}
+.gallery-grid{flex:1;overflow-y:auto;padding:3px;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;align-content:start;}
+.gallery-grid::-webkit-scrollbar{width:0;}
+.grid-item{aspect-ratio:1;border-radius:4px;overflow:hidden;position:relative;cursor:pointer;background:var(--surface);}
+.grid-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s;}
+.grid-item:active img{transform:scale(.97);}
+.grid-badge{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);border-radius:4px;padding:2px 5px;font-size:9px;letter-spacing:.5px;color:#fff;}
+.grid-badge.vid{background:rgba(255,59,59,.75);}
+.grid-duration{position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.65);border-radius:4px;padding:2px 5px;font-size:9px;color:#fff;}
+.grid-sel{position:absolute;inset:0;border:2.5px solid var(--accent);border-radius:4px;opacity:0;pointer-events:none;transition:opacity .15s;background:rgba(232,255,71,.08);}
+.grid-item.selected .grid-sel{opacity:1;}
+.gallery-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);padding:60px 0;}
+.gallery-empty svg{width:48px;height:48px;opacity:.25;}
+.gallery-empty p{font-size:12px;letter-spacing:1px;}
+.gallery-actions-bar{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.gal-act-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.gal-act-btn:active{transform:scale(.96);}
+.gal-act-btn.del{border-color:rgba(255,59,59,.4);color:var(--red);}
+.gal-act-btn.del:active{background:rgba(255,59,59,.1);}
+.gal-act-btn.edt{border-color:rgba(232,255,71,.3);color:var(--accent);}
+
+/* Preview */
+.preview-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s;}
+.preview-overlay.open{opacity:1;pointer-events:all;}
+.preview-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px;flex-shrink:0;gap:8px;}
+.preview-title{font-size:11px;letter-spacing:.5px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.preview-topbar-right{display:flex;gap:7px;flex-shrink:0;}
+.preview-media{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;touch-action:pinch-zoom;}
+#previewImg{max-width:100%;max-height:100%;object-fit:contain;}
+#previewVideo{max-width:100%;max-height:100%;outline:none;}
+.preview-info-bar{padding:10px 16px 28px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);background:rgba(10,10,12,.9);}
+.preview-meta{font-size:10px;color:var(--muted);line-height:1.8;}
+.preview-meta span{color:var(--text);}
+.preview-nav{display:flex;gap:8px;}
+.nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.nav-btn:active{transform:scale(.9);}
+
+/* Edit Sheet */
+.edit-sheet{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+.edit-sheet.open{opacity:1;pointer-events:all;}
+.edit-body{background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 18px 38px;width:100%;transform:translateY(20px);transition:transform .3s;}
+.edit-sheet.open .edit-body{transform:translateY(0);}
+.edit-body h3{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:16px;}
+.edit-field{margin-bottom:14px;}
+.edit-field label{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.edit-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .2s;}
+.edit-field input:focus{border-color:var(--accent);}
+.tx-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+.edit-transforms{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;}
+.tx-btn{padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;cursor:pointer;text-align:center;transition:all .15s;}
+.tx-btn:active{transform:scale(.96);}
+.tx-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(232,255,71,.07);}
+.edit-actions{display:flex;gap:8px;}
+.edit-save-btn{flex:1;background:var(--accent);color:#000;border:none;border-radius:10px;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;transition:opacity .15s;}
+.edit-save-btn:active{opacity:.8;}
+.edit-cancel-btn{width:48px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;color:var(--muted);font-size:18px;}
+
+/* Confirm */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.confirm-overlay.open{opacity:1;pointer-events:all;}
+.confirm-box{background:var(--surface);border:1px solid rgba(255,59,59,.3);border-radius:16px;padding:24px;width:100%;max-width:300px;text-align:center;}
+.confirm-box h3{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--red);margin-bottom:8px;}
+.confirm-box p{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-btns button{flex:1;padding:12px;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.confirm-btns button:active{transform:scale(.96);}
+.confirm-yes{background:var(--red);color:#fff;border:none;}
+.confirm-no{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+
+/* Config Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(6px);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 22px;width:100%;max-width:400px;max-height:90dvh;overflow-y:auto;}
+.modal h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--accent);margin-bottom:4px;}
+.cloud-badge{display:inline-flex;align-items:center;gap:6px;background:#3448c5;border-radius:6px;padding:3px 10px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:14px;}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.7;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:var(--accent);}
+.field small{display:block;font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.modal-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:10px;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;cursor:pointer;margin-top:6px;transition:opacity .15s;}
+.modal-btn:active{opacity:.8;}
+.skip-link{text-align:center;margin-top:13px;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <h2>CamVault</h2>
+    <div class="cloud-badge">☁ Cloudinary Storage</div>
+    <p>Enter your Cloudinary credentials to enable cloud storage, gallery, delete and transforms.</p>
+    <div class="field"><label>Cloud Name</label><input id="cfgCloudName" placeholder="e.g. dxxxxxx"><small>Dashboard → top-left corner</small></div>
+    <div class="field"><label>API Key</label><input id="cfgApiKey" placeholder="459687731144159"></div>
+    <div class="field"><label>API Secret</label><input id="cfgApiSecret" type="password" placeholder="••••••••••••"><small>⚠ Stored in localStorage on this device only.</small></div>
+    <div class="field"><label>Upload Folder</label><input id="cfgFolder" placeholder="camvault"></div>
+    <button class="modal-btn" onclick="initCloudinary()">CONNECT →</button>
+    <div class="skip-link" onclick="skipCloud()">Skip — save locally only</div>
+  </div>
+</div>
+
+<!-- Gallery Panel -->
+<div class="gallery-panel" id="galleryPanel">
+  <div class="gallery-header">
+    <div class="gallery-title-row">
+      <h2>Gallery</h2>
+      <div class="gallery-sub" id="gallerySub">0 items</div>
+    </div>
+    <div class="gallery-header-right">
+      <div class="gallery-filter">
+        <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('image',this)">IMG</button>
+        <button class="filter-btn" onclick="setFilter('video',this)">VID</button>
+      </div>
+      <div class="icon-btn" onclick="closeGallery()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+  <div class="gallery-actions-bar" id="galleryActionsBar" style="display:none;">
+    <button class="gal-act-btn" onclick="previewSelected()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      VIEW
+    </button>
+    <button class="gal-act-btn edt" onclick="openEdit()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      EDIT
+    </button>
+    <button class="gal-act-btn del" onclick="confirmDelete()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      DELETE
+    </button>
+  </div>
+</div>
+
+<!-- Preview Overlay -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-topbar">
+    <div class="preview-title" id="previewTitle">—</div>
+    <div class="preview-topbar-right">
+      <div class="icon-btn yellow" onclick="openEditFromPreview()" title="Edit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="icon-btn" onclick="downloadCurrent()" title="Download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="icon-btn red" onclick="confirmDeleteFromPreview()" title="Delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b3b" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </div>
+      <div class="icon-btn" onclick="closePreview()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="preview-media">
+    <img id="previewImg" style="display:none" alt="">
+    <video id="previewVideo" style="display:none" controls playsinline></video>
+  </div>
+  <div class="preview-info-bar">
+    <div class="preview-meta" id="previewMeta"></div>
+    <div class="preview-nav">
+      <div class="nav-btn" onclick="previewNav(-1)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="nav-btn" onclick="previewNav(1)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Sheet -->
+<div class="edit-sheet" id="editSheet">
+  <div class="edit-body">
+    <h3>Edit Media</h3>
+    <div class="edit-field">
+      <label>Display Name</label>
+      <input id="editName" type="text" placeholder="Enter a name">
+    </div>
+    <span class="tx-label">Cloudinary Transform (applied on download/preview)</span>
+    <div class="edit-transforms">
+      <div class="tx-btn active" id="tx-none" onclick="toggleTx('none')">Original</div>
+      <div class="tx-btn" id="tx-grayscale" onclick="toggleTx('e_grayscale')">Grayscale</div>
+      <div class="tx-btn" id="tx-sepia" onclick="toggleTx('e_sepia')">Sepia</div>
+      <div class="tx-btn" id="tx-sharpen" onclick="toggleTx('e_sharpen')">Sharpen</div>
+      <div class="tx-btn" id="tx-blur" onclick="toggleTx('e_blur:300')">Soft Blur</div>
+      <div class="tx-btn" id="tx-viesus" onclick="toggleTx('e_viesus_correct')">Auto Fix</div>
+    </div>
+    <div class="edit-actions">
+      <button class="edit-cancel-btn" onclick="closeEdit()">✕</button>
+      <button class="edit-save-btn" onclick="saveEdit()">SAVE CHANGES</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>Delete?</h3>
+    <p id="confirmMsg">This will permanently remove the file from Cloudinary.</p>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-yes" onclick="doDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera App -->
+<header>
+  <div class="logo">CamVault</div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">INIT</span>
+    </div>
+    <div class="gallery-btn" onclick="openGallery()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="1.8" stroke-linecap="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <div class="gallery-count" id="galleryCount" style="display:none">0</div>
+    </div>
+  </div>
+</header>
+
+<div class="mode-bar">
+  <div class="mode-tab active" id="tabPhoto" onclick="setMode('photo')">PHOTO</div>
+  <div class="mode-tab" id="tabVideo" onclick="setMode('video')">VIDEO</div>
+  <div class="mode-tab" id="tabLive" onclick="setMode('live')">LIVE</div>
+</div>
+
+<div class="viewfinder-wrap">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="rec-overlay" id="recOverlay"><div class="rec-dot"></div><span id="recLabel">REC</span></div>
+  <div class="vtimer" id="vtimer">00:00</div>
+  <div class="flash" id="flash"></div>
+  <div class="upload-bar" id="uploadBar"></div>
+</div>
+
+<div class="controls">
+  <div class="side-btn" onclick="switchCamera()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" stroke-width="1.8" stroke-linecap="round">
+      <path d="M20 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="13" r="3"/>
+      <path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+    </svg>
+  </div>
+  <div class="shutter-ring" id="shutterRing">
+    <button id="shutterBtn" onclick="onShutter()"></button>
+  </div>
+  <div id="liveBtn" onclick="toggleLive()">
+    <div class="live-icon"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+// ── Config ──
+let cfg = { cloudName:'', apiKey:'', apiSecret:'', folder:'camvault' };
+let cloudReady = false;
+
+// ── Camera ──
+let stream = null, facingMode = 'environment', mode = 'photo';
+let mediaRecorder = null, recordedChunks = [], isRecording = false;
+let timerInterval = null, elapsed = 0;
+
+// ── Gallery ──
+let mediaItems = [];
+let galleryFilter = 'all';
+let selectedId = null;
+let previewIndex = -1;
+let pendingDeleteId = null;
+let editingId = null;
+let currentTx = 'none';
+
+const TX_MAP = {
+  'none':'tx-none',
+  'e_grayscale':'tx-grayscale',
+  'e_sepia':'tx-sepia',
+  'e_sharpen':'tx-sharpen',
+  'e_blur:300':'tx-blur',
+  'e_viesus_correct':'tx-viesus'
+};
+
+// ── Boot ──
+window.onload = () => {
+  try { const s = localStorage.getItem('cvCfg'); if(s){ cfg={...cfg,...JSON.parse(s)}; fillForm(); } } catch(e){}
+  try { const s = localStorage.getItem('cvMedia'); if(s){ mediaItems=JSON.parse(s); } } catch(e){}
+  updateGalleryCount();
+};
+function fillForm() {
+  document.getElementById('cfgCloudName').value = cfg.cloudName||'';
+  document.getElementById('cfgApiKey').value = cfg.apiKey||'';
+  document.getElementById('cfgApiSecret').value = cfg.apiSecret||'';
+  document.getElementById('cfgFolder').value = cfg.folder||'camvault';
+}
+function initCloudinary() {
+  cfg.cloudName = v('cfgCloudName'); cfg.apiKey = v('cfgApiKey');
+  cfg.apiSecret = v('cfgApiSecret'); cfg.folder = v('cfgFolder')||'camvault';
+  if (!cfg.cloudName||!cfg.apiKey||!cfg.apiSecret) { showToast('Fill all fields','error'); return; }
+  cloudReady = true;
+  localStorage.setItem('cvCfg', JSON.stringify(cfg));
+  document.getElementById('configModal').style.display = 'none';
+  startCamera(); showToast('Cloudinary connected ✓','success');
+}
+function skipCloud() {
+  cloudReady=false; document.getElementById('configModal').style.display='none';
+  startCamera(); showToast('Local mode — no cloud upload','info');
+}
+
+// ── Camera ──
+async function startCamera() {
+  if (stream) stream.getTracks().forEach(t=>t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode,width:{ideal:1920},height:{ideal:1080}}, audio:true
+    });
+    document.getElementById('video').srcObject = stream;
+    setStatus('ready');
+  } catch(e) { showToast('Camera: '+e.message,'error'); setStatus('error'); }
+}
+function switchCamera() {
+  if(isRecording) return;
+  facingMode = facingMode==='environment'?'user':'environment';
+  startCamera(); showToast(facingMode==='user'?'Front camera':'Rear camera','info');
+}
+function setMode(m) {
+  if(isRecording) return; mode=m;
+  ['photo','video','live'].forEach(t=>{
+    document.getElementById('tab'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active',t===m);
+  });
+}
+function onShutter() {
+  if(mode==='photo') capturePhoto();
+  else if(mode==='video') isRecording?stopVideoRecord():startVideoRecord();
+  else isRecording?stopLive():startLive();
+}
+
+// ── Photo ──
+function capturePhoto() {
+  const v=document.getElementById('video'), c=document.getElementById('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const fl=document.getElementById('flash');
+  fl.classList.add('on'); setTimeout(()=>fl.classList.remove('on'),150);
+  c.toBlob(blob=>{
+    if(cloudReady) uploadToCloudinary(blob,'image','Photo');
+    else { downloadBlob(blob,'photo_'+Date.now()+'.jpg'); showToast('Saved locally','info'); }
+  },'image/jpeg',0.93);
+}
+
+// ── Video ──
+function startVideoRecord() {
+  recordedChunks=[]; const mime=getMime();
+  mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
+  mediaRecorder.ondataavailable=e=>{if(e.data.size>0) recordedChunks.push(e.data);};
+  mediaRecorder.onstop=()=>{
+    const blob=new Blob(recordedChunks,{type:recordedChunks[0]?.type});
+    if(cloudReady) uploadToCloudinary(blob,'video','Video');
+    else { downloadBlob(blob,'video_'+Date.now()+'.'+(blob.type.includes('mp4')?'mp4':'webm')); showToast('Saved locally','info'); }
+  };
+  mediaRecorder.start(1000); isRecording=true; updateRecUI(true,'REC');
+}
+function stopVideoRecord() { mediaRecorder?.stop(); isRecording=false; updateRecUI(false); }
+
+// ── Live ──
+function startLive() {
+  if(!cloudReady){ showToast('Connect Cloudinary for LIVE','error'); return; }
+  recordedChunks=[]; const mime=getMime();
+  mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
+  mediaRecorder.ondataavailable=e=>{if(e.data.size>0) recordedChunks.push(e.data);};
+  mediaRecorder.onstop=()=>{
+    const blob=new Blob(recordedChunks,{type:recordedChunks[0]?.type});
+    uploadToCloudinary(blob,'video','Live video');
+  };
+  mediaRecorder.start(1000); isRecording=true;
+  document.getElementById('liveBtn').classList.add('recording');
+  updateRecUI(true,'🔴 LIVE'); showToast('Recording — uploads on stop','info');
+}
+function stopLive() {
+  mediaRecorder?.stop(); isRecording=false;
+  document.getElementById('liveBtn').classList.remove('recording');
+  updateRecUI(false); showToast('Uploading to Cloudinary...','info');
+}
+
+// ── Upload ──
+async function uploadToCloudinary(blob, resourceType, label) {
+  setStatus('uploading'); document.getElementById('uploadBar').style.width='0%';
+  try {
+    const ts=Math.floor(Date.now()/1000), folder=cfg.folder||'camvault';
+    const sig=await sha1(`folder=${folder}&timestamp=${ts}${cfg.apiSecret}`);
+    const ext=resourceType==='image'?'jpg':(blob.type.includes('mp4')?'mp4':'webm');
+    const fname=`capture_${ts}.${ext}`;
+    const fd=new FormData();
+    fd.append('file',blob,fname); fd.append('api_key',cfg.apiKey);
+    fd.append('timestamp',ts); fd.append('signature',sig); fd.append('folder',folder);
+    const url=`https://api.cloudinary.com/v1_1/${cfg.cloudName}/${resourceType}/upload`;
+    await new Promise((resolve,reject)=>{
+      const xhr=new XMLHttpRequest(); xhr.open('POST',url);
+      xhr.upload.onprogress=e=>{
+        if(e.lengthComputable){
+          const pct=Math.round(e.loaded/e.total*100);
+          document.getElementById('uploadBar').style.width=pct+'%';
+          document.getElementById('statusText').textContent=pct+'%';
+        }
+      };
+      xhr.onload=()=>{
+        if(xhr.status===200){
+          const r=JSON.parse(xhr.responseText);
+          document.getElementById('uploadBar').style.width='100%';
+          setTimeout(()=>document.getElementById('uploadBar').style.width='0%',800);
+          const item={
+            id:'cv_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+            publicId:r.public_id, url:r.secure_url, type:resourceType,
+            name:fname, uploadedAt:new Date().toISOString(),
+            size:r.bytes||blob.size, width:r.width, height:r.height,
+            duration:r.duration||null, transform:'none'
+          };
+          mediaItems.unshift(item); saveMedia(); updateGalleryCount();
+          showToast(`${label} uploaded ✓`,'success'); setStatus('ready'); resolve(r);
+        } else {
+          const err=JSON.parse(xhr.responseText);
+          reject(new Error(err.error?.message||'Upload failed'));
+        }
+      };
+      xhr.onerror=()=>reject(new Error('Network error'));
+      xhr.send(fd);
+    });
+  } catch(e) {
+    showToast('Upload error: '+e.message,'error'); setStatus('ready');
+    document.getElementById('uploadBar').style.width='0%';
+  }
+}
+
+// ── Gallery ──
+function openGallery() {
+  selectedId=null;
+  document.getElementById('galleryActionsBar').style.display='none';
+  document.getElementById('galleryPanel').classList.add('open');
+  renderGallery();
+}
+function closeGallery() {
+  document.getElementById('galleryPanel').classList.remove('open');
+  selectedId=null;
+  document.getElementById('galleryActionsBar').style.display='none';
+}
+function setFilter(f,btn) {
+  galleryFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderGallery();
+}
+function renderGallery() {
+  const filtered = galleryFilter==='all' ? mediaItems : mediaItems.filter(i=>i.type===galleryFilter);
+  document.getElementById('gallerySub').textContent = `${filtered.length} item${filtered.length!==1?'s':''}`;
+  const grid=document.getElementById('galleryGrid');
+  if(filtered.length===0){
+    grid.innerHTML=`<div class="gallery-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p>No ${galleryFilter==='all'?'media':galleryFilter+'s'} yet</p></div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(item=>{
+    const thumb = getThumb(item);
+    const badge = item.type==='video'
+      ? `<div class="grid-badge vid">▶ VID</div>`
+      : `<div class="grid-badge">IMG</div>`;
+    const dur = item.duration ? `<div class="grid-duration">${fmtDur(item.duration)}</div>` : '';
+    const sel = item.id===selectedId?' selected':'';
+    return `<div class="grid-item${sel}" data-id="${item.id}" onclick="selectItem('${item.id}')" ondblclick="openPreviewById('${item.id}')">
+      <img src="${thumb}" loading="lazy" onerror="this.style.background='#1e1e28'">
+      ${badge}${dur}<div class="grid-sel"></div>
+    </div>`;
+  }).join('');
+}
+function selectItem(id) {
+  if(selectedId===id){ openPreviewById(id); return; }
+  selectedId=id; renderGallery();
+  document.getElementById('galleryActionsBar').style.display='flex';
+}
+function previewSelected() { if(selectedId) openPreviewById(selectedId); }
+function getThumb(item) {
+  if(item.type==='image') return item.url.replace('/image/upload/','/image/upload/w_300,h_300,c_fill,q_auto/');
+  return item.url.replace('/video/upload/','/video/upload/so_0,w_300,h_300,c_fill/').replace(/\.(mp4|webm)$/,'.jpg');
+}
+function saveMedia() { localStorage.setItem('cvMedia',JSON.stringify(mediaItems)); }
+function updateGalleryCount() {
+  const cnt=document.getElementById('galleryCount');
+  if(mediaItems.length>0){ cnt.style.display='flex'; cnt.textContent=mediaItems.length>99?'99+':mediaItems.length; }
+  else cnt.style.display='none';
+}
+
+// ── Preview ──
+function openPreviewById(id) {
+  const idx=mediaItems.findIndex(i=>i.id===id);
+  if(idx===-1) return;
+  previewIndex=idx; showPreview(mediaItems[idx]);
+}
+function showPreview(item) {
+  const img=document.getElementById('previewImg'), vid=document.getElementById('previewVideo');
+  img.style.display='none'; vid.style.display='none'; vid.pause(); vid.src='';
+  const txUrl=applyTx(item.url, item.transform||'none');
+  if(item.type==='image'){ img.src=txUrl; img.style.display='block'; }
+  else { vid.src=item.url; vid.style.display='block'; }
+  document.getElementById('previewTitle').textContent = item.name;
+  document.getElementById('previewMeta').innerHTML =
+    `<span>${item.type.toUpperCase()}</span> · ${fmtSize(item.size)} · ${fmtDate(item.uploadedAt)}`+
+    (item.width ? `<br>${item.width}×${item.height}` : '')+
+    (item.duration ? ` · ${fmtDur(item.duration)}` : '')+
+    (item.transform&&item.transform!=='none' ? `<br>Filter: ${item.transform}` : '');
+  document.getElementById('previewOverlay').classList.add('open');
+}
+function closePreview() {
+  const vid=document.getElementById('previewVideo'); vid.pause(); vid.src='';
+  document.getElementById('previewOverlay').classList.remove('open');
+}
+function previewNav(dir) {
+  const filtered = galleryFilter==='all' ? mediaItems : mediaItems.filter(i=>i.type===galleryFilter);
+  if(!filtered.length) return;
+  const cur=filtered.findIndex(i=>i.id===mediaItems[previewIndex]?.id);
+  let next=(cur+dir+filtered.length)%filtered.length;
+  previewIndex=mediaItems.findIndex(i=>i.id===filtered[next].id);
+  showPreview(mediaItems[previewIndex]);
+}
+
+// ── Delete ──
+function confirmDelete() {
+  if(!selectedId) return;
+  pendingDeleteId=selectedId;
+  document.getElementById('confirmMsg').textContent = cloudReady
+    ? 'Permanently removes from Cloudinary and local history. Cannot be undone.'
+    : 'Remove from local history?';
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function confirmDeleteFromPreview() {
+  if(previewIndex===-1) return;
+  pendingDeleteId=mediaItems[previewIndex]?.id;
+  document.getElementById('confirmMsg').textContent = cloudReady
+    ? 'Permanently removes from Cloudinary. Cannot be undone.'
+    : 'Remove from local history?';
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); pendingDeleteId=null; }
+async function doDelete() {
+  closeConfirm();
+  const item=mediaItems.find(i=>i.id===pendingDeleteId);
+  if(!item) return;
+  if(cloudReady && item.publicId) {
+    try {
+      const ts=Math.floor(Date.now()/1000);
+      const sig=await sha1(`public_id=${item.publicId}&timestamp=${ts}${cfg.apiSecret}`);
+      const fd=new FormData();
+      fd.append('public_id',item.publicId); fd.append('api_key',cfg.apiKey);
+      fd.append('timestamp',ts); fd.append('signature',sig);
+      const url=`https://api.cloudinary.com/v1_1/${cfg.cloudName}/${item.type}/destroy`;
+      const res=await fetch(url,{method:'POST',body:fd});
+      const d=await res.json();
+      if(d.result!=='ok') throw new Error(d.result||'Delete failed');
+    } catch(e) { showToast('Delete error: '+e.message,'error'); return; }
+  }
+  mediaItems=mediaItems.filter(i=>i.id!==pendingDeleteId);
+  saveMedia(); updateGalleryCount();
+  selectedId=null; pendingDeleteId=null;
+  document.getElementById('galleryActionsBar').style.display='none';
+  renderGallery(); closePreview();
+  showToast('Deleted','success');
+}
+
+// ── Edit ──
+function openEdit() {
+  const item=mediaItems.find(i=>i.id===selectedId);
+  if(!item) return;
+  editingId=item.id; currentTx=item.transform||'none';
+  document.getElementById('editName').value=item.name;
+  document.querySelectorAll('.tx-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(TX_MAP[currentTx]||'tx-none')?.classList.add('active');
+  document.getElementById('editSheet').classList.add('open');
+}
+function openEditFromPreview() {
+  if(previewIndex===-1) return;
+  selectedId=mediaItems[previewIndex]?.id;
+  openEdit();
+}
+function closeEdit() { document.getElementById('editSheet').classList.remove('open'); }
+function toggleTx(tx) {
+  currentTx=tx;
+  document.querySelectorAll('.tx-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(TX_MAP[tx]||'tx-none')?.classList.add('active');
+}
+function saveEdit() {
+  const item=mediaItems.find(i=>i.id===editingId);
+  if(!item){ closeEdit(); return; }
+  const newName=document.getElementById('editName').value.trim();
+  if(newName) item.name=newName;
+  item.transform=currentTx;
+  saveMedia(); renderGallery();
+  if(previewIndex!==-1 && mediaItems[previewIndex]?.id===editingId) showPreview(item);
+  closeEdit(); showToast('Changes saved','success');
+}
+function applyTx(url, tx) {
+  if(!tx||tx==='none') return url;
+  if(url.includes('/image/upload/')) return url.replace('/image/upload/',`/image/upload/${tx}/`);
+  return url;
+}
+
+// ── Download ──
+function downloadCurrent() {
+  if(previewIndex===-1) return;
+  const item=mediaItems[previewIndex];
+  const url=applyTx(item.url, item.transform||'none');
+  const a=document.createElement('a'); a.href=url; a.download=item.name; a.target='_blank'; a.click();
+}
+function downloadBlob(blob,fname) {
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Utils ──
+function getMime() {
+  const t=['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  return t.find(t=>MediaRecorder.isTypeSupported(t))||'video/webm';
+}
+function updateRecUI(on,label='REC') {
+  document.getElementById('recOverlay').classList.toggle('visible',on);
+  document.getElementById('recLabel').textContent=label;
+  document.getElementById('vtimer').classList.toggle('visible',on);
+  document.getElementById('shutterRing').classList.toggle('recording',on);
+  if(on){
+    elapsed=0;
+    timerInterval=setInterval(()=>{
+      elapsed++;
+      const m=String(Math.floor(elapsed/60)).padStart(2,'0');
+      const s=String(elapsed%60).padStart(2,'0');
+      document.getElementById('vtimer').textContent=`${m}:${s}`;
+    },1000);
+  } else { clearInterval(timerInterval); document.getElementById('vtimer').textContent='00:00'; }
+}
+async function sha1(msg) {
+  const buf=await crypto.subtle.digest('SHA-1',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function fmtSize(b) {
+  if(!b) return '—'; if(b<1024) return b+'B';
+  if(b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB';
+}
+function fmtDate(iso) { if(!iso) return '—'; return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDur(s) { if(!s) return ''; const m=Math.floor(s/60),sc=Math.floor(s%60); return `${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`; }
+function setStatus(s) {
+  const dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');
+  dot.className='dot';
+  if(s==='ready'){dot.classList.add('ready');txt.textContent='READY';}
+  else if(s==='uploading'){dot.classList.add('uploading');txt.textContent='...';}
+  else if(s==='error'){dot.classList.add('error');txt.textContent='ERROR';}
+  else txt.textContent='INIT';
+}
+function v(id){ return document.getElementById(id).value.trim(); }
+let _tt;
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast'); t.textContent=msg; t.className=`toast ${type} show`;
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>

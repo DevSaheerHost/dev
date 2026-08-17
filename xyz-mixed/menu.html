@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hair Salon Poster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#D4AF37',
+                            500: '#AA8529',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+        }
+        
+        /* A4 Paper Dimensions */
+        .poster-container {
+            width: 210mm;
+            height: 297mm;
+            background-color: #0f172a;
+            /* Using a high-quality dark barbershop background with an overlay */
+            background-image: linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.95)), url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            box-sizing: border-box;
+            padding: 40px;
+        }
+
+        /* Decorative border */
+        .poster-border {
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .service-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .service-item {
+            display: flex;
+            align-items: baseline;
+            width: 100%;
+        }
+
+        .service-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .service-meta {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-left: 10px;
+            text-transform: none;
+            font-weight: 400;
+        }
+
+        .dot-leader {
+            flex-grow: 1;
+            border-bottom: 2px dotted rgba(255, 255, 255, 0.2);
+            margin: 0 15px;
+            position: relative;
+            top: -6px;
+        }
+
+        .service-price {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #D4AF37;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Responsive scaling for previewing on smaller screens */
+        @media (max-width: 220mm) {
+            body {
+                padding: 0;
+            }
+            .poster-container {
+                transform: scale(0.45);
+                transform-origin: top center;
+                margin-bottom: -150mm;
+            }
+        }
+        @media (min-width: 221mm) and (max-width: 1200px) {
+            .poster-container {
+                transform: scale(0.7);
+                transform-origin: top center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="poster-container">
+        <!-- Inner decorative border -->
+        <div class="poster-border"></div>
+
+        <div class="content-wrapper">
+            
+            <!-- HEADER SECTION (Logo Area) -->
+            <header class="text-center mt-8 mb-12 flex flex-col items-center">
+                <!-- User Logo Placeholder -->
+                <!-- Replace 'YOUR_LOGO_IMAGE_URL.jpg' with your actual logo path, e.g., 'thadikkaran pdf_page-0001.jpg' -->
+                <div class="w-full max-w-md h-40 flex justify-center items-center mb-6">
+                    <!-- Example of how to add the image -->
+                    <img src="https://placehold.co/600x200/111/white?text=THADIKKARAN+LOGO+HERE" alt="Thadikkaran Logo" class="max-h-full object-contain filter drop-shadow-lg" />
+                </div>
+                
+                <h1 class="font-serif text-4xl tracking-[0.2em] text-gold-400 font-bold uppercase mt-4 mb-2 text-center w-full">Our Services</h1>
+                <div class="w-24 h-1 bg-gold-400 mx-auto rounded-full"></div>
+            </header>
+
+            <!-- MIDDLE SECTION (Services List) -->
+            <main class="flex-grow px-8 py-4">
+                <ul class="service-list">
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-scissors text-gold-400 text-lg mr-3"></i>Hair Cut
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 120</div>
+                    </li>
+                    
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-razor text-gold-400 text-lg mr-3"></i>Shaving
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 80</div>
+                    </li>
+                    
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-spray-can text-gold-400 text-lg mr-3"></i>Beard Setting
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 100</div>
+                    </li>
+                    
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-pump-soap text-gold-400 text-lg mr-3"></i>Clean Up
+                            <span class="service-meta">(Starting)</span>
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 500</div>
+                    </li>
+                    
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-fill-drip text-gold-400 text-lg mr-3"></i>Hair Dye
+                            <span class="service-meta">(Starting)</span>
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 350</div>
+                    </li>
+
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-spa text-gold-400 text-lg mr-3"></i>Facials
+                            <span class="service-meta">(Starting)</span>
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 1000</div>
+                    </li>
+
+                    <li class="service-item">
+                        <div class="service-name">
+                            <i class="fa-solid fa-shower text-gold-400 text-lg mr-3"></i>Shampoo Wash
+                        </div>
+                        <div class="dot-leader"></div>
+                        <div class="service-price">₹ 50</div>
+                    </li>
+                </ul>
+            </main>
+
+            <!-- FOOTER SECTION (Details) -->
+            <footer class="mt-auto pt-8 border-t border-gray-700">
+                <div class="grid grid-cols-2 gap-8 px-4">
+                    
+                    <!-- Left Side: Timings & Holiday -->
+                    <div class="flex flex-col justify-center items-start border-r border-gray-700 pr-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-gold-400/20 flex items-center justify-center mr-4">
+                                <i class="fa-regular fa-clock text-gold-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Opening Hours</p>
+                                <p class="text-lg font-bold">8:30 AM TO 8:30 PM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mr-4">
+                                <i class="fa-solid fa-calendar-xmark text-red-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-lg font-semibold text-red-400">Tuesday Holiday</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Location & Contact -->
+                    <div class="flex flex-col justify-center items-start pl-2">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-gold-400/20 flex items-center justify-center mr-4">
+                                <i class="fa-solid fa-location-dot text-gold-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Location</p>
+                                <p class="text-xl font-bold uppercase tracking-wider">Kurumasseery</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-1">
+                            <div class="w-10 h-10 rounded-full bg-gold-400/20 flex items-center justify-center mr-4">
+                                <i class="fa-solid fa-phone text-gold-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Contact Us</p>
+                                <p class="text-xl font-bold text-gold-400">+91 75609 53065</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </footer>
+            
+        </div>
+    </div>
+
+</body>
+</html>
