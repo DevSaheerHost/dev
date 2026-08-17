@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NEON DRIFT SURVIVAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── LOADING SCREEN ─────────────────────────────────────── -->
+  <div id="loadingScreen" class="screen active">
+    <div class="loader-inner">
+      <div class="logo-glow">NEON DRIFT</div>
+      <div class="logo-sub">SURVIVAL</div>
+      <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+      <div class="loader-text" id="loaderText">INITIALIZING ENGINE...</div>
+    </div>
+  </div>
+
+  <!-- ─── MAIN MENU ──────────────────────────────────────────── -->
+  <div id="menuScreen" class="screen">
+    <div class="menu-bg-grid"></div>
+    <div class="menu-inner">
+      <div class="menu-logo">
+        <span class="logo-line1">NEON DRIFT</span>
+        <span class="logo-line2">SURVIVAL</span>
+        <div class="logo-tagline">LAST BALL STANDING</div>
+      </div>
+      <div class="glass-card menu-card">
+        <div class="input-group">
+          <label>YOUR CALLSIGN</label>
+          <input id="usernameInput" type="text" maxlength="16" placeholder="ENTER NAME..." autocomplete="off" />
+        </div>
+        <button class="btn-primary" id="playBtn">
+          <span class="btn-text">ENTER ARENA</span>
+          <span class="btn-glow"></span>
+        </button>
+        <div class="menu-info">
+          <span class="info-chip">30 PLAYERS</span>
+          <span class="info-chip">PHYSICS ARENA</span>
+          <span class="info-chip">LAST STANDING</span>
+        </div>
+      </div>
+      <div class="controls-hint">
+        <div class="ctrl-row"><kbd>W A S D</kbd> <span>MOVE</span></div>
+        <div class="ctrl-row"><kbd>SPACE</kbd> <span>JUMP</span></div>
+        <div class="ctrl-row"><span class="ctrl-mobile">📱 Mobile joystick supported</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── GAME HUD ───────────────────────────────────────────── -->
+  <div id="gameHUD" class="hidden">
+    <!-- Top bar -->
+    <div id="topBar">
+      <div class="hud-pill" id="aliveCount">
+        <span class="pill-icon">👾</span>
+        <span id="aliveNum">--</span>
+        <span class="pill-label">ALIVE</span>
+      </div>
+      <div class="hud-logo">NEON<span>DRIFT</span></div>
+      <div class="hud-pill" id="pingDisplay">
+        <span class="pill-icon">📡</span>
+        <span id="pingNum">--</span>
+        <span class="pill-label">MS</span>
+      </div>
+    </div>
+
+    <!-- Round / status banner -->
+    <div id="statusBanner" class="hidden">
+      <div id="statusText">ROUND 1</div>
+    </div>
+
+    <!-- Kill feed -->
+    <div id="killFeed"></div>
+
+    <!-- Minimap -->
+    <canvas id="minimap" width="180" height="180"></canvas>
+
+    <!-- Player name tag (self indicator) -->
+    <div id="selfIndicator" class="hidden">
+      <div class="self-dot"></div>
+      <span id="selfName">YOU</span>
+    </div>
+  </div>
+
+  <!-- ─── COUNTDOWN OVERLAY ──────────────────────────────────── -->
+  <div id="countdownOverlay" class="hidden">
+    <div id="countdownNum">3</div>
+    <div id="countdownLabel">GET READY</div>
+  </div>
+
+  <!-- ─── ELIMINATION SCREEN ────────────────────────────────── -->
+  <div id="eliminatedScreen" class="hidden">
+    <div class="glass-card elim-card">
+      <div class="elim-title">ELIMINATED</div>
+      <div class="elim-rank" id="elimRank">#4</div>
+      <div class="elim-sub">SPECTATING...</div>
+      <div class="spectate-note">Round ends soon — hang tight!</div>
+    </div>
+  </div>
+
+  <!-- ─── ROUND END / LEADERBOARD ───────────────────────────── -->
+  <div id="roundEndScreen" class="hidden">
+    <div class="glass-card leaderboard-card">
+      <div class="lb-header">
+        <div id="winnerAnnounce">
+          <div class="winner-crown">👑</div>
+          <div class="winner-name" id="winnerName">PLAYER</div>
+          <div class="winner-sub">WINS THE ROUND</div>
+        </div>
+      </div>
+      <div class="lb-list" id="leaderboardList"></div>
+      <div class="lb-footer">
+        <div class="next-round-bar">
+          <span>NEXT ROUND IN</span>
+          <span id="nextRoundTimer">8</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MOBILE CONTROLS ────────────────────────────────────── -->
+  <div id="mobileControls" class="hidden">
+    <div id="joystickZone">
+      <div id="joystickBase">
+        <div id="joystickHandle"></div>
+      </div>
+    </div>
+    <div id="actionButtons">
+      <button id="jumpBtn" class="action-btn">
+        <span>JUMP</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── THREE.JS CANVAS ───────────────────────────────────── -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ─── SCRIPTS ───────────────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
