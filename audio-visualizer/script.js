@@ -611,7 +611,29 @@ document.addEventListener('drop', async (e) => {
 window.addEventListener('resize', Renderer.resize.bind(Renderer));
 
 /* ============================================================
-   UTILITY: Load & Decode Audio File
+   UTILITY: Apply a decoded AudioBuffer to app state + UI
+   Shared by file-upload and default-track loading paths.
+   ============================================================ */
+function applyDecodedTrack(audioBuffer, name, sizeBytes) {
+  State.audioBuffer = audioBuffer;
+  State.duration     = audioBuffer.duration;
+
+  const sizeLabel = sizeBytes ? `${(sizeBytes / 1_000_000).toFixed(1)} MB  ·  ` : '';
+  const meta = `${formatTime(State.duration)}  ·  ${sizeLabel}READY`;
+
+  UI.setTrackInfo(name, meta);
+  DOM.totalTime.textContent   = formatTime(State.duration);
+  DOM.currentTime.textContent = '0:00';
+  DOM.seekFill.style.width    = '0%';
+  DOM.seekHead.style.left     = '0%';
+  DOM.seekRange.value         = 0;
+  DOM.btnPlayPause.disabled   = false;
+}
+
+/* ============================================================
+   UTILITY: Load & Decode Audio File (user upload)
+   Uploading always replaces whatever track (default or
+   previous upload) is currently loaded.
    ============================================================ */
 async function loadAudioFile(file) {
   UI.setStatus('LOADING...', '');
@@ -625,23 +647,13 @@ async function loadAudioFile(file) {
     // Stop any current playback
     AudioEngine.stop();
 
-    State.audioBuffer = await AudioEngine.decode(arrayBuffer);
-    State.duration    = State.audioBuffer.duration;
-
+    const audioBuffer = await AudioEngine.decode(arrayBuffer);
     const name = file.name.replace(/\.[^.]+$/, ''); // strip extension
-    const meta = `${formatTime(State.duration)}  ·  ${(file.size / 1_000_000).toFixed(1)} MB  ·  READY`;
-
-    UI.setTrackInfo(name, meta);
-    DOM.totalTime.textContent   = formatTime(State.duration);
-    DOM.currentTime.textContent = '0:00';
-    DOM.seekFill.style.width    = '0%';
-    DOM.seekHead.style.left     = '0%';
-    DOM.seekRange.value         = 0;
-    DOM.btnPlayPause.disabled   = false;
+    applyDecodedTrack(audioBuffer, name, file.size);
 
     UI.setStatus('READY', 'paused');
 
-    // Auto-play
+    // Auto-play (safe here — this path always follows a user gesture)
     AudioEngine.play(0);
     UI.syncPlayPauseBtn();
     UI.setStatus('PLAYING', 'active');
@@ -650,6 +662,41 @@ async function loadAudioFile(file) {
     console.error('[AudioEngine] Decode error:', err);
     UI.setTrackInfo('ERROR', 'Could not decode this audio file.');
     UI.setStatus('ERROR', '');
+  }
+}
+
+/* ============================================================
+   UTILITY: Load the default track shipped in the project root
+   (audio.mp3). Runs once on boot so the visualizer is
+   immediately playable without requiring an upload first.
+
+   Does NOT auto-play — browsers block audio playback before a
+   user gesture, so this only decodes the file and arms the
+   Play button (status → READY). Uploading a file afterwards
+   works exactly as before and simply replaces this track.
+   ============================================================ */
+async function loadDefaultTrack(url = './SYNTHTONE-Phone.ogg') {
+  UI.setStatus('LOADING...', '');
+  UI.setTrackInfo('Loading...', 'Decoding default track...');
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const arrayBuffer = await res.arrayBuffer();
+    AudioEngine.init();
+
+    const audioBuffer = await AudioEngine.decode(arrayBuffer);
+    const name = url.split('/').pop().replace(/\.[^.]+$/, '');
+    applyDecodedTrack(audioBuffer, name, arrayBuffer.byteLength);
+
+    UI.setStatus('READY', 'paused');
+
+  } catch (err) {
+    // No default track present, or it failed to decode — fall
+    // back silently to the empty "upload to begin" state.
+    console.warn('[AudioEngine] No default track loaded:', err.message);
+    UI.setStatus('STANDBY', '');
   }
 }
 
@@ -673,4 +720,8 @@ function formatTime(sec) {
 
   // Draw idle scene before any audio is loaded
   Renderer.drawIdle();
+
+  // Pre-load the default track (./audio.mp3) so Play works
+  // immediately without an upload. No-ops cleanly if missing.
+  loadDefaultTrack();
 })();

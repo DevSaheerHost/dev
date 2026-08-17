@@ -40,6 +40,15 @@
         status: "live",
         color: "#A77CF2",
         icon: "phone"
+      },
+      {
+        title: "Audio Visualizer",
+        description: "A futuristic audio visualizer with neon effects, real-time spectrum bars, and immersive music controls.",
+        url: "./audio-visualizer/",
+        tags: ["Visualization", "Audio"],
+        status: "live",
+        color: "#ff1a4e",
+        icon: "waveform"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -59,7 +68,8 @@
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
-      phone: '<rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line>'
+      phone: '<rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line>',
+      waveform: '<line x1="4" y1="10" x2="4" y2="14"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="6" x2="16" y2="18"></line><line x1="20" y1="10" x2="20" y2="14"></line>'
     };
 
     const arrowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
