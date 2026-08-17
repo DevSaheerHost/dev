@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Inverter Wiring — 3D Viewer</title>
+
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #14161c;
+      --panel: #1c1f28;
+      --panel-border: #2b2f3a;
+      --accent: #4da3ff;
+      --accent-2: #7cf29c;
+      --text: #e8eaf0;
+      --text-dim: #8a8fa3;
+      --radius: 14px;
+    }
+
+    *{ box-sizing: border-box; }
+
+    html, body{
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .app{
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar{
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: linear-gradient(to bottom, rgba(10,11,15,0.85), rgba(10,11,15,0));
+      pointer-events: none;
+    }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .brand-icon{
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #2b6fd1);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(77,163,255,0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-title{
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .brand-title strong{ font-size: 15px; font-weight: 600; letter-spacing: 0.2px; }
+    .brand-title span{ font-size: 11.5px; color: var(--text-dim); }
+
+    .top-actions{
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .icon-btn{
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: rgba(28,31,40,0.85);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.15s, transform 0.15s, border-color 0.15s;
+    }
+
+    .icon-btn:hover{ background: rgba(42,46,58,0.95); border-color: #3a3f4f; }
+    .icon-btn:active{ transform: scale(0.94); }
+    .icon-btn.active{ border-color: var(--accent); color: var(--accent); }
+    .icon-btn svg{ width: 18px; height: 18px; }
+
+    /* ---------- Model viewer ---------- */
+    model-viewer{
+      width: 100%;
+      height: 100%;
+      --poster-color: transparent;
+      background: radial-gradient(circle at 50% 40%, #23262f 0%, #14161c 70%);
+      --progress-bar-color: var(--accent);
+      --progress-bar-height: 3px;
+    }
+
+    /* ---------- Bottom control dock ---------- */
+    .dock{
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(20,22,28,0.85);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+
+    .dock .icon-btn{ background: transparent; border-color: transparent; }
+    .dock .icon-btn:hover{ background: rgba(255,255,255,0.06); }
+    .dock .divider{ width: 1px; height: 24px; background: var(--panel-border); margin: 0 4px; }
+
+    /* ---------- Side settings panel ---------- */
+    .panel{
+      position: absolute;
+      top: 74px;
+      right: 20px;
+      z-index: 20;
+      width: 240px;
+      background: rgba(20,22,28,0.92);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 34px rgba(0,0,0,0.4);
+      padding: 16px;
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .panel.open{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .panel h4{
+      margin: 0 0 12px;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .field{ margin-bottom: 14px; }
+    .field:last-child{ margin-bottom: 0; }
+
+    .field label{
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .field label span.val{ color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    input[type="range"]{
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #2b2f3a;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 0 4px rgba(77,163,255,0.15);
+    }
+
+    .toggle-row{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      padding: 4px 0;
+    }
+
+    .switch{
+      width: 36px; height: 20px;
+      border-radius: 20px;
+      background: #2b2f3a;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .switch.on{ background: var(--accent); }
+
+    .switch::after{
+      content: "";
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left 0.15s;
+    }
+
+    .switch.on::after{ left: 18px; }
+
+    /* ---------- Info / legend card ---------- */
+    .legend{
+      position: absolute;
+      left: 20px;
+      bottom: 22px;
+      z-index: 20;
+      max-width: 230px;
+      background: rgba(20,22,28,0.88);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+      padding: 14px 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .legend h4{
+      margin: 0 0 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+    }
+
+    .legend ul{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .legend li{ display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+    .swatch{ width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ---------- Hotspots ---------- */
+    .hotspot{
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid rgba(255,255,255,0.9);
+      box-shadow: 0 0 0 6px rgba(77,163,255,0.25);
+      cursor: pointer;
+    }
+
+    .hotspot-annotation{
+      background: rgba(20,22,28,0.95);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+      transform: translate(16px, -50%);
+    }
+
+    /* ---------- Loading overlay ---------- */
+    .loader{
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--bg);
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .loader.hidden{ opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .spinner{
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      border: 3px solid #2b2f3a;
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    .loader-text{ font-size: 13px; color: var(--text-dim); }
+    .loader-pct{ font-size: 13px; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    /* ---------- Error state ---------- */
+    .error-card{
+      position: absolute;
+      inset: 0;
+      z-index: 25;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      text-align: center;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .error-card.show{ display: flex; }
+
+    .error-card svg{ width: 40px; height: 40px; color: #ff6b6b; }
+    .error-card h3{ margin: 4px 0 0; font-size: 16px; }
+    .error-card p{ margin: 0; font-size: 13px; color: var(--text-dim); max-width: 360px; }
+    .error-card code{ background: #23262f; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+    @media (max-width: 640px){
+      .legend{ display: none; }
+      .panel{ width: calc(100% - 40px); right: 20px; }
+      .brand-title span{ display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <strong>Inverter Wiring</strong>
+          <span>Interactive 3D Model</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="icon-btn" id="btnSettings" title="Display settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </div>
+        <div class="icon-btn" id="btnFullscreen" title="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="panel" id="panel">
+      <h4>Display</h4>
+
+      <div class="field">
+        <label>Exposure <span class="val" id="valExposure">1.0</span></label>
+        <input type="range" id="exposure" min="0.2" max="2" step="0.05" value="1">
+      </div>
+
+      <div class="field">
+        <label>Shadow softness <span class="val" id="valShadow">1.0</span></label>
+        <input type="range" id="shadow" min="0" max="2" step="0.05" value="1">
+      </div>
+
+      <div class="toggle-row">
+        <span>Auto-rotate</span>
+        <div class="switch" id="toggleRotate"></div>
+      </div>
+
+      <div class="toggle-row">
+        <span>Wireframe hint</span>
+        <div class="switch" id="toggleWire"></div>
+      </div>
+    </div>
+
+    <!-- Bottom dock -->
+    <div class="dock">
+      <div class="icon-btn" id="btnReset" title="Reset camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 2.64-6.36"></path>
+          <path d="M3 4v6h6"></path>
+        </svg>
+      </div>
+      <div class="icon-btn" id="btnZoomOut" title="Zoom out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      </div>
+      <div class="icon-btn" id="btnZoomIn" title="Zoom in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="11" y1="8" x2="11" y2="14"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      </div>
+      <div class="divider"></div>
+      <div class="icon-btn" id="btnAr" title="View in your space (AR)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3 4 7v10l8 4 8-4V7l-8-4z"></path>
+          <path d="M4 7l8 4 8-4"></path>
+          <path d="M12 11v10"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <h4>Wiring key</h4>
+      <ul>
+        <li><span class="swatch" style="background:#ff5c5c"></span> DC Positive (+)</li>
+        <li><span class="swatch" style="background:#3d3d3d"></span> DC Negative (−)</li>
+        <li><span class="swatch" style="background:#ffcc4d"></span> AC Live</li>
+        <li><span class="swatch" style="background:#4da3ff"></span> AC Neutral</li>
+        <li><span class="swatch" style="background:#2ecc71"></span> Earth / Ground</li>
+      </ul>
+    </div>
+
+    <!-- Model viewer -->
+    <model-viewer
+      id="viewer"
+      alt="Inverter wiring diagram 3D model"
+      src="./inverter_wiring.glb"
+      poster="./poster.png"
+      environment-image="./env.hdr"
+      shadow-intensity="1"
+      shadow-softness="1"
+      exposure="1"
+      camera-controls
+      touch-action="pan-y"
+      interaction-prompt="none"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      loading="eager"
+      reveal="manual">
+
+      <button slot="ar-button" style="display:none;"></button>
+
+      <div class="hotspot" slot="hotspot-dc" data-position="0 0 0" data-normal="0 1 0"
+           title="DC input terminal">
+        <div class="hotspot-annotation">DC Input</div>
+      </div>
+    </model-viewer>
+
+    <!-- Loading overlay -->
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <div class="loader-text">Loading model…</div>
+      <div class="loader-pct" id="loaderPct">0%</div>
+    </div>
+
+    <!-- Error state -->
+    <div class="error-card" id="errorCard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <h3>Model failed to load</h3>
+      <p>Couldn't find <code id="missingFile">inverter_wiring.glb</code>. Place the .glb file in the same folder as this HTML file and reload the page.</p>
+    </div>
+
+  </div>
+
+  <script>
+    const viewer   = document.getElementById('viewer');
+    const loader   = document.getElementById('loader');
+    const loaderPct= document.getElementById('loaderPct');
+    const errorCard= document.getElementById('errorCard');
+    const panel    = document.getElementById('panel');
+
+    // ---- Loading progress ----
+    viewer.addEventListener('progress', (e) => {
+      const pct = Math.round(e.detail.totalProgress * 100);
+      loaderPct.textContent = pct + '%';
+    });
+
+    viewer.addEventListener('load', () => {
+      loader.classList.add('hidden');
+      viewer.reveal = 'auto';
+      viewer.dismissPoster();
+    });
+
+    viewer.addEventListener('error', () => {
+      loader.classList.add('hidden');
+      errorCard.classList.add('show');
+    });
+
+    // Fallback: if nothing happens after 12s, assume missing file
+    setTimeout(() => {
+      if (!loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+        errorCard.classList.add('show');
+      }
+    }, 12000);
+
+    // ---- Settings panel toggle ----
+    document.getElementById('btnSettings').addEventListener('click', () => {
+      panel.classList.toggle('open');
+    });
+
+    // ---- Exposure ----
+    const exposure = document.getElementById('exposure');
+    const valExposure = document.getElementById('valExposure');
+    exposure.addEventListener('input', () => {
+      viewer.exposure = exposure.value;
+      valExposure.textContent = Number(exposure.value).toFixed(2);
+    });
+
+    // ---- Shadow softness ----
+    const shadow = document.getElementById('shadow');
+    const valShadow = document.getElementById('valShadow');
+    shadow.addEventListener('input', () => {
+      viewer.shadowSoftness = shadow.value;
+      valShadow.textContent = Number(shadow.value).toFixed(2);
+    });
+
+    // ---- Auto-rotate toggle ----
+    const toggleRotate = document.getElementById('toggleRotate');
+    toggleRotate.addEventListener('click', () => {
+      const on = toggleRotate.classList.toggle('on');
+      if (on) {
+        viewer.setAttribute('auto-rotate', '');
+      } else {
+        viewer.removeAttribute('auto-rotate');
+      }
+    });
+
+    // ---- Wireframe hint (visual only — toggles a subtle shader-like outline via CSS filter) ----
+    const toggleWire = document.getElementById('toggleWire');
+    toggleWire.addEventListener('click', () => {
+      const on = toggleWire.classList.toggle('on');
+      viewer.style.filter = on ? 'contrast(1.15) saturate(0.4)' : 'none';
+    });
+
+    // ---- Camera reset ----
+    document.getElementById('btnReset').addEventListener('click', () => {
+      viewer.cameraOrbit = '0deg 75deg 105%';
+      viewer.cameraTarget = 'auto auto auto';
+      viewer.jumpCameraToGoal();
+    });
+
+    // ---- Zoom controls ----
+    function nudgeZoom(deltaPercent) {
+      const orbit = viewer.getCameraOrbit();
+      const newRadius = Math.max(20, orbit.radius * (1 + deltaPercent));
+      viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${newRadius}m`;
+    }
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => nudgeZoom(-0.15));
+    document.getElementById('btnZoomOut').addEventListener('click', () => nudgeZoom(0.15));
+
+    // ---- Fullscreen ----
+    const btnFullscreen = document.getElementById('btnFullscreen');
+    btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        btnFullscreen.classList.add('active');
+      } else {
+        document.exitFullscreen();
+        btnFullscreen.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      btnFullscreen.classList.toggle('active', !!document.fullscreenElement);
+    });
+
+    // ---- AR button ----
+    document.getElementById('btnAr').addEventListener('click', () => {
+      viewer.activateAR();
+    });
+
+    // Close panel when clicking outside it
+    document.addEventListener('click', (e) => {
+      if (!panel.contains(e.target) && e.target.id !== 'btnSettings' && !document.getElementById('btnSettings').contains(e.target)) {
+        panel.classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>

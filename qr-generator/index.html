@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>QR Studio — URL to QR Code</title>
+<style>
+  :root{
+    --bg:#0a0c11;
+    --bg2:#0e1118;
+    --panel:rgba(255,255,255,.045);
+    --panel-2:rgba(255,255,255,.025);
+    --border:rgba(255,255,255,.09);
+    --border-strong:rgba(255,255,255,.16);
+    --text:#e8eaf0;
+    --muted:#8b91a4;
+    --faint:#5c6275;
+    --ind:#818cf8;
+    --cyan:#34d3ee;
+    --grad:linear-gradient(120deg,#818cf8,#34d3ee);
+    --danger:#fb7185;
+    --ok:#34d399;
+    --radius:16px;
+    --shadow:0 18px 50px -22px rgba(0,0,0,.85);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 85% -10%,rgba(52,211,238,.10),transparent 60%),
+      radial-gradient(700px 500px at -5% 0%,rgba(129,140,248,.12),transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100dvh;
+  }
+  .app{max-width:1120px;margin:0 auto;padding:22px 16px 64px}
+
+  header.top{display:flex;align-items:center;gap:13px;margin:6px 2px 22px}
+  .logo-mark{
+    width:42px;height:42px;border-radius:12px;flex:none;
+    background:var(--grad);position:relative;box-shadow:0 8px 22px -8px rgba(52,211,238,.7);
+  }
+  .logo-mark::before,.logo-mark::after{
+    content:"";position:absolute;background:#0a0c11;border-radius:3px;
+  }
+  .logo-mark::before{inset:9px;border-radius:6px;background:
+    repeating-linear-gradient(90deg,#0a0c11 0 4px,transparent 4px 7px),
+    repeating-linear-gradient(0deg,#0a0c11 0 4px,transparent 4px 7px);
+    mix-blend-mode:normal;}
+  .logo-mark::after{inset:0;border-radius:12px;border:0;background:transparent}
+  .titles h1{font-size:20px;letter-spacing:-.02em;margin:0;font-weight:650}
+  .titles p{margin:1px 0 0;color:var(--muted);font-size:12.5px;letter-spacing:.01em}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:900px){
+    .grid{grid-template-columns:420px 1fr;align-items:start}
+    .stage-col{position:sticky;top:18px}
+  }
+
+  /* ---------- Stage / preview ---------- */
+  .stage-card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);
+  }
+  .stage{
+    border-radius:13px;border:1px solid var(--border);
+    display:grid;place-items:center;padding:26px;min-height:300px;
+    background:
+      linear-gradient(45deg,#161922 25%,transparent 25%) -8px 0/16px 16px,
+      linear-gradient(-45deg,#161922 25%,transparent 25%) -8px 0/16px 16px,
+      linear-gradient(45deg,transparent 75%,#161922 75%) -8px 0/16px 16px,
+      linear-gradient(-45deg,transparent 75%,#161922 75%) -8px 0/16px 16px,
+      #11141b;
+    transition:background-color .25s ease;
+    position:relative;overflow:hidden;
+  }
+  .stage.solid{background:var(--stage-bg,#fff)}
+  #qr{max-width:100%;height:auto;line-height:0;display:block;filter:drop-shadow(0 8px 18px rgba(0,0,0,.28))}
+  #qr canvas,#qr svg{max-width:100%!important;height:auto!important;border-radius:6px}
+  .stage-hint{position:absolute;color:var(--faint);font-size:13px;display:none}
+  .stage.empty .stage-hint{display:block}
+  .stage.empty #qr{opacity:.12}
+
+  .actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:14px}
+  .actions .full{grid-column:1/-1}
+  button.act{
+    appearance:none;border:1px solid var(--border-strong);background:var(--panel);
+    color:var(--text);font:inherit;font-size:13px;font-weight:560;
+    padding:11px 8px;border-radius:11px;cursor:pointer;display:flex;
+    align-items:center;justify-content:center;gap:7px;transition:.15s;
+  }
+  button.act:hover{border-color:var(--ind);background:rgba(129,140,248,.1)}
+  button.act:active{transform:translateY(1px)}
+  button.act.primary{background:var(--grad);border:0;color:#06121a;font-weight:680}
+  button.act.primary:hover{filter:brightness(1.06)}
+  button.act svg{width:15px;height:15px}
+  button.act:disabled{opacity:.4;cursor:not-allowed;border-color:var(--border)}
+
+  /* ---------- Controls ---------- */
+  .controls{display:flex;flex-direction:column;gap:14px}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 17px;
+  }
+  .card h2{
+    font-size:11px;font-weight:680;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 13px;display:flex;align-items:center;gap:8px;
+  }
+  .card h2 .dot{width:6px;height:6px;border-radius:50%;background:var(--grad);flex:none}
+
+  label.field{display:block;margin-bottom:13px}
+  label.field:last-child{margin-bottom:0}
+  .lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted);margin-bottom:7px}
+  .lbl b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+
+  input[type=text]{
+    width:100%;background:#0c0f16;border:1px solid var(--border);color:var(--text);
+    font:inherit;font-size:15px;padding:12px 13px;border-radius:11px;outline:none;transition:.15s;
+  }
+  input[type=text]:focus{border-color:var(--ind);box-shadow:0 0 0 3px rgba(129,140,248,.18)}
+  input[type=text]::placeholder{color:var(--faint)}
+
+  select{
+    width:100%;background:#0c0f16;border:1px solid var(--border);color:var(--text);
+    font:inherit;font-size:14px;padding:11px 12px;border-radius:11px;outline:none;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 18px,calc(100% - 13px) 18px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  }
+  select:focus{border-color:var(--ind)}
+
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:6px;
+    background:linear-gradient(90deg,var(--ind),var(--cyan)) no-repeat;
+    background-size:var(--fill,50%) 100%;outline:none;cursor:pointer;
+    /* track base */
+    box-shadow:inset 0 0 0 40px #1a1e29;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;
+    border:3px solid #0a0c11;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #0a0c11;cursor:pointer}
+
+  .swatch{position:relative;display:inline-flex;align-items:center;gap:9px;background:#0c0f16;border:1px solid var(--border);border-radius:11px;padding:6px 11px 6px 6px;cursor:pointer}
+  .swatch input[type=color]{width:30px;height:30px;border:none;background:none;padding:0;border-radius:8px;cursor:pointer}
+  .swatch input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .swatch input[type=color]::-webkit-color-swatch{border:1px solid var(--border-strong);border-radius:8px}
+  .swatch .hex{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.02em;text-transform:uppercase}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row > *{flex:1;min-width:0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+
+  /* segmented + toggle */
+  .seg{display:flex;background:#0c0f16;border:1px solid var(--border);border-radius:11px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:560;padding:8px 6px;border-radius:8px;cursor:pointer;transition:.15s}
+  .seg button[aria-pressed=true]{background:var(--grad);color:#06121a;font-weight:680}
+
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none}
+  .toggle .switch{width:42px;height:25px;border-radius:20px;background:#1a1e29;border:1px solid var(--border);position:relative;flex:none;transition:.18s}
+  .toggle .switch::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#6b7187;transition:.18s}
+  .toggle input{display:none}
+  .toggle input:checked + .switch{background:var(--grad);border-color:transparent}
+  .toggle input:checked + .switch::after{left:19px;background:#06121a}
+  .toggle .t-txt{font-size:13.5px}
+  .toggle .t-sub{font-size:11.5px;color:var(--faint);margin-top:1px}
+
+  /* presets */
+  .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .preset{border:1px solid var(--border);background:#0c0f16;border-radius:12px;padding:9px 6px 8px;cursor:pointer;text-align:center;transition:.15s}
+  .preset:hover{border-color:var(--ind);transform:translateY(-2px)}
+  .preset .pv{width:100%;aspect-ratio:1;border-radius:8px;margin-bottom:6px;display:grid;place-items:center}
+  .preset .pv i{width:62%;height:62%;border-radius:var(--pvr,3px);background:var(--pvfg,#000);display:block;
+    -webkit-mask:repeating-linear-gradient(90deg,#000 0 3px,transparent 3px 5px),repeating-linear-gradient(0deg,#000 0 3px,transparent 3px 5px);
+    mask:repeating-linear-gradient(90deg,#000 0 3px,transparent 3px 5px),repeating-linear-gradient(0deg,#000 0 3px,transparent 3px 5px)}
+  .preset span{font-size:11px;color:var(--muted);font-weight:560}
+
+  .logo-drop{border:1px dashed var(--border-strong);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:.15s;background:#0c0f16}
+  .logo-drop:hover{border-color:var(--ind);background:rgba(129,140,248,.06)}
+  .logo-drop .ic{width:30px;height:30px;margin:0 auto 6px;color:var(--muted)}
+  .logo-drop b{font-size:13.5px;display:block}
+  .logo-drop small{color:var(--faint);font-size:11.5px}
+  .logo-active{display:none;align-items:center;gap:12px;background:#0c0f16;border:1px solid var(--border);border-radius:12px;padding:10px}
+  .logo-active img{width:46px;height:46px;border-radius:9px;object-fit:contain;background:#fff;flex:none}
+  .logo-active .meta{flex:1;min-width:0}
+  .logo-active .meta b{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .logo-active .meta small{color:var(--faint);font-size:11px}
+  .rm{border:1px solid var(--border);background:transparent;color:var(--danger);font:inherit;font-size:12px;font-weight:560;padding:8px 11px;border-radius:9px;cursor:pointer;flex:none}
+  .rm:hover{background:rgba(251,113,133,.12);border-color:var(--danger)}
+
+  .hide{display:none!important}
+  .note{font-size:11.5px;color:var(--faint);margin-top:9px;line-height:1.45}
+  .note b{color:var(--ind);font-weight:600}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#161a23;border:1px solid var(--border-strong);color:var(--text);
+    padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:540;opacity:0;
+    pointer-events:none;transition:.25s;box-shadow:var(--shadow);z-index:50;display:flex;gap:8px;align-items:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{border-color:var(--danger)}
+  #toast .tdot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  #toast.err .tdot{background:var(--danger)}
+
+  footer{text-align:center;color:var(--faint);font-size:11.5px;margin-top:30px;letter-spacing:.02em}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo-mark"></div>
+    <div class="titles">
+      <h1>QR Studio</h1>
+      <p>Paste a link · style it · drop in a logo · export</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ===== PREVIEW ===== -->
+    <div class="stage-col">
+      <div class="stage-card">
+        <div class="stage empty" id="stage">
+          <div class="stage-hint">Enter a URL to generate</div>
+          <div id="qr"></div>
+        </div>
+        <div class="actions">
+          <button class="act primary" id="dlPng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>PNG</button>
+          <button class="act" id="dlSvg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>SVG</button>
+          <button class="act" id="dlJpg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>JPG</button>
+          <button class="act full" id="copyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy image to clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONTROLS ===== -->
+    <div class="controls">
+
+      <div class="card">
+        <h2><span class="dot"></span>Content</h2>
+        <label class="field">
+          <div class="lbl"><span>Link or text</span></div>
+          <input type="text" id="data" placeholder="https://alfonex.com" value="https://alfonex.com" autocomplete="off" spellcheck="false" />
+        </label>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Quick presets</h2>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Logo</h2>
+        <input type="file" id="logoFile" accept="image/*" class="hide" />
+        <div class="logo-drop" id="logoDrop">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V8m0 0 3 3m-3-3-3 3"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <b>Add a logo</b>
+          <small>PNG or SVG with transparency works best</small>
+        </div>
+        <div class="logo-active" id="logoActive">
+          <img id="logoThumb" alt="logo" />
+          <div class="meta"><b id="logoName">logo.png</b><small>Center overlay</small></div>
+          <button class="rm" id="logoRemove">Remove</button>
+        </div>
+
+        <div id="logoOpts" class="hide" style="margin-top:14px">
+          <label class="field">
+            <div class="lbl"><span>Logo size</span><b id="logoSizeV">40%</b></div>
+            <input type="range" id="logoSize" min="15" max="60" value="40" />
+          </label>
+          <label class="field">
+            <div class="lbl"><span>Padding around logo</span><b id="logoMarginV">6 px</b></div>
+            <input type="range" id="logoMargin" min="0" max="24" value="6" />
+          </label>
+          <label class="toggle field" style="margin-bottom:0">
+            <div><div class="t-txt">Clear dots behind logo</div><div class="t-sub">Keeps the logo readable</div></div>
+            <input type="checkbox" id="hideDots" checked /><span class="switch"></span>
+          </label>
+          <div class="note">Tip: with a logo, set error correction to <b>High</b> so the code still scans.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Shape</h2>
+        <label class="field">
+          <div class="lbl"><span>Dot style</span></div>
+          <select id="dotType">
+            <option value="square">Square</option>
+            <option value="rounded" selected>Rounded</option>
+            <option value="dots">Dots</option>
+            <option value="classy">Classy</option>
+            <option value="classy-rounded">Classy rounded</option>
+            <option value="extra-rounded">Extra rounded</option>
+          </select>
+        </label>
+        <div class="two">
+          <label class="field" style="margin-bottom:0">
+            <div class="lbl"><span>Corner frame</span></div>
+            <select id="cornerSq">
+              <option value="square">Square</option>
+              <option value="extra-rounded" selected>Rounded</option>
+              <option value="dot">Dot</option>
+            </select>
+          </label>
+          <label class="field" style="margin-bottom:0">
+            <div class="lbl"><span>Corner center</span></div>
+            <select id="cornerDot">
+              <option value="square">Square</option>
+              <option value="dot" selected>Dot</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Colors</h2>
+
+        <div class="seg" id="fillMode" style="margin-bottom:14px">
+          <button data-mode="solid" aria-pressed="true">Solid</button>
+          <button data-mode="gradient" aria-pressed="false">Gradient</button>
+        </div>
+
+        <label class="field" id="solidWrap">
+          <div class="lbl"><span>Foreground</span></div>
+          <div class="swatch"><input type="color" id="fg" value="#101522" /><span class="hex" id="fgHex">#101522</span></div>
+        </label>
+
+        <div id="gradWrap" class="hide">
+          <div class="two" style="margin-bottom:13px">
+            <div class="swatch" style="width:100%"><input type="color" id="g1" value="#818cf8" /><span class="hex" id="g1Hex">#818CF8</span></div>
+            <div class="swatch" style="width:100%"><input type="color" id="g2" value="#34d3ee" /><span class="hex" id="g2Hex">#34D3EE</span></div>
+          </div>
+          <div class="two">
+            <label class="field" style="margin-bottom:0">
+              <div class="lbl"><span>Type</span></div>
+              <select id="gType"><option value="linear" selected>Linear</option><option value="radial">Radial</option></select>
+            </label>
+            <label class="field" style="margin-bottom:0">
+              <div class="lbl"><span>Angle</span><b id="gRotV">45°</b></div>
+              <input type="range" id="gRot" min="0" max="360" value="45" />
+            </label>
+          </div>
+        </div>
+
+        <label class="toggle field" style="margin:14px 0 0">
+          <div><div class="t-txt">Match corners to foreground</div></div>
+          <input type="checkbox" id="matchCorners" checked /><span class="switch"></span>
+        </label>
+        <label class="field hide" id="cornerColorWrap" style="margin-top:13px">
+          <div class="lbl"><span>Corner color</span></div>
+          <div class="swatch"><input type="color" id="cornerColor" value="#101522" /><span class="hex" id="cornerHex">#101522</span></div>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Background</h2>
+        <label class="toggle field">
+          <div><div class="t-txt">Transparent</div><div class="t-sub">No background fill (PNG/SVG)</div></div>
+          <input type="checkbox" id="bgTransparent" /><span class="switch"></span>
+        </label>
+        <label class="field hide" id="bgColorWrap" style="margin-bottom:0">
+          <div class="lbl"><span>Color</span></div>
+          <div class="swatch"><input type="color" id="bg" value="#ffffff" /><span class="hex" id="bgHex">#FFFFFF</span></div>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot"></span>Output</h2>
+        <label class="field">
+          <div class="lbl"><span>Resolution</span><b id="sizeV">600 px</b></div>
+          <input type="range" id="size" min="200" max="1200" step="40" value="600" />
+        </label>
+        <label class="field">
+          <div class="lbl"><span>Quiet zone (margin)</span><b id="marginV">12 px</b></div>
+          <input type="range" id="margin" min="0" max="60" step="2" value="12" />
+        </label>
+        <label class="field" style="margin-bottom:0">
+          <div class="lbl"><span>Error correction</span></div>
+          <select id="ecc">
+            <option value="L">Low · 7%</option>
+            <option value="M">Medium · 15%</option>
+            <option value="Q">Quartile · 25%</option>
+            <option value="H" selected>High · 30% (best for logos)</option>
+          </select>
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>Built for fast, branded QR codes · everything runs in your browser</footer>
+</div>
+
+<div id="toast"><span class="tdot"></span><span id="toastMsg">Done</span></div>
+
+<script>
+/* ---------- load qr-code-styling with CDN fallbacks ---------- */
+(function(urls, ready, fail){
+  let i=0;
+  (function next(){
+    if(i>=urls.length) return fail();
+    const s=document.createElement('script');
+    s.src=urls[i++];
+    s.onload=()=> window.QRCodeStyling ? ready() : next();
+    s.onerror=next;
+    document.head.appendChild(s);
+  })();
+})([
+  "https://cdnjs.cloudflare.com/ajax/libs/qr-code-styling/1.6.0-rc.1/qr-code-styling.js",
+  "https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js",
+  "https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"
+], init, function(){
+  document.getElementById('stage').classList.remove('empty');
+  document.getElementById('qr').innerHTML =
+    '<div style="color:#fb7185;font-size:13px;text-align:center;padding:20px;max-width:240px">Couldn\'t load the QR engine. Connect to the internet once and reopen this file.</div>';
+});
+
+let qr, logoData="", t;
+const $=id=>document.getElementById(id);
+
+function toast(msg,err){
+  const el=$('toast'); $('toastMsg').textContent=msg;
+  el.classList.toggle('err',!!err); el.classList.add('show');
+  clearTimeout(t); t=setTimeout(()=>el.classList.remove('show'),1900);
+}
+function setFill(input,hexEl,r){const f=(input.value-input.min)/(input.max-input.min)*100;input.style.setProperty('--fill',f+'%');}
+document.querySelectorAll('input[type=range]').forEach(r=>{
+  const f=(r.value-r.min)/(r.max-r.min)*100; r.style.setProperty('--fill',f+'%');
+  r.addEventListener('input',()=>r.style.setProperty('--fill',(r.value-r.min)/(r.max-r.min)*100+'%'));
+});
+
+function cfg(){
+  const data=($('data').value.trim()||" ");
+  const gradient = $('fillMode').dataset.mode==='gradient' ? {
+    type:$('gType').value, rotation:$('gRot').value*Math.PI/180,
+    colorStops:[{offset:0,color:$('g1').value},{offset:1,color:$('g2').value}]
+  } : undefined;
+  const fg=$('fg').value;
+  const cornerColor=$('matchCorners').checked ? (gradient?$('g1').value:fg) : $('cornerColor').value;
+  const size=+$('size').value;
+
+  return {
+    width:size, height:size, type:"canvas", data,
+    image: logoData || undefined,
+    margin:+$('margin').value,
+    qrOptions:{ errorCorrectionLevel:$('ecc').value },
+    imageOptions:{ hideBackgroundDots:$('hideDots').checked, imageSize:+$('logoSize').value/100, margin:+$('logoMargin').value, crossOrigin:"anonymous" },
+    dotsOptions: gradient ? {type:$('dotType').value, gradient} : {type:$('dotType').value, color:fg},
+    cornersSquareOptions:{ type:$('cornerSq').value, color:cornerColor },
+    cornersDotOptions:{ type:$('cornerDot').value, color:cornerColor },
+    backgroundOptions:{ color: $('bgTransparent').checked ? "transparent" : $('bg').value }
+  };
+}
+
+function render(){
+  const c=cfg();
+  if(!qr){ qr=new QRCodeStyling(c); qr.append($('qr')); }
+  else qr.update(c);
+
+  const empty = $('data').value.trim()==="";
+  const stage=$('stage');
+  stage.classList.toggle('empty',empty);
+  const trans=$('bgTransparent').checked;
+  stage.classList.toggle('solid',!trans && !empty);
+  if(!trans) stage.style.setProperty('--stage-bg',$('bg').value);
+
+  ['dlPng','dlSvg','dlJpg','copyBtn'].forEach(id=>$(id).disabled=empty);
+}
+
+/* ---------- wiring ---------- */
+function init(){
+  // text + selects + ranges -> live
+  ['data'].forEach(id=>$(id).addEventListener('input',render));
+  ['dotType','cornerSq','cornerDot','gType','ecc'].forEach(id=>$(id).addEventListener('change',render));
+  [['logoSize','logoSizeV','%'],['logoMargin','logoMarginV',' px'],['gRot','gRotV','°'],
+   ['size','sizeV',' px'],['margin','marginV',' px']].forEach(([id,out,suf])=>{
+    $(id).addEventListener('input',()=>{$(out).textContent=$(id).value+suf;render();});
+  });
+
+  // colors
+  const colors=[['fg','fgHex'],['g1','g1Hex'],['g2','g2Hex'],['cornerColor','cornerHex'],['bg','bgHex']];
+  colors.forEach(([id,hx])=>$(id).addEventListener('input',()=>{$(hx).textContent=$(id).value.toUpperCase();render();}));
+
+  // fill mode segmented
+  $('fillMode').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    $('fillMode').dataset.mode=b.dataset.mode;
+    $('fillMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    $('solidWrap').classList.toggle('hide',b.dataset.mode==='gradient');
+    $('gradWrap').classList.toggle('hide',b.dataset.mode!=='gradient');
+    render();
+  }));
+
+  // toggles
+  $('matchCorners').addEventListener('change',e=>{$('cornerColorWrap').classList.toggle('hide',e.target.checked);render();});
+  $('bgTransparent').addEventListener('change',e=>{$('bgColorWrap').classList.toggle('hide',e.target.checked);render();});
+  $('hideDots').addEventListener('change',render);
+
+  // logo
+  $('logoDrop').addEventListener('click',()=>$('logoFile').click());
+  $('logoFile').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      logoData=r.result;
+      $('logoThumb').src=logoData; $('logoName').textContent=f.name;
+      $('logoDrop').classList.add('hide'); $('logoActive').style.display='flex'; $('logoOpts').classList.remove('hide');
+      if($('ecc').value!=='H'){ $('ecc').value='H'; }
+      render();
+    };
+    r.readAsDataURL(f);
+  });
+  $('logoRemove').addEventListener('click',()=>{
+    logoData=""; $('logoFile').value="";
+    $('logoDrop').classList.remove('hide'); $('logoActive').style.display='none'; $('logoOpts').classList.add('hide');
+    render();
+  });
+
+  // presets
+  const PRESETS=[
+    {n:"Classic",   dot:"square",         cs:"square",        cd:"square", fg:"#101522", bg:"#ffffff", grad:0},
+    {n:"Rounded",   dot:"rounded",        cs:"extra-rounded", cd:"dot",    fg:"#0f172a", bg:"#ffffff", grad:0},
+    {n:"Indigo",    dot:"classy-rounded", cs:"extra-rounded", cd:"dot",    g1:"#6366f1", g2:"#a855f7", bg:"#ffffff", grad:1},
+    {n:"Aqua",      dot:"dots",           cs:"extra-rounded", cd:"dot",    g1:"#0ea5e9", g2:"#22d3ee", bg:"#ffffff", grad:1},
+    {n:"Sunset",    dot:"classy-rounded", cs:"extra-rounded", cd:"dot",    g1:"#f97316", g2:"#ec4899", bg:"#fff7ed", grad:1},
+    {n:"Neon",      dot:"dots",           cs:"square",        cd:"dot",    g1:"#22d3ee", g2:"#a855f7", bg:"#0a0c11", grad:1},
+  ];
+  const pc=$('presets');
+  PRESETS.forEach(p=>{
+    const el=document.createElement('div'); el.className='preset';
+    const fg=p.grad?p.g1:p.fg;
+    el.innerHTML=`<div class="pv" style="background:${p.bg};--pvfg:${fg};--pvr:${p.dot.includes('round')||p.dot==='dots'?'40%':'2px'}"><i></i></div><span>${p.n}</span>`;
+    el.addEventListener('click',()=>{
+      $('dotType').value=p.dot; $('cornerSq').value=p.cs; $('cornerDot').value=p.cd;
+      $('bgTransparent').checked=false; $('bgColorWrap').classList.remove('hide');
+      $('bg').value=p.bg; $('bgHex').textContent=p.bg.toUpperCase();
+      if(p.grad){
+        $('fillMode').dataset.mode='gradient';
+        $('fillMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.mode==='gradient'));
+        $('solidWrap').classList.add('hide'); $('gradWrap').classList.remove('hide');
+        $('g1').value=p.g1; $('g1Hex').textContent=p.g1.toUpperCase();
+        $('g2').value=p.g2; $('g2Hex').textContent=p.g2.toUpperCase();
+      }else{
+        $('fillMode').dataset.mode='solid';
+        $('fillMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.mode==='solid'));
+        $('solidWrap').classList.remove('hide'); $('gradWrap').classList.add('hide');
+        $('fg').value=p.fg; $('fgHex').textContent=p.fg.toUpperCase();
+      }
+      render(); toast(p.n+" applied");
+    });
+    pc.appendChild(el);
+  });
+
+  // exports
+  const dl=ext=>{ if($('data').value.trim()==="")return; qr.download({name:"qr-"+Date.now(),extension:ext}); toast(ext.toUpperCase()+" downloaded"); };
+  $('dlPng').addEventListener('click',()=>dl('png'));
+  $('dlSvg').addEventListener('click',()=>dl('svg'));
+  $('dlJpg').addEventListener('click',()=>dl('jpeg'));
+
+  $('copyBtn').addEventListener('click',async()=>{
+    try{
+      const blob=await qr.getRawData("png");
+      await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
+      toast("Copied to clipboard");
+    }catch(err){ toast("Copy not supported here — use Download",true); }
+  });
+
+  render();
+}
+</script>
+</body>
+</html>
