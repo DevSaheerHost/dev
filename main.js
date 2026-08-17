@@ -36,7 +36,7 @@
         title: "Stock OS",
         description: "A sleek Web OS with essential apps, colorful icons, and a simple, modern interface.",
         url: "./stock-os/v2/",
-        tags: ["Web OS", "Coding"],
+        tags: ["Web OS", "Coding", "Offline"],
         status: "live",
         color: "#A77CF2",
         icon: "phone"
@@ -45,7 +45,7 @@
         title: "Audio Visualizer",
         description: "A futuristic audio visualizer with neon effects, real-time spectrum bars, and immersive music controls.",
         url: "./audio-visualizer/",
-        tags: ["Visualization", "Audio"],
+        tags: ["Visualization", "Audio", "Offline"],
         status: "live",
         color: "#ff1a4e",
         icon: "waveform"
@@ -60,6 +60,15 @@
         status: "live",
         color: "#00ffff",
         icon: "gamepad"
+      },
+      {
+        title: "QR File transfer",
+        description: "An air-gapped file transfer app using QR codes, enabling secure offline file sharing without a network.",
+        url: "./qr-file-transfer/",
+        tags: ["Offline", "QR"],
+        status: "live",
+        color: "#ff6fb0",
+        icon: "transfer"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -81,7 +90,9 @@
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
       phone: '<rect x="6" y="2" width="12" height="20" rx="2"></rect><line x1="10" y1="18" x2="14" y2="18"></line>',
       waveform: '<line x1="4" y1="10" x2="4" y2="14"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="6" x2="16" y2="18"></line><line x1="20" y1="10" x2="20" y2="14"></line>',
-      gamepad: '<line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><circle cx="15" cy="13" r="1"></circle><circle cx="18" cy="11" r="1"></circle><path d="M17 6H7a4 4 0 0 0-4 4v4a4 4 0 0 0 4 4l1.5-2h7L17 18a4 4 0 0 0 4-4v-4a4 4 0 0 0-4-4z"></path>'
+      gamepad: '<line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><circle cx="15" cy="13" r="1"></circle><circle cx="18" cy="11" r="1"></circle><path d="M17 6H7a4 4 0 0 0-4 4v4a4 4 0 0 0 4 4l1.5-2h7L17 18a4 4 0 0 0 4-4v-4a4 4 0 0 0-4-4z"></path>',
+      transfer: '<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>',
+      qrTransfer: '<rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="4.5" y1="4.5" x2="4.5" y2="4.5"></line><line x1="4.5" y1="15.5" x2="4.5" y2="15.5"></line><path d="M14 4h7v7h-7z" opacity="0"></path><line x1="14" y1="4" x2="14" y2="10"></line><line x1="18" y1="4" x2="18" y2="10"></line><path d="M14 16h4l3-3"></path><path d="M14 20h4l3-3"></path>'
     };
 
     const arrowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';

@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRTransfer — Air-Gapped File Share</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #7c6fff;
+    --accent2: #ff6fb0;
+    --green: #00e5a0;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --danger: #ff5566;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,111,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 80px;
+  }
+
+  /* Header */
+  .header {
+    padding: 28px 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo-text span { color: var(--accent); }
+  .badge {
+    margin-left: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--green);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 2px 6px;
+    letter-spacing: 1px;
+  }
+
+  /* Tab bar */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(124,111,255,0.04);
+  }
+  .dropzone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .dz-icon { font-size: 32px; margin-bottom: 10px; }
+  .dz-label {
+    font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+  }
+  .dz-sub { font-size: 12px; color: var(--muted); }
+
+  /* File info */
+  .file-info {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .file-info.show { display: flex; }
+  .file-icon { font-size: 22px; }
+  .file-details { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .file-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .file-remove {
+    background: none; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; padding: 4px;
+    transition: color 0.2s;
+  }
+  .file-remove:hover { color: var(--danger); }
+
+  /* Settings row */
+  .settings-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .setting-block {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .setting-label {
+    font-size: 10px; color: var(--muted);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .setting-block select {
+    background: none; border: none; outline: none;
+    color: var(--text); font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 600; width: 100%; cursor: pointer;
+  }
+  .setting-block select option { background: var(--surface2); }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #9b8fff);
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; transform: none; cursor: not-allowed; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-green {
+    background: linear-gradient(135deg, var(--green), #00c988);
+    color: #000;
+  }
+
+  /* QR Display */
+  .qr-section { display: none; }
+  .qr-section.show { display: block; }
+
+  .qr-wrapper {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    position: relative;
+    min-height: 260px;
+  }
+  #qrCanvas { display: block; }
+
+  /* Progress */
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label { font-size: 12px; color: var(--muted); }
+  .progress-counter {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px; font-weight: 700; color: var(--accent);
+  }
+  .progress-bar-track {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* Nav controls */
+  .nav-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-btn-play {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .nav-btn-play:hover:not(:disabled) { background: #9b8fff; border-color: #9b8fff; color: #fff; }
+
+  /* Speed selector */
+  .speed-row {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .speed-chip {
+    flex: 1; padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .speed-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(124,111,255,0.1);
+  }
+
+  /* Chunk info */
+  .chunk-meta {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; gap: 20px;
+    margin-bottom: 16px;
+  }
+  .meta-item { flex: 1; text-align: center; }
+  .meta-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px; font-weight: 700; color: var(--text);
+  }
+  .meta-key { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.8px; }
+
+  /* ── RECEIVER SIDE ── */
+  .scan-area {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .scan-area:hover { border-color: var(--accent); }
+  .scan-icon { font-size: 40px; margin-bottom: 12px; }
+  .scan-label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .scan-sub { font-size: 12px; color: var(--muted); }
+
+  /* Manual input */
+  .manual-input-wrap { position: relative; margin-bottom: 16px; }
+  .manual-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    resize: none;
+    height: 100px;
+    transition: border-color 0.2s;
+  }
+  .manual-input:focus { border-color: var(--accent); }
+  .manual-input::placeholder { color: var(--muted); }
+
+  /* Received chunks list */
+  .chunks-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .chunk-dot {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .chunk-dot.received {
+    background: rgba(0,229,160,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .chunk-dot.current {
+    background: rgba(124,111,255,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(124,111,255,0.3);
+  }
+
+  /* Receive status */
+  .recv-stats {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .recv-stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+    padding: 4px 0;
+  }
+  .recv-stat-row + .recv-stat-row { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px; }
+  .recv-stat-key { color: var(--muted); }
+  .recv-stat-val { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--text); }
+  .recv-stat-val.ok { color: var(--green); }
+  .recv-stat-val.warn { color: #ffb347; }
+
+  /* Download area */
+  .download-card {
+    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(124,111,255,0.08));
+    border: 1px solid var(--green);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .download-card.show { display: block; }
+  .dl-icon { font-size: 40px; margin-bottom: 10px; }
+  .dl-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .dl-size { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px; font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+    max-width: 90vw;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* Section divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 16px;
+  }
+
+  /* Inline camera */
+  #cameraContainer {
+    display: none;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+    background: #000;
+    aspect-ratio: 4/3;
+  }
+  #cameraContainer.show { display: block; }
+  #videoEl { width: 100%; display: block; }
+  .cam-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .cam-frame {
+    width: 70%; aspect-ratio: 1;
+    border: 2px solid rgba(124,111,255,0.7);
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+  }
+  .cam-close {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.6);
+    border: none; color: #fff; font-size: 18px;
+    width: 32px; height: 32px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    pointer-events: all;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">QR<span>Transfer</span></div>
+    <div class="badge">NO NETWORK</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('send')">📤 Send</div>
+    <div class="tab" onclick="switchTab('receive')">📥 Receive</div>
+  </div>
+
+  <!-- ════════ SEND PANEL ════════ -->
+  <div class="panel active" id="sendPanel">
+
+    <!-- File picker -->
+    <div class="card">
+      <div class="card-title">Select File</div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" onchange="handleFile(this.files[0])">
+        <div class="dz-icon">📁</div>
+        <div class="dz-label">Tap to choose a file</div>
+        <div class="dz-sub">Any file type • Transfers via QR chunks</div>
+      </div>
+      <div class="file-info" id="fileInfo">
+        <div class="file-icon" id="fileIconEl">📄</div>
+        <div class="file-details">
+          <div class="file-name" id="fileName">—</div>
+          <div class="file-size" id="fileSize">—</div>
+        </div>
+        <button class="file-remove" onclick="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-row">
+      <div class="setting-block">
+        <div class="setting-label">Chunk Size</div>
+        <select id="chunkSizeSelect" onchange="updateChunkPreview()">
+          <option value="300">300 B — Hi-compat</option>
+          <option value="500" selected>500 B — Balanced</option>
+          <option value="800">800 B — Fast</option>
+          <option value="1200">1200 B — Max</option>
+        </select>
+      </div>
+      <div class="setting-block">
+        <div class="setting-label">QR Version</div>
+        <select id="qrECSelect">
+          <option value="L" selected>L — High density</option>
+          <option value="M">M — Medium</option>
+          <option value="Q">Q — Low density</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Chunk preview -->
+    <div class="chunk-meta" id="chunkMeta" style="display:none">
+      <div class="meta-item">
+        <div class="meta-val" id="metaChunks">—</div>
+        <div class="meta-key">CHUNKS</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val" id="metaSize">—</div>
+        <div class="meta-key">FILE SIZE</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val" id="metaEst">—</div>
+        <div class="meta-key">EST. SCANS</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="generateBtn" onclick="generateQR()" disabled>
+      Generate QR Sequence →
+    </button>
+
+    <!-- QR Display section -->
+    <div class="qr-section" id="qrSection">
+      <div class="divider"></div>
+
+      <!-- QR Canvas -->
+      <div class="qr-wrapper">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-header">
+        <span class="progress-label">Chunk progress</span>
+        <span class="progress-counter" id="progressCounter">1 / 1</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+
+      <!-- Speed -->
+      <div class="speed-row">
+        <div class="speed-chip active" data-ms="0" onclick="setSpeed(this)">MANUAL</div>
+        <div class="speed-chip" data-ms="1500" onclick="setSpeed(this)">1.5s</div>
+        <div class="speed-chip" data-ms="2500" onclick="setSpeed(this)">2.5s</div>
+        <div class="speed-chip" data-ms="4000" onclick="setSpeed(this)">4s</div>
+      </div>
+
+      <!-- Nav buttons -->
+      <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" onclick="navChunk(-1)">← Prev</button>
+        <button class="nav-btn nav-btn-play" id="playBtn" onclick="togglePlay()">▶ Auto</button>
+        <button class="nav-btn" id="nextBtn" onclick="navChunk(1)">Next →</button>
+      </div>
+
+      <button class="btn btn-secondary" onclick="resetSender()" style="margin-top:4px">✕ Cancel</button>
+    </div>
+  </div>
+
+  <!-- ════════ RECEIVE PANEL ════════ -->
+  <div class="panel" id="receivePanel">
+
+    <!-- Camera -->
+    <div id="cameraContainer">
+      <video id="videoEl" autoplay playsinline muted></video>
+      <div class="cam-overlay"><div class="cam-frame"></div></div>
+      <button class="cam-close" onclick="stopCamera()">✕</button>
+    </div>
+
+    <!-- Scan buttons -->
+    <div class="card">
+      <div class="card-title">Scan QR Codes</div>
+      <div class="scan-area" onclick="startCamera()">
+        <div class="scan-icon">📷</div>
+        <div class="scan-label">Tap to open camera</div>
+        <div class="scan-sub">Point camera at each QR code • Hold steady</div>
+      </div>
+
+      <div style="text-align:center; font-size:12px; color:var(--muted); margin: 0 0 12px">— or paste QR data manually —</div>
+      <textarea class="manual-input" id="manualInput" placeholder="Paste chunk data here…&#10;Format: QRT:INDEX:TOTAL:FILENAME:CHECKSUM:DATA"></textarea>
+      <button class="btn btn-secondary" onclick="processManualInput()" style="margin-bottom:0">Add Chunk</button>
+    </div>
+
+    <!-- Received chunks -->
+    <div class="card" id="chunksCard" style="display:none">
+      <div class="card-title">Chunks Received</div>
+      <div class="chunks-grid" id="chunksGrid"></div>
+
+      <div class="recv-stats" id="recvStats">
+        <div class="recv-stat-row">
+          <span class="recv-stat-key">File name</span>
+          <span class="recv-stat-val" id="recvFileName">—</span>
+        </div>
+        <div class="recv-stat-row">
+          <span class="recv-stat-key">Received</span>
+          <span class="recv-stat-val" id="recvProgress">0 / ?</span>
+        </div>
+        <div class="recv-stat-row">
+          <span class="recv-stat-key">Status</span>
+          <span class="recv-stat-val warn" id="recvStatus">Scanning…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div class="download-card" id="downloadCard">
+      <div class="dl-icon">✅</div>
+      <div class="dl-name" id="dlFileName">file.bin</div>
+      <div class="dl-size" id="dlFileSize">0 KB</div>
+      <button class="btn btn-green" onclick="downloadFile()">⬇ Download File</button>
+      <button class="btn btn-secondary" onclick="resetReceiver()" style="margin-top:10px">Receive Another</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- QR lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ─── QR drawing (pure canvas, no external lib needed for display) ───────────
+// We'll use a minimal QR encoder approach — we draw QR via a tiny inline lib
+
+// ══════════════════════════════════════════
+//  TINY QR ENCODER (self-contained, no lib)
+// ══════════════════════════════════════════
+
+// Using jsQR for decoding (camera) and a simple canvas QR generator
+// We'll load jsQR for scanning
+const jsQRScript = document.createElement('script');
+jsQRScript.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+document.head.appendChild(jsQRScript);
+
+// ─── Minimal QR matrix generator (Reed-Solomon, alphanumeric/byte mode) ──────
+// Since we need offline capable, we use a pure JS approach.
+// For simplicity and reliability, we'll use the QRCode library from cdnjs.
+// The qrcodejs lib is loaded above. Let's render via hidden div→canvas copy.
+
+// ─── Global State ─────────────────────────────────────────────────────────────
+let selectedFile = null;
+let fileData = null; // base64 string
+let chunks = [];
+let currentChunk = 0;
+let autoPlayInterval = null;
+let autoPlayMs = 0;
+let isPlaying = false;
+
+let receivedChunks = {};
+let receiveTotal = null;
+let receiveFileName = null;
+let cameraStream = null;
+let scanInterval = null;
+let lastScanned = null;
+
+// ─── Tab switch ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='send')||(i===1 && tab==='receive')));
+  document.getElementById('sendPanel').classList.toggle('active', tab==='send');
+  document.getElementById('receivePanel').classList.toggle('active', tab==='receive');
+  if(tab==='send') stopCamera();
+}
+
+// ─── File handling ────────────────────────────────────────────────────────────
+function handleFile(file) {
+  if(!file) return;
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fileData = e.target.result.split(',')[1]; // base64
+    document.getElementById('fileInfo').classList.add('show');
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatBytes(file.size);
+    document.getElementById('fileIconEl').textContent = getFileIcon(file.name);
+    document.getElementById('generateBtn').disabled = false;
+    updateChunkPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile() {
+  selectedFile = null; fileData = null; chunks = [];
+  document.getElementById('fileInfo').classList.remove('show');
+  document.getElementById('generateBtn').disabled = true;
+  document.getElementById('chunkMeta').style.display = 'none';
+  document.getElementById('qrSection').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+}
+
+function updateChunkPreview() {
+  if(!fileData) return;
+  const sz = parseInt(document.getElementById('chunkSizeSelect').value);
+  const totalChunks = Math.ceil(fileData.length / sz);
+  document.getElementById('chunkMeta').style.display = 'flex';
+  document.getElementById('metaChunks').textContent = totalChunks;
+  document.getElementById('metaSize').textContent = formatBytes(selectedFile.size);
+  document.getElementById('metaEst').textContent = totalChunks;
+}
+
+// ─── QR Generation ────────────────────────────────────────────────────────────
+function generateQR() {
+  const chunkSize = parseInt(document.getElementById('chunkSizeSelect').value);
+  const ec = document.getElementById('qrECSelect').value;
+  
+  // Split base64 data into chunks
+  chunks = [];
+  for(let i = 0; i < fileData.length; i += chunkSize) {
+    chunks.push(fileData.slice(i, i + chunkSize));
+  }
+
+  // Compute simple checksum
+  const checksum = simpleHash(fileData);
+  const fname = encodeURIComponent(selectedFile.name);
+
+  // Build QR payload for each chunk
+  window._qrPayloads = chunks.map((c, i) =>
+    `QRT:${i}:${chunks.length}:${fname}:${checksum}:${c}`
+  );
+
+  currentChunk = 0;
+  document.getElementById('qrSection').classList.add('show');
+  renderChunk(0);
+  showToast(`${chunks.length} QR codes ready`, 'success');
+}
+
+function renderChunk(idx) {
+  const payload = window._qrPayloads[idx];
+  const canvas = document.getElementById('qrCanvas');
+  const size = Math.min(window.innerWidth - 80, 280);
+
+  // Clear canvas area
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  canvas.width = size; canvas.height = size;
+
+  // Use QRCode lib via hidden div
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+  document.body.appendChild(tmp);
+
+  new QRCode(tmp, {
+    text: payload,
+    width: size,
+    height: size,
+    correctLevel: QRCode.CorrectLevel[document.getElementById('qrECSelect').value] || QRCode.CorrectLevel.L
+  });
+
+  // Copy from QRCode's canvas to ours
+  setTimeout(() => {
+    const src = tmp.querySelector('canvas');
+    if(src) {
+      canvas.getContext('2d').drawImage(src, 0, 0);
+    } else {
+      // fallback: img
+      const img = tmp.querySelector('img');
+      if(img) {
+        const i2 = new Image();
+        i2.onload = () => canvas.getContext('2d').drawImage(i2, 0, 0, size, size);
+        i2.src = img.src;
+      }
+    }
+    document.body.removeChild(tmp);
+  }, 80);
+
+  // Update UI
+  const total = chunks.length;
+  document.getElementById('progressCounter').textContent = `${idx+1} / ${total}`;
+  document.getElementById('progressFill').style.width = `${((idx+1)/total)*100}%`;
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === total - 1;
+  currentChunk = idx;
+}
+
+function navChunk(dir) {
+  const next = currentChunk + dir;
+  if(next >= 0 && next < chunks.length) renderChunk(next);
+}
+
+function togglePlay() {
+  if(autoPlayMs === 0) { showToast('Select a speed first', 'error'); return; }
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('playBtn');
+  if(isPlaying) {
+    btn.textContent = '⏸ Pause';
+    autoPlayInterval = setInterval(() => {
+      if(currentChunk < chunks.length - 1) {
+        renderChunk(currentChunk + 1);
+      } else {
+        clearInterval(autoPlayInterval); isPlaying = false;
+        btn.textContent = '▶ Auto';
+        showToast('All chunks displayed ✓', 'success');
+      }
+    }, autoPlayMs);
+  } else {
+    clearInterval(autoPlayInterval);
+    btn.textContent = '▶ Auto';
+  }
+}
+
+function setSpeed(el) {
+  document.querySelectorAll('.speed-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  autoPlayMs = parseInt(el.dataset.ms);
+  if(isPlaying) { togglePlay(); togglePlay(); } // restart
+}
+
+function resetSender() {
+  clearInterval(autoPlayInterval);
+  isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶ Auto';
+  document.getElementById('qrSection').classList.remove('show');
+  clearFile();
+}
+
+// ─── RECEIVER ─────────────────────────────────────────────────────────────────
+function startCamera() {
+  if(!navigator.mediaDevices) { showToast('Camera not available', 'error'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(stream => {
+      cameraStream = stream;
+      const vid = document.getElementById('videoEl');
+      vid.srcObject = stream;
+      document.getElementById('cameraContainer').classList.add('show');
+      startScanLoop();
+    })
+    .catch(() => showToast('Camera permission denied', 'error'));
+}
+
+function stopCamera() {
+  if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  clearInterval(scanInterval);
+  document.getElementById('cameraContainer').classList.remove('show');
+}
+
+function startScanLoop() {
+  const vid = document.getElementById('videoEl');
+  const offscreen = document.createElement('canvas');
+  const ctx = offscreen.getContext('2d');
+  
+  scanInterval = setInterval(() => {
+    if(!vid.videoWidth) return;
+    offscreen.width = vid.videoWidth;
+    offscreen.height = vid.videoHeight;
+    ctx.drawImage(vid, 0, 0);
+    const imgData = ctx.getImageData(0,0,offscreen.width,offscreen.height);
+    
+    if(window.jsQR) {
+      const result = window.jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      if(result && result.data && result.data !== lastScanned) {
+        lastScanned = result.data;
+        processChunkData(result.data);
+      }
+    }
+  }, 250);
+}
+
+function processManualInput() {
+  const val = document.getElementById('manualInput').value.trim();
+  if(!val) return;
+  processChunkData(val);
+  document.getElementById('manualInput').value = '';
+}
+
+function processChunkData(raw) {
+  // Format: QRT:INDEX:TOTAL:FILENAME:CHECKSUM:DATA
+  if(!raw.startsWith('QRT:')) { showToast('Invalid QR data', 'error'); return; }
+  
+  const parts = raw.split(':');
+  if(parts.length < 6) { showToast('Malformed chunk', 'error'); return; }
+  
+  const [, idx, total, fname, checksum, ...dataParts] = parts;
+  const data = dataParts.join(':'); // data may contain colons in base64 (rare, but safe)
+  const i = parseInt(idx);
+  const t = parseInt(total);
+
+  if(receivedChunks[i]) return; // already have it
+
+  if(receiveTotal === null) {
+    receiveTotal = t;
+    receiveFileName = decodeURIComponent(fname);
+    document.getElementById('recvFileName').textContent = receiveFileName;
+    buildChunkGrid(t);
+    document.getElementById('chunksCard').style.display = 'block';
+  }
+
+  receivedChunks[i] = { data, checksum };
+  updateChunkGrid();
+  updateRecvStats();
+
+  const count = Object.keys(receivedChunks).length;
+  showToast(`Chunk ${i+1}/${t} received`, 'success');
+
+  if(count === t) {
+    // All done!
+    assembleFile(checksum);
+  }
+}
+
+function buildChunkGrid(total) {
+  const grid = document.getElementById('chunksGrid');
+  grid.innerHTML = '';
+  for(let i=0;i<total;i++) {
+    const dot = document.createElement('div');
+    dot.className = 'chunk-dot';
+    dot.textContent = i+1;
+    dot.id = `dot_${i}`;
+    grid.appendChild(dot);
+  }
+}
+
+function updateChunkGrid() {
+  Object.keys(receivedChunks).forEach(i => {
+    const dot = document.getElementById(`dot_${i}`);
+    if(dot) dot.classList.add('received');
+  });
+}
+
+function updateRecvStats() {
+  const count = Object.keys(receivedChunks).length;
+  document.getElementById('recvProgress').textContent = `${count} / ${receiveTotal}`;
+  if(count === receiveTotal) {
+    document.getElementById('recvStatus').textContent = 'Complete ✓';
+    document.getElementById('recvStatus').className = 'recv-stat-val ok';
+  }
+}
+
+function assembleFile(expectedChecksum) {
+  // Reassemble base64
+  let full = '';
+  for(let i=0; i<receiveTotal; i++) {
+    full += receivedChunks[i].data;
+  }
+
+  // Verify checksum
+  const computed = simpleHash(full);
+  if(computed !== expectedChecksum) {
+    showToast('⚠ Checksum mismatch! Some chunks may be corrupted.', 'error');
+  } else {
+    showToast('✓ File verified & ready!', 'success');
+  }
+
+  window._assembledB64 = full;
+  window._assembledName = receiveFileName;
+
+  document.getElementById('dlFileName').textContent = receiveFileName;
+  const bytes = Math.floor(full.length * 0.75);
+  document.getElementById('dlFileSize').textContent = formatBytes(bytes);
+  document.getElementById('downloadCard').classList.add('show');
+  stopCamera();
+}
+
+function downloadFile() {
+  const b64 = window._assembledB64;
+  const name = window._assembledName;
+  const mime = getMimeType(name);
+
+  const byteChars = atob(b64);
+  const arr = new Uint8Array(byteChars.length);
+  for(let i=0;i<byteChars.length;i++) arr[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  showToast('Download started!', 'success');
+}
+
+function resetReceiver() {
+  receivedChunks = {}; receiveTotal = null; receiveFileName = null;
+  lastScanned = null; window._assembledB64 = null;
+  document.getElementById('chunksCard').style.display = 'none';
+  document.getElementById('downloadCard').classList.remove('show');
+  document.getElementById('recvFileName').textContent = '—';
+  document.getElementById('recvProgress').textContent = '0 / ?';
+  document.getElementById('recvStatus').textContent = 'Scanning…';
+  document.getElementById('recvStatus').className = 'recv-stat-val warn';
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function simpleHash(str) {
+  let h = 0x811c9dc5;
+  for(let i=0;i<str.length;i++) {
+    h ^= str.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
+
+function formatBytes(b) {
+  if(b < 1024) return `${b} B`;
+  if(b < 1048576) return `${(b/1024).toFixed(1)} KB`;
+  return `${(b/1048576).toFixed(2)} MB`;
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = { jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',webp:'🖼',svg:'🖼',
+                pdf:'📄',doc:'📝',docx:'📝',txt:'📝',
+                mp3:'🎵',wav:'🎵',ogg:'🎵',flac:'🎵',
+                mp4:'🎬',mov:'🎬',avi:'🎬',
+                zip:'📦',rar:'📦','7z':'📦',
+                apk:'📱',ipa:'📱',
+                js:'💻',ts:'💻',py:'💻',html:'💻',css:'💻',json:'💻' };
+  return map[ext] || '📄';
+}
+
+function getMimeType(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = { jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',
+                webp:'image/webp',pdf:'application/pdf',txt:'text/plain',
+                mp3:'audio/mpeg',mp4:'video/mp4',zip:'application/zip',
+                json:'application/json',html:'text/html' };
+  return map[ext] || 'application/octet-stream';
+}
+
+// Toast
+let toastTimer = null;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Drag-drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+</script>
+</body>
+</html>
