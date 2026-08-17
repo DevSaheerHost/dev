@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHONK VISUALIZER</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+  <!-- Background ambient layers -->
+  <div class="bg-grid"></div>
+  <div class="bg-vignette"></div>
+  <div class="bass-pulse" id="bassPulse"></div>
+
+  <!-- Main canvas for frequency visualization -->
+  <canvas id="visualizerCanvas"></canvas>
+
+  <!-- Top title bar -->
+  <header class="title-bar">
+    <div class="title-left">
+      <span class="title-tag">// PHONK</span>
+      <h1 class="title-main">AUDIO<span class="accent"> VISUALIZER</span></h1>
+    </div>
+    <div class="title-right">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-label" id="statusLabel">STANDBY</span>
+    </div>
+  </header>
+
+  <!-- Track info bar -->
+  <div class="track-info" id="trackInfo">
+    <div class="track-name" id="trackName">— NO TRACK LOADED —</div>
+    <div class="track-meta" id="trackMeta">UPLOAD A FILE TO BEGIN</div>
+  </div>
+
+  <!-- Glassmorphism control panel -->
+  <div class="control-panel" id="controlPanel">
+
+    <!-- Progress / seek bar -->
+    <div class="seek-row">
+      <span class="time-label" id="currentTime">0:00</span>
+      <div class="seek-bar-wrap">
+        <div class="seek-bar-bg">
+          <div class="seek-bar-fill" id="seekFill"></div>
+          <div class="seek-bar-head" id="seekHead"></div>
+        </div>
+        <input
+          type="range"
+          class="seek-range"
+          id="seekRange"
+          min="0"
+          max="100"
+          step="0.1"
+          value="0"
+        />
+      </div>
+      <span class="time-label" id="totalTime">0:00</span>
+    </div>
+
+    <!-- Main controls row -->
+    <div class="controls-row">
+
+      <!-- Upload button -->
+      <label class="btn btn-upload" for="audioFileInput" title="Upload Audio File">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span class="btn-label">UPLOAD</span>
+        <input type="file" id="audioFileInput" accept="audio/*" hidden />
+      </label>
+
+      <!-- Skip backward -->
+      <button class="btn btn-skip" id="btnRestart" title="Restart">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+        </svg>
+      </button>
+
+      <!-- Play / Pause -->
+      <button class="btn btn-play" id="btnPlayPause" title="Play / Pause" disabled>
+        <svg class="btn-icon icon-play" id="iconPlay" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5,3 19,12 5,21"/>
+        </svg>
+        <svg class="btn-icon icon-pause hidden" id="iconPause" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+
+      <!-- Stop -->
+      <button class="btn btn-skip" id="btnStop" title="Stop">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="6" width="12" height="12"/>
+        </svg>
+      </button>
+
+      <!-- Volume group -->
+      <div class="volume-group">
+        <button class="btn btn-mute" id="btnMute" title="Mute / Unmute">
+          <svg class="btn-icon" id="iconVolume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+        </button>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1" />
+      </div>
+
+      <!-- Visualizer mode toggle -->
+      <div class="mode-group">
+        <button class="mode-btn active" id="modeBars" data-mode="bars">BARS</button>
+        <button class="mode-btn" id="modeWave" data-mode="wave">WAVE</button>
+        <button class="mode-btn" id="modeCircle" data-mode="circle">RADIAL</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
