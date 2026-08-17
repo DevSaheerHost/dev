@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saheer's Lab</title>
+
+  <style>
+    :root{
+      --bg: #0e0f14;
+      --panel: #171a22;
+      --panel-2: #1d212b;
+      --border: #262b38;
+      --accent: #4da3ff;
+      --accent-2: #7cf29c;
+      --text: #e8eaf0;
+      --text-dim: #8a8fa3;
+      --radius: 16px;
+    }
+
+    *{ box-sizing: border-box; }
+
+    html, body{
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100%;
+    }
+
+    body{
+      background:
+        radial-gradient(circle at 15% 0%, rgba(77,163,255,0.08), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(124,242,156,0.06), transparent 40%),
+        var(--bg);
+    }
+
+    /* ---------- Header ---------- */
+    header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 24px 20px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark{
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #2b6fd1);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(77,163,255,0.3);
+      flex-shrink: 0;
+    }
+
+    .brand-mark svg{ width: 22px; height: 22px; }
+
+    .brand-text strong{ display: block; font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
+    .brand-text span{ font-size: 12.5px; color: var(--text-dim); }
+
+    .header-right{
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .count-pill{
+      font-size: 12px;
+      color: var(--text-dim);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero{
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 12px 24px 8px;
+    }
+
+    .hero h1{
+      font-size: clamp(26px, 4vw, 36px);
+      margin: 0 0 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .hero h1 span{
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p{
+      margin: 0;
+      color: var(--text-dim);
+      font-size: 14.5px;
+      max-width: 560px;
+      line-height: 1.5;
+    }
+
+    /* ---------- Search / filter ---------- */
+    .toolbar{
+      max-width: 1080px;
+      margin: 22px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-box{
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .search-box svg{ width: 16px; height: 16px; color: var(--text-dim); flex-shrink: 0; }
+
+    .search-box input{
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13.5px;
+      width: 100%;
+    }
+
+    .search-box input::placeholder{ color: var(--text-dim); }
+
+    .tag-filters{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag-chip{
+      font-size: 12.5px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .tag-chip:hover{ border-color: #3a3f4f; color: var(--text); }
+    .tag-chip.active{ background: var(--accent); border-color: var(--accent); color: #0a1120; font-weight: 600; }
+
+    /* ---------- Grid ---------- */
+    .grid{
+      max-width: 1080px;
+      margin: 24px auto 60px;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-decoration: none;
+      color: var(--text);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .card::before{
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(77,163,255,0.06), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .card:hover{
+      transform: translateY(-3px);
+      border-color: #3a3f4f;
+      background: var(--panel-2);
+    }
+
+    .card:hover::before{ opacity: 1; }
+
+    .card-top{
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .card-icon{
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-icon svg{ width: 22px; height: 22px; color: #0a1120; }
+
+    .status-dot{
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .status-dot i{
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(124,242,156,0.7);
+    }
+
+    .status-dot.soon i{ background: #f5a623; box-shadow: 0 0 6px rgba(245,166,35,0.7); }
+
+    .card h3{
+      margin: 0;
+      font-size: 17px;
+      font-weight: 650;
+    }
+
+    .card p{
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .card-tags{
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .card-tags span{
+      font-size: 10.5px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      background: rgba(77,163,255,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(77,163,255,0.2);
+    }
+
+    .card-footer{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 12.5px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .card-footer svg{ width: 15px; height: 15px; transition: transform 0.15s; }
+    .card:hover .card-footer svg{ transform: translateX(3px); }
+
+    /* Disabled / coming soon card */
+    .card.disabled{
+      cursor: default;
+      opacity: 0.55;
+    }
+
+    .card.disabled:hover{ transform: none; border-color: var(--border); background: var(--panel); }
+    .card.disabled .card-footer{ color: var(--text-dim); }
+
+    .empty-state{
+      max-width: 1080px;
+      margin: 40px auto;
+      padding: 0 24px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13.5px;
+      display: none;
+    }
+
+    .empty-state.show{ display: block; }
+
+    footer{
+      text-align: center;
+      padding: 24px;
+      color: var(--text-dim);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <strong>Saheer's Lab</strong>
+        <span>dev / projects</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="count-pill" id="countPill">0 projects</div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Build. Ship. <span>Repeat.</span></h1>
+    <p>A collection of tools, viewers and experiments — frontend builds, 3D visualizations and utilities, all in one place.</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search projects...">
+    </div>
+    <div class="tag-filters" id="tagFilters"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="emptyState">No projects match your search.</div>
+
+  <footer>© <span id="year"></span> Saheer's Lab — Malappuram, Kerala</footer>
+
+  <script src="./main.js">
+  </script>
+
+</body>
+</html>
