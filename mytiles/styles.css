@@ -5,72 +5,105 @@
 }
 
 :root {
-    /* Background Colors */
+    /* Background */
     --bg-body: #f7f8fc;
     --bg-surface: #ffffff;
+
     --bg-icon-image: #edf4ff;
     --bg-icon-link: #eef9f5;
     --bg-badge-future: #e5f7f0;
     --bg-arrow: #f4f6fa;
 
-    /* Text Colors */
+    /* Text */
     --text-primary: #182033;
     --text-secondary: #7a8296;
     --text-badge-future: #20a47e;
 
-    /* Border & Shadow Colors */
+    /* Border & Shadow */
     --border-header: #e7e9ef;
     --border-tile: #e5e8ef;
     --border-tile-hover: #d5d9e3;
     --shadow-hover: rgba(30, 40, 70, .07);
 
-    /* Icon Colors */
+    /* Icons */
     --icon-image: #3f7df5;
     --icon-link: #20aa82;
     --icon-arrow: #687187;
 }
 
+
 body {
     font-family: Inter, Arial, sans-serif;
+
     background: var(--bg-body);
     color: var(--text-primary);
+
 }
 
-/* HEADER */
+
+/* ========================================
+   HEADER
+======================================== */
+
 .header {
     height: 70px;
+
     display: flex;
     align-items: center;
+
     padding: 0 28px;
+
     background: var(--bg-surface);
+
     border-bottom: 1px solid var(--border-header);
 }
 
 .header h1 {
     font-size: 22px;
     font-weight: 700;
+
     letter-spacing: -0.4px;
+
+    white-space: nowrap;
 }
 
-/* CONTENT */
+
+/* ========================================
+   TILES
+======================================== */
+
 .tiles {
-    max-width: 620px;
+    width: 100%;
+    max-width: none;
+
+    display: grid;
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    gap: 14px;
+
     padding: 22px 28px;
+
+    overflow-x: auto;
 }
 
-/* TILE */
+
+/* ========================================
+   TILE
+======================================== */
+
 .tile {
     height: 82px;
+
+    min-width: 0;
 
     display: flex;
     align-items: center;
 
     padding: 12px 16px;
-    margin-bottom: 12px;
 
     background: var(--bg-surface);
 
     border: 1px solid var(--border-tile);
+
     border-radius: 14px;
 
     cursor: pointer;
@@ -81,39 +114,50 @@ body {
         border-color .18s ease;
 }
 
+
 .tile:hover {
     transform: translateY(-2px);
+
     border-color: var(--border-tile-hover);
 
     box-shadow:
         0 8px 22px var(--shadow-hover);
 }
 
-/* ICON */
+
+/* ========================================
+   ICON
+======================================== */
+
 .icon {
     width: 48px;
     height: 48px;
+
+    flex-shrink: 0;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     border-radius: 12px;
-
-    flex-shrink: 0;
 }
+
 
 .icon svg {
     width: 25px;
     height: 25px;
 
     fill: none;
+
     stroke-width: 2;
+
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
+
 /* IMAGE */
+
 .image-icon {
     background: var(--bg-icon-image);
 }
@@ -122,7 +166,9 @@ body {
     stroke: var(--icon-image);
 }
 
+
 /* LINK */
+
 .link-icon {
     background: var(--bg-icon-link);
 }
@@ -131,45 +177,82 @@ body {
     stroke: var(--icon-link);
 }
 
-/* TEXT */
+
+/* ========================================
+   TEXT
+======================================== */
+
 .info {
-    margin-left: 15px;
+    min-width: 0;
+
     flex: 1;
+
+    margin-left: 15px;
 }
 
+
 .title {
+    min-width: 0;
+
     display: flex;
     align-items: center;
+
     gap: 9px;
 
     font-size: 16px;
     font-weight: 650;
+
+    white-space: nowrap;
 }
+
 
 .description {
     margin-top: 4px;
 
     font-size: 13px;
+
     color: var(--text-secondary);
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 }
 
-/* FUTURE */
+
+/* ========================================
+   FUTURE BADGE
+======================================== */
+
 .future {
+    flex-shrink: 0;
+
     padding: 3px 8px;
 
     font-size: 10px;
+
     font-weight: 700;
 
     color: var(--text-badge-future);
+
     background: var(--bg-badge-future);
 
     border-radius: 20px;
+
+    white-space: nowrap;
 }
 
-/* ARROW */
+
+/* ========================================
+   ARROW
+======================================== */
+
 .arrow {
     width: 34px;
     height: 34px;
+
+    flex-shrink: 0;
 
     display: flex;
     align-items: center;
@@ -180,119 +263,95 @@ body {
     background: var(--bg-arrow);
 }
 
+
 .arrow svg {
     width: 17px;
     height: 17px;
 
     fill: none;
+
     stroke: var(--icon-arrow);
 
     stroke-width: 2;
+
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
-/* MOBILE */
-@media (max-width: 600px) {
 
-    .header {
-        height: 60px;
-        padding: 0 18px;
-    }
-
-    .header h1 {
-        font-size: 19px;
-    }
-
-    .tiles {
-        padding: 16px 14px;
-    }
-
-    .tile {
-        height: 72px;
-        padding: 10px 12px;
-    }
-
-    .icon {
-        width: 43px;
-        height: 43px;
-    }
-
-    .icon svg {
-        width: 22px;
-        height: 22px;
-    }
-
-    .info {
-        margin-left: 12px;
-    }
-
-    .title {
-        font-size: 15px;
-    }
-
-    .description {
-        font-size: 12px;
-    }
-
-    .arrow {
-        width: 30px;
-        height: 30px;
-    }
-}
-
-
-
-/* Toast Style */
+/* ========================================
+   TOAST
+======================================== */
 
 .toast {
     position: fixed;
+
     left: 50%;
     bottom: 25px;
 
     display: flex;
     align-items: center;
+
     gap: 10px;
 
     padding: 12px 18px;
 
     background: #1f2937;
-    color: #fff;
+
+    color: #ffffff;
 
     border-radius: 10px;
 
     font-size: 14px;
     font-weight: 500;
 
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.15);
 
-    transform: translate(-50%, 80px);
+    transform:
+        translate(-50%, 80px);
+
     opacity: 0;
+
     pointer-events: none;
 
     transition:
-        transform 0.25s ease,
-        opacity 0.25s ease;
+        transform .25s ease,
+        opacity .25s ease;
 }
 
+
 .toast.show {
-    transform: translate(-50%, 0);
+    transform:
+        translate(-50%, 0);
+
     opacity: 1;
 }
+
 
 .toast-icon {
     width: 20px;
     height: 20px;
+
+    flex-shrink: 0;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: #22c55e;
-    color: white;
+
+    color: #ffffff;
 
     border-radius: 50%;
 
     font-size: 12px;
     font-weight: 700;
+}
+
+
+.toast-icon svg {
+    width: 14px;
+    height: 14px;
+    display: block;
 }
