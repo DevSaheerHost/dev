@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resturant</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+      <h1 class="logo">R<span>T</span></h1>
+    </header>
+  <main class="welcome page" id="welcome">
+
+    <div class="container">
+      <h1>Welcome!</h1>
+      <p class="title">Choose something delicious</p>
+      
+      </div>
+      <div class="hori-auto-scroll" id="welcome_scroll_dish"></div>
+    <div class="space" style="height: 150px;"></div>
+    <button class="explore" onclick="navigateTo('menu')">Explore store</button>
+  </main>
+  
+  <main class="page menu hidden" id="menu">
+    <p class="title">What would you like?</p>
+    <div class="categories">
+      <span class="category active">All</span>
+      <span class="category">Biryani</span>
+      <span class="category">Rice</span>
+      <span class="category">Drinks</span>
+    </div>
+    
+    <div class="product-list" id="product_list">
+      <div class="card product-item">
+        <img src="./assets/dishes/chicken-biryani.jpg" alt="i" />
+        
+        <div class="details">
+          <p class="name">Chicken Biryani</p>
+          <p class="price">₹180</p>
+        </div>
+      </div>
+      <div class="card product-item">
+        <img src="./assets/dishes/chicken-biryani.jpg" alt="i" />
+        
+        <div class="details">
+          <p class="name">Chicken Biryani</p>
+          <p class="price">₹180</p>
+        </div>
+      </div>
+      <div class="card product-item">
+        <img src="./assets/dishes/chicken-biryani.jpg" alt="i" />
+        
+        <div class="details">
+  <p class="name">Chicken Biryani</p>
+  <p class="price">₹180</p>
+</div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="./script.js"></script>
+</body>
+
+</html>
