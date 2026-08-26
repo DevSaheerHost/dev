@@ -57,7 +57,6 @@ const autoScrollDish = (dishes, limit = 3) => {
   });
 };
 
-autoScrollDish(dishes, 5);
 
 
 const container = $('#welcome_scroll_dish');
