@@ -6,6 +6,15 @@
 
     const projects = [
       {
+        title: "Quotient",
+        description: "Freelance pricing studio. Describe a project and get a defensible price range, the reasoning behind it, an hourly equivalent and a quotation you can export.",
+        url: "./freelance-rate-calculator/",
+        tags: ["Freelance", "Pricing", "Export"],
+        status: "live",
+        color: "#0C6B66",
+        icon: "tag"
+      },
+      {
         title: "Uno Meter",
         description: "Speed up your work with an Arduino multimeter. Voltage measurement, boot sequence and more.",
         url: `${baseUrl}/uno-multymeter/`,
@@ -85,6 +94,7 @@
     const icons = {
       cube: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>',
       qr: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="17" y1="17" x2="17" y2="17.01"></line><line x1="14" y1="14" x2="14" y2="14.01"></line><line x1="21" y1="14" x2="21" y2="14.01"></line><line x1="14" y1="21" x2="14" y2="21.01"></line><line x1="21" y1="21" x2="21" y2="21.01"></line>',
+      tag: '<path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h8.99l8.61 8.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle>',
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
