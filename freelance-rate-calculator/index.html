@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- Locked down: no third-party scripts, no network calls, fonts only. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <title>Quotient &middot; Freelance Pricing &amp; Quote Studio</title>
+  <meta name="description" content="Work out what to charge for a freelance project. Describe the brief, get a defensible price range, an hourly equivalent, the reasoning behind it, and a professional quotation you can export.">
+  <meta name="author" content="Saheer Babu">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#e9edec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1312" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://saheerlab.vercel.app/freelance-rate-calculator/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Quotient — Freelance Pricing & Quote Studio">
+  <meta property="og:description" content="Stop guessing your price. Describe the project, get a defensible range, the reasoning, and a quotation you can send today.">
+  <meta property="og:url" content="https://saheerlab.vercel.app/freelance-rate-calculator/">
+  <meta property="og:site_name" content="Saheer's Lab">
+
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,500&display=swap">
+  <link rel="stylesheet" href="./assets/styles.css">
+
+  <script src="./assets/theme.js"></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">Q</div>
+      <div>
+        <div class="brand-name">Quotient</div>
+        <div class="brand-sub">Freelance pricing studio</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="importBtn">Open brief</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="resetBtn">Reset</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="themeBtn" aria-live="polite">Dark</button>
+      <input type="file" id="importInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+    </div>
+  </header>
+
+  <section class="intro">
+    <p class="eyebrow">Pricing, not guessing</p>
+    <h1>Know what to charge <em>before</em> you answer the email.</h1>
+    <p>Describe the project the way the client described it to you. Quotient turns that into a defensible price range, shows you exactly which parts of the brief pushed the number up or down, and writes the quotation you send back.</p>
+  </section>
+
+  <main class="workspace">
+    <!-- ------------------------------------------------ The brief ---- -->
+    <form class="brief" id="briefForm" autocomplete="off" novalidate>
+      <section class="card group">
+        <div class="group-head">
+          <h2>The work</h2>
+          <p>What the client asked for</p>
+        </div>
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="projectTitle">Project name</label>
+            <input type="text" id="projectTitle" maxlength="120" placeholder="Booking site for a dive school">
+          </div>
+          <div class="field span-2">
+            <label for="description">What did they ask for?</label>
+            <textarea id="description" maxlength="2000" rows="4" placeholder="Paste or paraphrase the client's brief. The more detail, the better the scope reading."></textarea>
+            <p class="hint">Read for scope signals only. Nothing you type here leaves your browser.</p>
+            <div class="signals" id="signals"></div>
+          </div>
+          <div class="field span-2">
+            <label for="deliverables">Deliverables, one per line</label>
+            <textarea id="deliverables" maxlength="1800" rows="5" placeholder="Five-page responsive website&#10;Online booking with payments&#10;Handover and training call"></textarea>
+          </div>
+          <div class="field span-2">
+            <label for="discipline">Type of work</label>
+            <select id="discipline"></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card group">
+        <div class="group-head">
+          <h2>The client</h2>
+          <p>Price to their market, not your rent</p>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="clientName">Contact name</label>
+            <input type="text" id="clientName" maxlength="80" placeholder="Marta Nilsen">
+          </div>
+          <div class="field">
+            <label for="clientCompany">Company</label>
+            <input type="text" id="clientCompany" maxlength="80" placeholder="Blue Reef Diving">
+          </div>
+          <div class="field">
+            <label for="clientType">Who is paying</label>
+            <select id="clientType"></select>
+          </div>
+          <div class="field">
+            <label for="market">Where they are based</label>
+            <select id="market"></select>
+          </div>
+          <div class="field">
+            <label for="currency">Quote currency</label>
+            <select id="currency"></select>
+          </div>
+          <div class="field" id="fxField">
+            <label for="fxRate">Rate per 1 USD</label>
+            <input type="number" id="fxRate" min="0.0001" max="1000000" step="0.01" inputmode="decimal">
+            <p class="hint">Reference tables are in USD. Set today's rate before you send a quote.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card group">
+        <div class="group-head">
+          <h2>The effort</h2>
+          <p>Your honest estimate</p>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="effortValue">How long is the work</label>
+            <div class="input-pair">
+              <input type="number" id="effortValue" min="0.5" max="4000" step="0.5" inputmode="decimal">
+              <select id="effortUnit">
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+              </select>
+            </div>
+            <p class="hint">Estimate the build only. Revisions and admin are added for you.</p>
+          </div>
+          <div class="field">
+            <label for="durationWeeks">Calendar weeks to deliver</label>
+            <input type="number" id="durationWeeks" min="0.2" max="104" step="0.5" inputmode="decimal">
+            <p class="hint" id="paceHint"></p>
+          </div>
+          <div class="field">
+            <label for="hoursPerDay">Hours in your working day</label>
+            <input type="number" id="hoursPerDay" min="1" max="16" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field">
+            <span class="field-label" id="revisionsLabel">Revision rounds included</span>
+            <div class="segmented" id="revisions" role="radiogroup" aria-labelledby="revisionsLabel"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card group">
+        <div class="group-head">
+          <h2>The pressure</h2>
+          <p>What makes this job hard</p>
+        </div>
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="complexity">Complexity</label>
+            <div class="slider-row">
+              <input type="range" id="complexity" min="1" max="5" step="1" aria-describedby="complexityValue">
+              <div class="slider-value" id="complexityValue"></div>
+            </div>
+            <p class="hint" id="complexitySuggestion"></p>
+          </div>
+          <div class="field span-2">
+            <span class="field-label" id="urgencyLabel">Deadline pressure</span>
+            <div class="segmented" id="urgency" role="radiogroup" aria-labelledby="urgencyLabel"></div>
+            <p class="hint" id="urgencyHint"></p>
+          </div>
+          <div class="field span-2">
+            <span class="field-label" id="clarityLabel">How clear is the scope</span>
+            <div class="segmented" id="clarity" role="radiogroup" aria-labelledby="clarityLabel"></div>
+            <p class="hint" id="clarityHint"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card group">
+        <div class="group-head">
+          <h2>You</h2>
+          <p>Experience and your cost floor</p>
+        </div>
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="experience">Experience level</label>
+            <select id="experience"></select>
+            <p class="hint" id="experienceHint"></p>
+          </div>
+          <div class="field span-2">
+            <label class="floor-toggle" for="floorEnabled">
+              <input type="checkbox" id="floorEnabled">
+              <span>
+                <b>Check this against what I need to earn</b>
+                Works out the hourly rate that actually covers your costs, tax and income, and refuses to quote below it.
+              </span>
+            </label>
+            <div class="floor-fields field-grid" id="floorFields" hidden>
+              <div class="field">
+                <label for="targetMonthlyIncome">Income you want, monthly</label>
+                <input type="number" id="targetMonthlyIncome" min="0" step="100" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label for="monthlyCosts">Business costs, monthly</label>
+                <input type="number" id="monthlyCosts" min="0" step="50" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label for="billableHoursPerWeek">Billable hours a week</label>
+                <input type="number" id="billableHoursPerWeek" min="1" max="60" step="1" inputmode="decimal">
+                <p class="hint">Billable only. Most full-time freelancers manage 20 to 25.</p>
+              </div>
+              <div class="field">
+                <label for="weeksOffPerYear">Weeks off a year</label>
+                <input type="number" id="weeksOffPerYear" min="0" max="30" step="1" inputmode="decimal">
+              </div>
+              <div class="field span-2">
+                <label for="taxReservePct">Set aside for tax, %</label>
+                <input type="number" id="taxReservePct" min="0" max="70" step="1" inputmode="decimal">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <!-- ------------------------------------------------ The price ---- -->
+    <aside class="panel" aria-label="Recommended price">
+      <section class="card rate-card">
+        <p class="eyebrow">
+          <span>Fair price range</span>
+          <span class="confidence" id="confidence">Moderate</span>
+        </p>
+        <p class="rate-range">
+          <span class="num" id="priceLow">&mdash;</span>
+          <span class="dash">&ndash;</span>
+          <span class="num" id="priceHigh">&mdash;</span>
+        </p>
+        <div class="rate-quote">
+          <span class="label">Put this on the quote</span>
+          <span class="value num" id="priceMid">&mdash;</span>
+        </div>
+        <dl class="tiles">
+          <div class="tile">
+            <dt>Real hourly</dt>
+            <dd class="num" id="hourlyReal">&mdash;</dd>
+          </div>
+          <div class="tile">
+            <dt>Day rate</dt>
+            <dd class="num" id="dayRate">&mdash;</dd>
+          </div>
+          <div class="tile">
+            <dt>Hours</dt>
+            <dd class="num" id="effectiveHours">&mdash;</dd>
+          </div>
+        </dl>
+        <p class="rate-note" id="summary"></p>
+        <div class="panel-actions">
+          <button type="button" class="btn btn-primary" id="toQuoteBtn">See the quotation</button>
+          <button type="button" class="btn" id="printBtn">Print</button>
+        </div>
+      </section>
+
+      <section class="card breakdown">
+        <h3>Why this number</h3>
+        <p class="sub">Every factor, in the order it is applied.</p>
+        <div class="wf" id="waterfall"></div>
+        <div class="wf-total">
+          <span>Recommended fee</span>
+          <span class="num" id="waterfallTotal">&mdash;</span>
+        </div>
+      </section>
+
+      <section class="insights" id="insights" aria-label="Pricing advice"></section>
+    </aside>
+  </main>
+
+  <!-- ---------------------------------------------- The quotation ---- -->
+  <section class="quote-section" id="quoteSection">
+    <div class="quote-head">
+      <div>
+        <p class="eyebrow">Ready to send</p>
+        <h2>Your quotation</h2>
+        <p>Fill in who it is from, then export. Everything below updates live with the brief.</p>
+      </div>
+      <div class="export-bar">
+        <button type="button" class="btn btn-primary" id="exportPdf">Save as PDF</button>
+        <button type="button" class="btn" id="exportHtml">HTML</button>
+        <button type="button" class="btn" id="exportMarkdown">Markdown</button>
+        <button type="button" class="btn" id="exportText">Plain text</button>
+        <button type="button" class="btn" id="copyText">Copy</button>
+        <button type="button" class="btn btn-ghost" id="exportJson">Save brief</button>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <form class="card doc-fields" id="docForm" autocomplete="off" novalidate>
+        <p class="eyebrow">Document details</p>
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="fromName">Your name</label>
+            <input type="text" id="fromName" maxlength="80" placeholder="Saheer Babu">
+          </div>
+          <div class="field span-2">
+            <label for="fromBusiness">Business name</label>
+            <input type="text" id="fromBusiness" maxlength="80" placeholder="Independent">
+          </div>
+          <div class="field span-2">
+            <label for="fromEmail">Email</label>
+            <input type="text" id="fromEmail" maxlength="120" inputmode="email" placeholder="hello@example.com">
+          </div>
+          <div class="field span-2">
+            <label for="fromLocation">Location</label>
+            <input type="text" id="fromLocation" maxlength="80" placeholder="Kerala, India">
+          </div>
+          <div class="field">
+            <label for="validDays">Valid for, days</label>
+            <input type="number" id="validDays" min="1" max="180" step="1" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="paymentDays">Invoice due, days</label>
+            <input type="number" id="paymentDays" min="0" max="120" step="1" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="depositPct">Deposit, %</label>
+            <input type="number" id="depositPct" min="0" max="100" step="5" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="taxPct">Tax, %</label>
+            <input type="number" id="taxPct" min="0" max="40" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field span-2">
+            <label for="taxLabel">Tax label</label>
+            <input type="text" id="taxLabel" maxlength="20" placeholder="VAT, GST, sales tax">
+          </div>
+          <div class="field span-2">
+            <label for="notes">Notes to the client</label>
+            <textarea id="notes" maxlength="600" rows="3" placeholder="Anything worth saying before they read the number."></textarea>
+          </div>
+        </div>
+      </form>
+
+      <div class="sheet-wrap">
+        <article class="sheet" id="sheet" aria-label="Quotation document"></article>
+      </div>
+    </div>
+  </section>
+
+  <div class="mobile-bar" id="mobileBar">
+    <div>
+      <span class="eyebrow">Recommended fee</span>
+      <span class="amount" id="mobilePrice">&mdash;</span>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" id="mobileQuoteBtn">Quotation</button>
+  </div>
+
+  <footer class="site-footer">
+    <p>Quotient runs entirely in your browser. No accounts, no uploads, no tracking &mdash; your brief never leaves this device.</p>
+    <p><a href="../">Back to Saheer&rsquo;s Lab</a></p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./assets/app.js"></script>
+</body>
+
+</html>
