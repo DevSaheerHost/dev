@@ -6,6 +6,15 @@
 
     const projects = [
       {
+        title: "TransferBox",
+        description: "Move large text, images, videos and files between any two browsers. No accounts, QR and direct browser-to-browser transfer, encrypted private workspaces.",
+        url: "./transferbox/",
+        tags: ["Transfer", "PWA", "QR"],
+        status: "live",
+        color: "#2456E6",
+        icon: "transfer"
+      },
+      {
         title: "Quotient",
         description: "Freelance pricing studio. Describe a project and get a defensible price range, the reasoning behind it, an hourly equivalent and a quotation you can export.",
         url: "./freelance-rate-calculator/",

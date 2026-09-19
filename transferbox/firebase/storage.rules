@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// TransferBox Cloud Storage rules.
+//
+// Two zones, mirroring the database layout:
+//
+//   workspaces/public/...                 deliberately open, size capped
+//   workspaces/private/{workspaceId}/...  reachable only by a browser that
+//                                         already knows the 128-bit id, which
+//                                         is derived from a secret the server
+//                                         never sees
+//
+// Listing is denied everywhere. Without `list`, the private zone cannot be
+// enumerated: an object can only be fetched by someone who already holds its
+// exact path, and private objects are ciphertext in any case.
+//
+// No `allow write` is granted outside these two prefixes, so nothing can be
+// written to the bucket root or to any other application's folder.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // 3 MB, matching MAX_FILE_BYTES in the client. Raise both together.
+    function withinSizeLimit() {
+      return request.resource.size > 0 && request.resource.size <= 3 * 1024 * 1024;
+    }
+
+    // The browser's MIME type is not trusted for safety decisions, but active
+    // content types are refused outright so nothing stored here can ever be
+    // served as an executable document.
+    function isSafeContentType() {
+      return request.resource.contentType is string
+        && !request.resource.contentType.matches('text/html.*')
+        && !request.resource.contentType.matches('application/xhtml.*')
+        && !request.resource.contentType.matches('image/svg.*')
+        && !request.resource.contentType.matches('.*javascript.*');
+    }
+
+    match /workspaces/public/{itemId}/{fileName} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if withinSizeLimit()
+        && isSafeContentType()
+        && itemId.matches('^[A-Za-z0-9_-]{8,64}$')
+        && fileName.matches('^[A-Za-z0-9._-]{1,96}$');
+      // Objects are immutable once written; deletion is how expiry works.
+      allow update: if false;
+      allow delete: if true;
+    }
+
+    match /workspaces/private/{workspaceId}/{itemId}/{fileName} {
+      allow get: if workspaceId.matches('^[0-9a-f]{32}$');
+      allow list: if false;
+      allow create: if workspaceId.matches('^[0-9a-f]{32}$')
+        && withinSizeLimit()
+        && isSafeContentType()
+        && itemId.matches('^[A-Za-z0-9_-]{8,64}$')
+        && fileName.matches('^[A-Za-z0-9._-]{1,96}$');
+      allow update: if false;
+      allow delete: if workspaceId.matches('^[0-9a-f]{32}$');
+    }
+
+    // Everything else in the bucket is closed.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
