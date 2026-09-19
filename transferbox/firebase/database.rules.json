@@ -1,0 +1,117 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "workspaces": {
+      "public": {
+        "metadata": {
+          ".read": true,
+          ".write": false
+        },
+        "items": {
+          ".read": true,
+          ".indexOn": ["createdAt"],
+
+          "$itemId": {
+            ".write": "newData.exists() ? !data.exists() : true",
+
+            ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt']) && newData.child('id').val() === $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('createdAt').val() >= now - 86400000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
+
+            "expiresAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+            "preview": { ".validate": "newData.isString() && newData.val().length <= 512" },
+            "text": { ".validate": "newData.isString() && newData.val().length <= 65536" },
+            "fileName": { ".validate": "newData.isString() && newData.val().length <= 256" },
+            "mimeType": { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "sha256": { ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)" },
+            "storagePath": { ".validate": "newData.isString() && newData.val().beginsWith('workspaces/public/') && newData.val().length <= 512 && !newData.val().contains('..')" },
+            "enc": { ".validate": "newData.isString() && newData.val().length <= 262144" },
+            "id": { ".validate": "newData.isString()" },
+            "type": { ".validate": "newData.isString()" },
+            "size": { ".validate": "newData.isNumber()" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
+      },
+
+      "private": {
+        ".read": false,
+        ".write": false,
+
+        "$workspaceId": {
+          ".read": "$workspaceId.matches(/^[0-9a-f]{32}$/)",
+          ".write": false,
+
+          "metadata": {
+            ".write": "$workspaceId.matches(/^[0-9a-f]{32}$/) && newData.child('createdAt').isNumber()",
+            ".validate": "newData.hasChildren(['createdAt'])",
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          },
+
+          "items": {
+            ".indexOn": ["createdAt"],
+
+            "$itemId": {
+              ".write": "$workspaceId.matches(/^[0-9a-f]{32}$/) && (newData.exists() ? !data.exists() : true)",
+
+              ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt', 'enc']) && newData.child('id').val() === $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
+
+              "enc": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 262144" },
+              "expiresAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+              "sha256": { ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)" },
+              "storagePath": { ".validate": "newData.isString() && newData.val().beginsWith('workspaces/private/' + $workspaceId + '/') && newData.val().length <= 512 && !newData.val().contains('..')" },
+              "id": { ".validate": "newData.isString()" },
+              "type": { ".validate": "newData.isString()" },
+              "size": { ".validate": "newData.isNumber()" },
+              "createdAt": { ".validate": "newData.isNumber()" },
+              "preview": { ".validate": false },
+              "text": { ".validate": false },
+              "fileName": { ".validate": false },
+              "mimeType": { ".validate": false },
+              "$other": { ".validate": false }
+            }
+          },
+
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
+    "signals": {
+      ".read": false,
+      ".write": false,
+
+      "$code": {
+        ".read": "$code.matches(/^[A-Z0-9]{6,16}$/)",
+        ".write": "$code.matches(/^[A-Z0-9]{6,16}$/) && (!newData.exists() || newData.child('expiresAt').val() <= now + 900000)",
+
+        ".validate": "newData.hasChildren(['createdAt', 'expiresAt'])",
+
+        "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "expiresAt": { ".validate": "newData.isNumber() && newData.val() <= now + 900000" },
+
+        "offer": {
+          ".validate": "newData.hasChildren(['type', 'sdp'])",
+          "type": { ".validate": "newData.isString() && newData.val().length <= 16" },
+          "sdp": { ".validate": "newData.isString() && newData.val().length <= 65536" },
+          "$other": { ".validate": false }
+        },
+        "answer": {
+          ".validate": "newData.hasChildren(['type', 'sdp'])",
+          "type": { ".validate": "newData.isString() && newData.val().length <= 16" },
+          "sdp": { ".validate": "newData.isString() && newData.val().length <= 65536" },
+          "$other": { ".validate": false }
+        },
+        "callerCandidates": {
+          "$candidateId": { ".validate": "newData.hasChild('candidate') && newData.child('candidate').isString() && newData.child('candidate').val().length <= 2048" }
+        },
+        "calleeCandidates": {
+          "$candidateId": { ".validate": "newData.hasChild('candidate') && newData.child('candidate').isString() && newData.child('candidate').val().length <= 2048" }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

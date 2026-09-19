@@ -1,0 +1,181 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   Design tokens.
+
+   Colour is defined once as CSS custom properties and swapped per theme, so no
+   component needs a `dark:` variant and the three theme states (explicit light,
+   explicit dark, follow the system) all resolve from the same set.
+
+   Typeface is the platform UI stack on purpose: an installable offline app
+   should not wait on a font request, and system text renders natively on every
+   device the app targets.
+   =========================================================================== */
+
+:root {
+  --tb-bg: #f3f4f7;
+  --tb-bg-soft: #e9ebf0;
+  --tb-surface: #ffffff;
+  --tb-surface-2: #f7f8fa;
+  --tb-ink: #10141b;
+  --tb-ink-2: #46505f;
+  --tb-ink-3: #6b7583;
+  --tb-line: #e0e4ea;
+  --tb-line-strong: #c9cfda;
+  --tb-accent: #2456e6;
+  --tb-accent-ink: #1a43ba;
+  --tb-accent-soft: #e5ebfd;
+  --tb-accent-contrast: #ffffff;
+  --tb-good: #15803d;
+  --tb-good-soft: #e3f3e9;
+  --tb-warn: #b45309;
+  --tb-warn-soft: #fbeedd;
+  --tb-danger: #b3261e;
+  --tb-danger-soft: #fae7e5;
+  --tb-shadow: 0 1px 2px rgb(16 20 27 / 0.05), 0 10px 26px rgb(16 20 27 / 0.06);
+  --tb-shadow-lg: 0 24px 60px rgb(16 20 27 / 0.16);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --tb-bg: #0b0e13;
+    --tb-bg-soft: #10141b;
+    --tb-surface: #151a22;
+    --tb-surface-2: #1b212b;
+    --tb-ink: #e8ecf3;
+    --tb-ink-2: #aab4c3;
+    --tb-ink-3: #7c8697;
+    --tb-line: #242c38;
+    --tb-line-strong: #333d4c;
+    --tb-accent: #6d8dff;
+    --tb-accent-ink: #90a8ff;
+    --tb-accent-soft: #16203a;
+    --tb-accent-contrast: #0b0e13;
+    --tb-good: #4ec07f;
+    --tb-good-soft: #10251a;
+    --tb-warn: #e0a350;
+    --tb-warn-soft: #2a2015;
+    --tb-danger: #ef8177;
+    --tb-danger-soft: #2c1917;
+    --tb-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 26px rgb(0 0 0 / 0.32);
+    --tb-shadow-lg: 0 24px 60px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --tb-bg: #0b0e13;
+  --tb-bg-soft: #10141b;
+  --tb-surface: #151a22;
+  --tb-surface-2: #1b212b;
+  --tb-ink: #e8ecf3;
+  --tb-ink-2: #aab4c3;
+  --tb-ink-3: #7c8697;
+  --tb-line: #242c38;
+  --tb-line-strong: #333d4c;
+  --tb-accent: #6d8dff;
+  --tb-accent-ink: #90a8ff;
+  --tb-accent-soft: #16203a;
+  --tb-accent-contrast: #0b0e13;
+  --tb-good: #4ec07f;
+  --tb-good-soft: #10251a;
+  --tb-warn: #e0a350;
+  --tb-warn-soft: #2a2015;
+  --tb-danger: #ef8177;
+  --tb-danger-soft: #2c1917;
+  --tb-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 26px rgb(0 0 0 / 0.32);
+  --tb-shadow-lg: 0 24px 60px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--tb-bg);
+  --color-bg-soft: var(--tb-bg-soft);
+  --color-surface: var(--tb-surface);
+  --color-surface-2: var(--tb-surface-2);
+  --color-ink: var(--tb-ink);
+  --color-ink-2: var(--tb-ink-2);
+  --color-ink-3: var(--tb-ink-3);
+  --color-line: var(--tb-line);
+  --color-line-strong: var(--tb-line-strong);
+  --color-accent: var(--tb-accent);
+  --color-accent-ink: var(--tb-accent-ink);
+  --color-accent-soft: var(--tb-accent-soft);
+  --color-accent-contrast: var(--tb-accent-contrast);
+  --color-good: var(--tb-good);
+  --color-good-soft: var(--tb-good-soft);
+  --color-warn: var(--tb-warn);
+  --color-warn-soft: var(--tb-warn-soft);
+  --color-danger: var(--tb-danger);
+  --color-danger-soft: var(--tb-danger-soft);
+
+  --shadow-card: var(--tb-shadow);
+  --shadow-float: var(--tb-shadow-lg);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--tb-bg);
+  color: var(--tb-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Visible, consistent focus for every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--tb-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--tb-accent-soft);
+  color: var(--tb-ink);
+}
+
+/* Native controls follow the theme. */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+textarea {
+  field-sizing: content;
+}
+
+.tb-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.tb-scroll::-webkit-scrollbar-thumb {
+  background: var(--tb-line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
