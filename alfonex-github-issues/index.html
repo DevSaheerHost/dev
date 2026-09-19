@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Alfonex Issues</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f6f7f9;
+      color: #171717;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 25px;
+    }
+
+    #issues {
+      display: grid;
+      gap: 12px;
+    }
+
+    .issue {
+      display: block;
+      padding: 18px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: 0.2s;
+    }
+
+    .issue:hover {
+      border-color: #888;
+      transform: translateY(-2px);
+    }
+
+    .title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .number {
+      color: #777;
+      margin-right: 6px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .status {
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .open {
+      color: #187a3d;
+      background: #e1f7e8;
+    }
+
+    .closed {
+      color: #7a3db8;
+      background: #f1e4fa;
+    }
+
+    .label {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .loading,
+    .error,
+    .empty {
+      padding: 25px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .error {
+      color: #c62828;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="container">
+
+    <h1>Alfonex Issues</h1>
+
+    <p class="subtitle">
+      Bug reports, feature requests and issues
+    </p>
+
+    <div id="issues">
+      <div class="loading">
+        Loading issues...
+      </div>
+    </div>
+
+  </main>
+
+
+  <script>
+
+    const API_URL =
+  "https://api.github.com/repos/DevSaheerHost/alfonex/issues?state=open";
+
+    async function loadIssues() {
+
+      const container =
+        document.getElementById("issues");
+
+      try {
+
+        const response = await fetch(API_URL);
+
+const text = await response.text();
+
+console.log("Status:", response.status);
+console.log("Response:", text);
+
+if (!response.ok) {
+  throw new Error(`GitHub API error: ${response.status}`);
+}
+
+const data = JSON.parse(text);
+
+
+        /*
+          GitHub's /issues endpoint also returns
+          Pull Requests.
+
+          Pull Requests contain a "pull_request"
+          property, so remove them.
+        */
+
+        const issues = data.filter(
+          issue => !issue.pull_request
+        );
+
+
+        if (issues.length === 0) {
+
+          container.innerHTML = `
+            <div class="empty">
+              No issues found.
+            </div>
+          `;
+
+          return;
+        }
+
+
+        container.innerHTML =
+          issues.map(issue => {
+
+            const status =
+              issue.state === "open"
+                ? "Open"
+                : "Closed";
+
+
+            const labels =
+              issue.labels.map(label => {
+
+                return `
+                  <span
+                    class="label"
+                    style="
+                      color: #${label.color};
+                      background: #${label.color}22;
+                    "
+                  >
+                    ${escapeHTML(label.name)}
+                  </span>
+                `;
+
+              }).join("");
+
+
+            return `
+
+              <a
+                class="issue"
+                href="${issue.html_url}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+
+                <div class="title">
+
+                  <span class="number">
+                    #${issue.number}
+                  </span>
+
+                  ${escapeHTML(issue.title)}
+
+                </div>
+
+
+                <div class="meta">
+
+                  <span
+                    class="status ${issue.state}"
+                  >
+                    ${status}
+                  </span>
+
+
+                  <span>
+                    ${escapeHTML(issue.user.login)}
+                  </span>
+
+
+                  <span>
+                    ${issue.comments}
+                    ${issue.comments === 1
+                      ? "comment"
+                      : "comments"}
+                  </span>
+
+
+                  ${labels}
+
+                </div>
+
+              </a>
+
+            `;
+
+          }).join("");
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML = `
+
+          <div class="error">
+            Failed to load GitHub issues.
+          </div>
+
+        `;
+
+      }
+
+    }
+
+
+    /*
+      Prevent HTML injection from
+      issue titles, usernames and labels.
+    */
+
+    function escapeHTML(value) {
+
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+    }
+
+
+    loadIssues();
+
+  </script>
+
+</body>
+</html>

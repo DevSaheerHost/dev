@@ -1,0 +1,235 @@
+  {
+  "brands": {
+    "samsung": {
+      "name": "Samsung"
+    },
+    "redmi": {
+      "name": "Redmi"
+    },
+    "vivo": {
+      "name": "Vivo"
+    },
+    "oppo": {
+      "name": "Oppo"
+    },
+    "realme": {
+      "name": "Realme"
+    }
+  },
+
+  "models": {
+    "samsung_a15": {
+      "brandId": "samsung",
+      "name": "Galaxy A15"
+    },
+    "samsung_a25": {
+      "brandId": "samsung",
+      "name": "Galaxy A25"
+    },
+    "samsung_m14": {
+      "brandId": "samsung",
+      "name": "Galaxy M14"
+    },
+
+    "redmi_note_12": {
+      "brandId": "redmi",
+      "name": "Note 12"
+    },
+    "redmi_note_13": {
+      "brandId": "redmi",
+      "name": "Note 13"
+    },
+    "redmi_12_5g": {
+      "brandId": "redmi",
+      "name": "12 5G"
+    },
+
+    "vivo_y21": {
+      "brandId": "vivo",
+      "name": "Y21"
+    },
+    "vivo_y22": {
+      "brandId": "vivo",
+      "name": "Y22"
+    },
+
+    "oppo_a57": {
+      "brandId": "oppo",
+      "name": "A57"
+    },
+
+    "realme_c55": {
+      "brandId": "realme",
+      "name": "C55"
+    }
+  },
+
+  "parts": {
+    "part_001": {
+      "name": "Display",
+      "category": "display",
+      "compatibleModels": [
+        "samsung_a15"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_002": {
+      "name": "Display",
+      "category": "display",
+      "compatibleModels": [
+        "samsung_a25"
+      ],
+      "quality": "original"
+    },
+
+    "part_003": {
+      "name": "Battery",
+      "category": "battery",
+      "compatibleModels": [
+        "samsung_a15",
+        "samsung_a25"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_004": {
+      "name": "Charging Flex",
+      "category": "charging_flex",
+      "compatibleModels": [
+        "redmi_note_12",
+        "redmi_note_13"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_005": {
+      "name": "Charging Connector",
+      "category": "connector",
+      "compatibleModels": [
+        "redmi_12_5g"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_006": {
+      "name": "Frame",
+      "category": "frame",
+      "compatibleModels": [
+        "samsung_a15"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_007": {
+      "name": "Battery",
+      "category": "battery",
+      "compatibleModels": [
+        "vivo_y21",
+        "vivo_y22"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_008": {
+      "name": "Display",
+      "category": "display",
+      "compatibleModels": [
+        "oppo_a57"
+      ],
+      "quality": "aftermarket"
+    },
+
+    "part_009": {
+      "name": "Speaker",
+      "category": "speaker",
+      "compatibleModels": [
+        "realme_c55"
+      ],
+      "quality": "aftermarket"
+    }
+  },
+
+  "inventory": {
+    "part_001": {
+      "sku": "SAM-A15-DIS-001",
+      "buyPrice": 850,
+      "sellPrice": 1200,
+      "quantity": 4,
+      "minimumStock": 2,
+      "supplier": "ABC Mobiles"
+    },
+
+    "part_002": {
+      "sku": "SAM-A25-DIS-001",
+      "buyPrice": 1800,
+      "sellPrice": 2500,
+      "quantity": 2,
+      "minimumStock": 2,
+      "supplier": "XYZ Spares"
+    },
+
+    "part_003": {
+      "sku": "SAM-A15-A25-BAT-001",
+      "buyPrice": 450,
+      "sellPrice": 700,
+      "quantity": 8,
+      "minimumStock": 3,
+      "supplier": "ABC Mobiles"
+    },
+
+    "part_004": {
+      "sku": "RED-N12-N13-CF-001",
+      "buyPrice": 180,
+      "sellPrice": 350,
+      "quantity": 12,
+      "minimumStock": 5,
+      "supplier": "Mobile Parts Kerala"
+    },
+
+    "part_005": {
+      "sku": "RED-12-5G-CON-001",
+      "buyPrice": 80,
+      "sellPrice": 180,
+      "quantity": 3,
+      "minimumStock": 5,
+      "supplier": "Mobile Parts Kerala"
+    },
+
+    "part_006": {
+      "sku": "SAM-A15-FRM-001",
+      "buyPrice": 500,
+      "sellPrice": 850,
+      "quantity": 1,
+      "minimumStock": 2,
+      "supplier": "XYZ Spares"
+    },
+
+    "part_007": {
+      "sku": "VIVO-Y21-Y22-BAT-001",
+      "buyPrice": 400,
+      "sellPrice": 650,
+      "quantity": 6,
+      "minimumStock": 2,
+      "supplier": "ABC Mobiles"
+    },
+
+    "part_008": {
+      "sku": "OPP-A57-DIS-001",
+      "buyPrice": 900,
+      "sellPrice": 1300,
+      "quantity": 3,
+      "minimumStock": 2,
+      "supplier": "XYZ Spares"
+    },
+
+    "part_009": {
+      "sku": "REAL-C55-SPK-001",
+      "buyPrice": 120,
+      "sellPrice": 250,
+      "quantity": 5,
+      "minimumStock": 2,
+      "supplier": "Mobile Parts Kerala"
+    }
+  }
+}
