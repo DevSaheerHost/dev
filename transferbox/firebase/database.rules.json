@@ -16,9 +16,9 @@
           "$itemId": {
             ".write": "newData.exists() ? !data.exists() : true",
 
-            ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt']) && newData.child('id').val() === $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('createdAt').val() >= now - 86400000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
+            ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt']) && newData.child('id').val() == $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('createdAt').val() >= now - 86400000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
 
-            "expiresAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+            "expiresAt": { ".validate": "newData.isNumber() || newData.val() == null" },
             "preview": { ".validate": "newData.isString() && newData.val().length <= 512" },
             "text": { ".validate": "newData.isString() && newData.val().length <= 65536" },
             "fileName": { ".validate": "newData.isString() && newData.val().length <= 256" },
@@ -56,10 +56,10 @@
             "$itemId": {
               ".write": "$workspaceId.matches(/^[0-9a-f]{32}$/) && (newData.exists() ? !data.exists() : true)",
 
-              ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt', 'enc']) && newData.child('id').val() === $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
+              ".validate": "$itemId.matches(/^[A-Za-z0-9_-]{8,64}$/) && newData.hasChildren(['id', 'type', 'size', 'createdAt', 'enc']) && newData.child('id').val() == $itemId && newData.child('size').isNumber() && newData.child('size').val() >= 0 && newData.child('size').val() <= 3145728 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('type').isString() && newData.child('type').val().matches(/^(text|image|video|audio|file)$/)",
 
               "enc": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 262144" },
-              "expiresAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+              "expiresAt": { ".validate": "newData.isNumber() || newData.val() == null" },
               "sha256": { ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{64}$/)" },
               "storagePath": { ".validate": "newData.isString() && newData.val().beginsWith('workspaces/private/' + $workspaceId + '/') && newData.val().length <= 512 && !newData.val().contains('..')" },
               "id": { ".validate": "newData.isString()" },

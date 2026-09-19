@@ -117,23 +117,28 @@ The app needs a Firebase project with **Realtime Database** and **Cloud
 Storage** enabled. No Authentication provider is required — TransferBox has no
 accounts by design.
 
+`firebase.json` and `.firebaserc` in this folder are already configured, so the
+whole backend setup is one command:
+
 ```bash
 npm install -g firebase-tools
-firebase login
-firebase use <your-project-id>
+firebase login            # one-time, opens a browser
+./deploy.sh               # rules + CORS, in that order
+```
 
-# Deploy the rules in this repository
+`deploy.sh` targets the project in `.firebaserc` and the bucket
+`<project>.appspot.com`; override either with `FIREBASE_PROJECT` or
+`FIREBASE_BUCKET`. To run the steps yourself:
+
+```bash
 firebase deploy --only database,storage
+gcloud storage buckets update gs://<your-bucket> --cors-file=firebase/cors.json
 ```
 
-`firebase.json` for the deploy:
-
-```json
-{
-  "database": { "rules": "firebase/database.rules.json" },
-  "storage": { "rules": "firebase/storage.rules" }
-}
-```
+The Storage rules have been compiled locally against the Firebase emulator. The
+Database rules are validated as JSON here and compiled server-side by
+`firebase deploy`, which rejects an invalid ruleset without touching the rules
+already live.
 
 ### Realtime Database rules
 
