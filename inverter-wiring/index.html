@@ -329,6 +329,7 @@
       color: var(--text);
       white-space: nowrap;
       transform: translate(16px, -50%);
+      width: max-content;
     }
 
     /* ---------- Loading overlay ---------- */
@@ -387,6 +388,61 @@
       .panel{ width: calc(100% - 40px); right: 20px; }
       .brand-title span{ display: none; }
     }
+    
+    
+    
+    /* ---------- Warning popup ---------- */
+.warn-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10,11,15,0.75);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.warn-overlay.show{ opacity: 1; visibility: visible; }
+
+.warn-box{
+  width: 100%;
+  max-width: 340px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.warn-box img{
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.warn-box h3{ margin: 0 0 14px; font-size: 16px; color: #ff6b6b; }
+.warn-close{
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.warn-close:disabled{
+  background: #2b2f3a;
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
   </style>
 </head>
 
@@ -503,7 +559,7 @@
       shadow-softness="1"
       exposure="1"
       camera-controls
-      touch-action="pan-y"
+      touch-action="manipulation"
       interaction-prompt="none"
       ar
       ar-modes="webxr scene-viewer quick-look"
@@ -512,11 +568,28 @@
 
       <button slot="ar-button" style="display:none;"></button>
 
-      <div class="hotspot" slot="hotspot-dc" data-position="0 0 0" data-normal="0 1 0"
+      <div class="hotspot" slot="hotspot-dc" data-position="4 2 0" data-normal="0 1 0"
            title="DC input terminal">
-        <div class="hotspot-annotation">DC Input</div>
+        <div class="hotspot-annotation" onclick="warnOverlay.classList.add('show');">
+          Do not plug in your devices here!
+        </div>
       </div>
     </model-viewer>
+    
+    
+    
+    <!-- Warning popup -->
+<div class="warn-overlay" id="warnOverlay">
+  <div class="warn-box">
+    <img id="warnGif" alt="Warning" src="">
+    <h3>Don't plug in your devices here!</h3>
+    <button class="warn-close" id="warnClose" disabled>Please wait…</button>
+  </div>
+</div>
+
+
+
+
 
     <!-- Loading overlay -->
     <div class="loader" id="loader">
@@ -653,6 +726,33 @@
         panel.classList.remove('open');
       }
     });
+    
+    
+    
+    // ---- Warning popup ----
+const warnOverlay = document.getElementById('warnOverlay');
+const warnGif = document.getElementById('warnGif');
+const warnClose = document.getElementById('warnClose');
+
+window.addEventListener('load', () => {
+  // wait 2s after page load, then show popup
+  setTimeout(() => {
+    // cache-bust so the GIF always starts from its first frame
+    warnGif.src = './warning.gif?t=' + Date.now();
+    warnOverlay.classList.add('show');
+    
+    // close button unlocks 2s after the popup (GIF) starts playing
+    setTimeout(() => {
+      warnClose.disabled = false;
+      warnClose.textContent = 'Close';
+    }, 2000);
+  }, 2000);
+});
+
+warnClose.addEventListener('click', () => {
+  if (warnClose.disabled) return;
+  warnOverlay.classList.remove('show');
+});
   </script>
 </body>
 </html>
