@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Web Game</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Using Import Map for Three.js without a bundler -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+
+        <!-- Health Bar -->
+    <div id="health-bar" style="position: absolute; top: 20px; left: 20px; display: flex; gap: 5px; z-index: 100;"></div>
+
+    <!-- Main Menu UI -->
+    <div id="main-menu" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 300;">
+      <h1 style="color: white; font-family: sans-serif; font-size: 48px; margin-bottom: 40px;">MY WEB GAME</h1>
+      <button id="btn-play" style="padding: 15px 40px; font-size: 24px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; width: 200px;">PLAY</button>
+      <button id="btn-settings" style="padding: 15px 40px; font-size: 24px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; width: 200px;">SETTINGS</button>
+      <button id="btn-exit" style="padding: 15px 40px; font-size: 24px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; width: 200px;">EXIT</button>
+    </div>
+
+    <!-- Game Over UI -->
+    <div id="game-over" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(50, 0, 0, 0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 200;">
+      <div style="color: red; font-size: 60px; font-weight: bold; font-family: sans-serif;">YOU DIED</div>
+      <div style="color: white; font-size: 20px; margin-top: 20px; font-family: sans-serif;">Press ENTER to Respawn</div>
+      <button id="btn-respawn" style="margin-top: 30px; padding: 15px 30px; font-size: 20px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold;">RESPAWN</button>
+    </div>
+
+    <!-- Add this right after <body> tag -->
+    <div
+      id="health-bar"
+      style="
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        display: flex;
+        gap: 5px;
+        z-index: 100;
+      "
+    ></div>
+
+    <div
+      id="game-over"
+      style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: red;
+        font-size: 50px;
+        font-weight: bold;
+        font-family: sans-serif;
+        display: none;
+        z-index: 200;
+      "
+    >
+      YOU DIED
+    </div>
+
+    <div
+      id="hint-ui"
+      style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-family: sans-serif;
+        font-weight: bold;
+        display: none;
+        z-index: 100;
+        pointer-events: none;
+      "
+    >
+      Press 'E' to Interact
+    </div>
+
+    <div id="ui-controls">
+      <!-- Add this inside your <div id="ui-controls"> above JUMP button -->
+      <button
+        id="btn-e"
+        style="
+          margin-bottom: 20px;
+          width: 80px;
+          border-radius: 10px;
+          display: none;
+        "
+      >
+        INTERACT
+      </button>
+
+      <button
+        id="btn-space"
+        style="margin-bottom: 20px; width: 80px; border-radius: 10px"
+      >
+        JUMP
+      </button>
+      <button
+        id="btn-t"
+        style="margin-bottom: 20px; width: 80px; border-radius: 10px"
+      >
+        TORCH
+      </button>
+
+      <button id="btn-w">W</button>
+      <div>
+        <button id="btn-a">A</button>
+        <button id="btn-s">S</button>
+        <button id="btn-d">D</button>
+      </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

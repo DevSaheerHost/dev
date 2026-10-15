@@ -1,0 +1,1823 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <!--
+      Security: strict CSP. Everything is same-origin except the pinned Three.js
+      import from unpkg. For full protection also send CSP (with frame-ancestors
+      'none'), X-Content-Type-Options: nosniff and Referrer-Policy via HTTP headers.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#070b14" />
+    <link rel="icon" href="data:," />
+    <title>Nightfall</title>
+
+    <style>
+      :root {
+        --ink: #070b14;
+        --dusk: rgba(14, 20, 36, 0.78);
+        --line: rgba(232, 236, 246, 0.14);
+        --bone: #e8ecf6;
+        --muted: #98a2bd;
+        --lamp: #ffb454;
+        --lamp-hot: #ffc979;
+        --blood: #e5253a;
+        --radius: 14px;
+        --safe-t: env(safe-area-inset-top, 0px);
+        --safe-r: env(safe-area-inset-right, 0px);
+        --safe-b: env(safe-area-inset-bottom, 0px);
+        --safe-l: env(safe-area-inset-left, 0px);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #87ceeb;
+        color: var(--bone);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      #game {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      /* ---------- Screens (menu, settings, exit, death) ---------- */
+      .screen {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: grid;
+        place-items: center;
+        padding: max(20px, var(--safe-t)) max(20px, var(--safe-r))
+          max(20px, var(--safe-b)) max(20px, var(--safe-l));
+        background: radial-gradient(
+          120% 90% at 50% 100%,
+          rgba(255, 180, 84, 0.1),
+          rgba(4, 7, 14, 0.82) 60%
+        );
+        backdrop-filter: blur(5px);
+        overflow-y: auto;
+      }
+
+      .card {
+        width: min(100%, 400px);
+        padding: 32px 28px 26px;
+        border-radius: var(--radius);
+        background: var(--dusk);
+        border: 1px solid var(--line);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.6);
+        text-align: center;
+      }
+
+      .title {
+        margin: 0;
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+          serif;
+        font-size: clamp(2.6rem, 9vw, 3.6rem);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: 0.01em;
+      }
+
+      .subtitle {
+        margin: 10px 0 26px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        padding: 14px 18px;
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--bone);
+        background: rgba(232, 236, 246, 0.07);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      }
+      .btn:hover:not(:disabled) {
+        background: rgba(232, 236, 246, 0.14);
+        border-color: rgba(232, 236, 246, 0.3);
+      }
+      .btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+      .btn:focus-visible,
+      .icon-btn:focus-visible {
+        outline: 2px solid var(--lamp);
+        outline-offset: 2px;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn--primary {
+        color: #1b1203;
+        background: var(--lamp);
+        border-color: transparent;
+      }
+      .btn--primary:hover:not(:disabled) {
+        background: var(--lamp-hot);
+      }
+
+      .loading {
+        margin: 0 0 6px;
+      }
+      .loading progress {
+        width: 100%;
+        height: 6px;
+        border: 0;
+        border-radius: 3px;
+        overflow: hidden;
+        accent-color: var(--lamp);
+      }
+      .loading p {
+        margin: 8px 0 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .help {
+        margin: 20px 0 0;
+        font-size: 0.85rem;
+        line-height: 1.9;
+        color: var(--muted);
+      }
+      kbd {
+        display: inline-block;
+        min-width: 1.7em;
+        padding: 1px 6px;
+        font: 600 0.8rem ui-monospace, Menlo, Consolas, monospace;
+        color: var(--bone);
+        background: rgba(232, 236, 246, 0.1);
+        border: 1px solid var(--line);
+        border-bottom-width: 2px;
+        border-radius: 6px;
+      }
+
+      /* ---------- Settings ---------- */
+      .card--settings {
+        text-align: left;
+        width: min(100%, 440px);
+      }
+      .card--settings h2 {
+        margin: 0 0 6px;
+        font-family: "Iowan Old Style", Palatino, Georgia, serif;
+        font-size: 1.8rem;
+        font-weight: 600;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .row label {
+        font-weight: 600;
+      }
+      .row output {
+        min-width: 4ch;
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .row input[type="range"] {
+        grid-column: 1 / -1;
+        width: 100%;
+        accent-color: var(--lamp);
+      }
+      .row input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        accent-color: var(--lamp);
+      }
+
+      /* ---------- Death ---------- */
+      .screen--death {
+        z-index: 40;
+        background: radial-gradient(
+          100% 80% at 50% 50%,
+          rgba(60, 0, 10, 0.55),
+          rgba(20, 0, 4, 0.9)
+        );
+      }
+      .screen--death .card {
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+      .death-title {
+        margin: 0 0 10px;
+        font-family: "Iowan Old Style", Palatino, Georgia, serif;
+        font-size: clamp(2.8rem, 10vw, 4.4rem);
+        font-weight: 600;
+        color: var(--blood);
+      }
+      .screen--death .subtitle {
+        margin-bottom: 18px;
+      }
+
+      /* ---------- HUD ---------- */
+      .hud {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        pointer-events: none;
+      }
+      #health-bar {
+        position: absolute;
+        top: calc(14px + var(--safe-t));
+        left: calc(14px + var(--safe-l));
+        display: flex;
+        gap: 2px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+      }
+      #health-bar svg {
+        width: 26px;
+        height: 26px;
+      }
+      .hud-corner {
+        position: absolute;
+        top: calc(14px + var(--safe-t));
+        right: calc(14px + var(--safe-r));
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #fps {
+        padding: 4px 8px;
+        font: 600 12px ui-monospace, Menlo, Consolas, monospace;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+      }
+      .icon-btn {
+        pointer-events: auto;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        font-size: 16px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      .hint {
+        position: absolute;
+        left: 50%;
+        bottom: 22%;
+        transform: translateX(-50%);
+        padding: 10px 18px;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.68);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      #damage-flash {
+        position: fixed;
+        inset: 0;
+        z-index: 15;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 35%,
+          rgba(255, 0, 30, 0.7)
+        );
+      }
+
+      /* ---------- Touch controls ---------- */
+      .touch {
+        display: none;
+      }
+      .touch button {
+        pointer-events: auto;
+        touch-action: none;
+        font: 700 15px system-ui, sans-serif;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.18);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        backdrop-filter: blur(3px);
+      }
+      .touch button.is-down,
+      .touch button.is-on {
+        background: rgba(255, 255, 255, 0.6);
+        color: #111;
+      }
+      .dpad {
+        position: absolute;
+        left: calc(18px + var(--safe-l));
+        bottom: calc(22px + var(--safe-b));
+        display: grid;
+        grid-template-columns: repeat(3, 64px);
+        grid-template-rows: repeat(2, 64px);
+        gap: 8px;
+      }
+      .dpad .up { grid-column: 2; grid-row: 1; }
+      .dpad .left { grid-column: 1; grid-row: 2; }
+      .dpad .down { grid-column: 2; grid-row: 2; }
+      .dpad .right { grid-column: 3; grid-row: 2; }
+      .actions {
+        position: absolute;
+        right: calc(18px + var(--safe-r));
+        bottom: calc(22px + var(--safe-b));
+        display: grid;
+        grid-template-columns: repeat(2, 72px);
+        gap: 10px;
+      }
+      .actions button {
+        width: 72px;
+        height: 72px;
+        font-size: 13px;
+      }
+
+      .touch-only { display: none; }
+      @media (pointer: coarse) {
+        .touch { display: block; }
+        .touch-only { display: inline; }
+        .kbd-only { display: none; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn { transition: none; }
+      }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <canvas id="game"></canvas>
+    <div id="damage-flash" aria-hidden="true"></div>
+
+    <!-- HUD -->
+    <div id="hud" class="hud" hidden>
+      <div
+        id="health-bar"
+        role="meter"
+        aria-label="Health"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+      ></div>
+
+      <div class="hud-corner">
+        <span id="fps" hidden>60 fps</span>
+        <button class="icon-btn" data-action="pause" aria-label="Pause">
+          &#10074;&#10074;
+        </button>
+      </div>
+
+      <div id="hint" class="hint kbd-only" hidden>Press E to use the switch</div>
+
+      <div class="touch">
+        <div class="dpad">
+          <button class="up" data-hold="forward" aria-label="Move forward">&#9650;</button>
+          <button class="left" data-hold="left" aria-label="Move left">&#9664;</button>
+          <button class="down" data-hold="back" aria-label="Move back">&#9660;</button>
+          <button class="right" data-hold="right" aria-label="Move right">&#9654;</button>
+        </div>
+        <div class="actions">
+          <button id="btn-interact" data-action="interact" hidden>Switch</button>
+          <button id="btn-torch" data-action="torch">Torch</button>
+          <button data-hold="jump">Jump</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Death -->
+    <section
+      id="screen-death"
+      class="screen screen--death"
+      role="alertdialog"
+      aria-labelledby="death-title"
+      hidden
+    >
+      <div class="card">
+        <h2 id="death-title" class="death-title">You died</h2>
+        <p class="subtitle kbd-only">Press <kbd>Enter</kbd> to respawn</p>
+        <button class="btn btn--primary" data-action="respawn">Respawn</button>
+      </div>
+    </section>
+
+    <!-- Main / pause menu -->
+    <section id="screen-menu" class="screen" role="dialog" aria-labelledby="game-title">
+      <div class="card">
+        <h1 id="game-title" class="title">Nightfall</h1>
+        <p class="subtitle">Stay near the house. The dogs come out after dark.</p>
+
+        <div id="loading" class="loading">
+          <progress id="progress" max="1" value="0"></progress>
+          <p id="status" role="status">Loading world&hellip;</p>
+        </div>
+
+        <button id="btn-play" class="btn btn--primary" data-action="play" disabled>Play</button>
+        <button class="btn" data-action="settings">Settings</button>
+        <button class="btn" data-action="exit">Exit</button>
+
+        <p class="help kbd-only">
+          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;
+          <kbd>Space</kbd> jump &nbsp; <kbd>T</kbd> torch<br />
+          <kbd>E</kbd> switch &nbsp; <kbd>Esc</kbd> pause
+        </p>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="screen-settings" class="screen" role="dialog" aria-labelledby="settings-title" hidden>
+      <div class="card card--settings">
+        <h2 id="settings-title">Settings</h2>
+
+        <div class="row">
+          <label for="s-sens">Look sensitivity</label>
+          <output data-unit="&times;"></output>
+          <input id="s-sens" type="range" min="0.3" max="2" step="0.1" data-setting="lookSensitivity" />
+        </div>
+        <div class="row">
+          <label for="s-fov">Field of view</label>
+          <output data-unit="&deg;"></output>
+          <input id="s-fov" type="range" min="60" max="100" step="1" data-setting="fov" />
+        </div>
+        <div class="row">
+          <label for="s-day">Day length</label>
+          <output data-unit=" s"></output>
+          <input id="s-day" type="range" min="60" max="600" step="10" data-setting="dayLength" />
+        </div>
+        <div class="row">
+          <label for="s-shadows">Shadows</label>
+          <input id="s-shadows" type="checkbox" data-setting="shadows" />
+        </div>
+        <div class="row">
+          <label for="s-full">Full screen on play</label>
+          <input id="s-full" type="checkbox" data-setting="fullscreen" />
+        </div>
+        <div class="row">
+          <label for="s-fps">Show FPS</label>
+          <input id="s-fps" type="checkbox" data-setting="showFps" />
+        </div>
+
+        <button class="btn" data-action="resetSettings">Reset to defaults</button>
+        <button class="btn btn--primary" data-action="back">Back</button>
+      </div>
+    </section>
+
+    <!-- Exit -->
+    <section id="screen-exit" class="screen" role="dialog" aria-labelledby="exit-title" hidden>
+      <div class="card">
+        <h2 id="exit-title" class="title">See you at dusk</h2>
+        <p class="subtitle">You can close this tab now.</p>
+        <button class="btn btn--primary" data-action="menu">Back to menu</button>
+      </div>
+    </section>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+
+      /* =====================================================================
+       * Config
+       * ===================================================================*/
+      const MODEL_URLS = Object.freeze({
+        land: "models/land.glb",
+        player: "models/player.glb",
+        home: "models/home.glb",
+        house2: "models/house_1.glb",
+        streetlight: "models/streetlight.glb",
+        tree: "models/tree.glb",
+        dog: "models/dog.glb",
+      });
+
+      const CFG = Object.freeze({
+        player: Object.freeze({
+          speed: 6, // units / second
+          gravity: -54,
+          jumpSpeed: 18,
+          terminalSpeed: -40,
+          radius: 0.8,
+          stepHeight: 1,
+          groundSnap: 0.3,
+          voidY: -40,
+          maxEnergy: 100,
+        }),
+        dog: Object.freeze({
+          count: 10,
+          wanderSpeed: [1.8, 3.0],
+          chaseSpeed: [4.8, 6.0],
+          chaseStart: 20,
+          chaseStop: 30,
+          attackRange: 2.5,
+          attackDamage: 10,
+          attackCooldown: 1,
+        }),
+        world: Object.freeze({
+          safeZone: 15, // square half-size around the house
+          limit: 70, // dogs stay inside +/- limit
+          treeCount: 60,
+          treeArea: 60,
+          house2: { x: 25, z: -40, clearRadius: 12 },
+        }),
+        lights: Object.freeze({
+          street: 15,
+          room: 10,
+          torch: 50,
+          interactRange: 2,
+        }),
+        camera: Object.freeze({
+          distance: 2,
+          min: 1,
+          max: 20,
+          heightOffset: 1.5,
+          lookHeight: 1.5,
+          pitchMin: -0.35,
+          pitchMax: 1.3,
+        }),
+        startTimeOfDay: 0.25, // 0.25 = noon
+        respawnGrace: 1, // seconds of protection after respawn
+        respawnDelay: 0.6, // seconds before respawn is allowed
+      });
+
+      const SPAWN = new THREE.Vector3(2, 3, -5);
+      const STREETLIGHT_POSITION = new THREE.Vector3(7, 2, 10);
+      // Bulb position relative to the streetlight model. Adjust to your model.
+      const STREETLIGHT_BULB = new THREE.Vector3(0, 4, 0);
+
+      /* =====================================================================
+       * Settings (validated, persisted)
+       * ===================================================================*/
+      const SETTINGS_KEY = "nightfall.settings.v1";
+      const SETTING_DEFS = Object.freeze({
+        lookSensitivity: { type: "number", min: 0.3, max: 2, def: 1 },
+        fov: { type: "number", min: 60, max: 100, def: 75 },
+        dayLength: { type: "number", min: 60, max: 600, def: 100 },
+        shadows: { type: "boolean", def: true },
+        fullscreen: { type: "boolean", def: true },
+        showFps: { type: "boolean", def: false },
+      });
+
+      function sanitizeSetting(key, value) {
+        const def = SETTING_DEFS[key];
+        if (def.type === "boolean") {
+          return typeof value === "boolean" ? value : def.def;
+        }
+        return typeof value === "number" && Number.isFinite(value)
+          ? THREE.MathUtils.clamp(value, def.min, def.max)
+          : def.def;
+      }
+
+      function loadSettings() {
+        let stored = {};
+        try {
+          const parsed = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}");
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            stored = parsed;
+          }
+        } catch {
+          /* corrupt or unavailable storage: use defaults */
+        }
+        return Object.fromEntries(
+          Object.keys(SETTING_DEFS).map((key) => [key, sanitizeSetting(key, stored[key])]),
+        );
+      }
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch {
+          /* storage full or blocked: ignore */
+        }
+      }
+
+      const settings = loadSettings();
+      const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+
+      /* =====================================================================
+       * DOM references
+       * ===================================================================*/
+      const $ = (id) => document.getElementById(id);
+      const ui = {
+        canvas: $("game"),
+        hud: $("hud"),
+        healthBar: $("health-bar"),
+        fps: $("fps"),
+        hint: $("hint"),
+        interactBtn: $("btn-interact"),
+        torchBtn: $("btn-torch"),
+        flash: $("damage-flash"),
+        loading: $("loading"),
+        progress: $("progress"),
+        status: $("status"),
+        playBtn: $("btn-play"),
+        screens: {
+          menu: $("screen-menu"),
+          settings: $("screen-settings"),
+          exit: $("screen-exit"),
+          death: $("screen-death"),
+        },
+      };
+
+      /* =====================================================================
+       * Renderer, scene, camera, lights
+       * ===================================================================*/
+      const renderer = new THREE.WebGLRenderer({
+        canvas: ui.canvas,
+        antialias: true,
+        powerPreference: "high-performance",
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = settings.shadows;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const DAY_COLOR = new THREE.Color(0x87ceeb);
+      const NIGHT_COLOR = new THREE.Color(0x000511);
+
+      const scene = new THREE.Scene();
+      scene.background = DAY_COLOR.clone();
+      scene.fog = new THREE.Fog(DAY_COLOR.clone(), 10, 50);
+
+      const camera = new THREE.PerspectiveCamera(
+        settings.fov,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+
+      const sun = new THREE.DirectionalLight(0xffffff, 1);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(isTouchDevice ? 1024 : 2048, isTouchDevice ? 1024 : 2048);
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 150;
+      sun.shadow.camera.left = -50;
+      sun.shadow.camera.right = 50;
+      sun.shadow.camera.top = 50;
+      sun.shadow.camera.bottom = -50;
+      sun.shadow.bias = -0.0005;
+      sun.shadow.normalBias = 0.02;
+      scene.add(sun, sun.target);
+
+      /* =====================================================================
+       * Game state
+       * ===================================================================*/
+      const state = {
+        mode: "loading", // loading | menu | playing | paused | exited
+        screen: "menu", // menu | settings | exit | null
+        ready: false,
+        loadError: false,
+
+        energy: CFG.player.maxEnergy,
+        isDead: false,
+        deadFor: 0,
+        damageTimer: 0,
+
+        velocityY: 0,
+        grounded: false,
+        flashlightOn: false,
+
+        timeOfDay: CFG.startTimeOfDay,
+        yaw: 0,
+        pitch: 0.1,
+        cameraDistance: CFG.camera.distance,
+        menuAngle: 0,
+      };
+
+      const input = { forward: false, back: false, left: false, right: false, jump: false };
+
+      let player = null;
+      let land = null;
+      let flashlight = null;
+      let activeSwitch = null;
+      const spawnPoint = SPAWN.clone();
+
+      const dogs = [];
+      const streetLights = [];
+      const roomLights = [];
+      const interactiveSwitches = [];
+
+      /* =====================================================================
+       * Collision helpers
+       * ===================================================================*/
+      const raycaster = new THREE.Raycaster();
+      const DOWN = new THREE.Vector3(0, -1, 0);
+      const UP = new THREE.Vector3(0, 1, 0);
+      const _origin = new THREE.Vector3();
+      const _dir = new THREE.Vector3();
+
+      function castRay(origin, direction, far, objects) {
+        raycaster.set(origin, direction);
+        raycaster.far = far;
+        const hits = raycaster.intersectObjects(objects, true);
+        return hits.length > 0 ? hits[0] : null;
+      }
+
+      // Broad phase: only raycast against objects whose bounding sphere is close.
+      const colliders = [];
+      const nearby = [];
+
+      function registerCollider(object) {
+        object.updateMatrixWorld(true);
+        const sphere = new THREE.Box3().setFromObject(object).getBoundingSphere(new THREE.Sphere());
+        colliders.push({ object, sphere });
+      }
+
+      function collectNearby(position, range) {
+        nearby.length = 0;
+        for (const { object, sphere } of colliders) {
+          if (sphere.distanceToPoint(position) <= range) nearby.push(object);
+        }
+        return nearby;
+      }
+
+      function sampleGroundY(x, z) {
+        if (!land) return null;
+        _origin.set(x, 100, z);
+        const hit = castRay(_origin, DOWN, 300, [land]);
+        return hit ? hit.point.y : null;
+      }
+
+      const isInSafeZone = (x, z) =>
+        Math.abs(x) < CFG.world.safeZone && Math.abs(z) < CFG.world.safeZone;
+
+      function isReserved(x, z) {
+        const h = CFG.world.house2;
+        return isInSafeZone(x, z) || Math.hypot(x - h.x, z - h.z) < h.clearRadius;
+      }
+
+      function enableShadows(root) {
+        root.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+      }
+
+      function turnToward(object, targetAngle, rate, dt) {
+        const diff = Math.atan2(
+          Math.sin(targetAngle - object.rotation.y),
+          Math.cos(targetAngle - object.rotation.y),
+        );
+        object.rotation.y += diff * (1 - Math.exp(-rate * dt));
+      }
+
+      /* =====================================================================
+       * Asset loading & world setup
+       * ===================================================================*/
+      const loadingManager = new THREE.LoadingManager();
+      loadingManager.onProgress = (_url, loaded, total) => {
+        ui.progress.value = total > 0 ? loaded / total : 0;
+        ui.status.textContent = `Loading world\u2026 ${loaded}/${total}`;
+      };
+      const gltfLoader = new GLTFLoader(loadingManager);
+
+      function setupLand(root) {
+        enableShadows(root);
+        scene.add(root);
+        registerCollider(root);
+        land = root;
+      }
+
+      function setupPlayer(root) {
+        enableShadows(root);
+
+        flashlight = new THREE.SpotLight(0xffffff, 0);
+        flashlight.position.set(-0.4, 1.5, 0.5);
+        flashlight.angle = Math.PI / 6;
+        flashlight.penumbra = 0.2;
+        flashlight.distance = 50;
+        flashlight.castShadow = true;
+
+        const target = new THREE.Object3D();
+        target.position.set(0, 1, 5); // in front of the player (+Z)
+        root.add(target, flashlight);
+        flashlight.target = target;
+
+        root.position.copy(SPAWN);
+        scene.add(root);
+        player = root;
+      }
+
+      function setupHome(root) {
+        enableShadows(root);
+        scene.add(root);
+        root.updateMatrixWorld(true);
+
+        const lightNodes = new Map();
+        const switchNodes = [];
+        root.traverse((node) => {
+          const lightMatch = /light_point_(\w+)/i.exec(node.name);
+          if (lightMatch) lightNodes.set(lightMatch[1], node);
+          const switchMatch = /switch_(\w+)/i.exec(node.name);
+          if (switchMatch) switchNodes.push({ id: switchMatch[1], node });
+        });
+
+        const lightsById = new Map();
+        for (const [id, node] of lightNodes) {
+          const light = new THREE.PointLight(0xffddaa, CFG.lights.room, 15);
+          light.userData.targetIntensity = CFG.lights.room;
+          node.add(light);
+          roomLights.push(light);
+          lightsById.set(id, light);
+        }
+
+        const worldPosition = new THREE.Vector3();
+        for (const { id, node } of switchNodes) {
+          node.getWorldPosition(worldPosition);
+          interactiveSwitches.push({
+            position: worldPosition.clone(),
+            light: lightsById.get(id) ?? null,
+          });
+        }
+
+        registerCollider(root);
+      }
+
+      function setupHouse2(root) {
+        enableShadows(root);
+        root.position.set(CFG.world.house2.x, 0, CFG.world.house2.z);
+        root.rotation.y = Math.PI / 2;
+        scene.add(root);
+        registerCollider(root);
+      }
+
+      function setupStreetlight(root) {
+        enableShadows(root);
+        root.position.copy(STREETLIGHT_POSITION);
+
+        const bulb = new THREE.SpotLight(0xffddaa, 0);
+        bulb.position.copy(STREETLIGHT_BULB);
+        bulb.angle = Math.PI / 4;
+        bulb.penumbra = 0.5;
+        bulb.distance = 20;
+        bulb.castShadow = true;
+
+        const target = new THREE.Object3D();
+        target.position.set(STREETLIGHT_BULB.x, 0, STREETLIGHT_BULB.z);
+        root.add(bulb, target);
+        bulb.target = target;
+
+        scene.add(root);
+        streetLights.push(bulb);
+      }
+
+      function populateTrees(template) {
+        enableShadows(template);
+        const { treeCount, treeArea } = CFG.world;
+        let placed = 0;
+        for (let attempt = 0; placed < treeCount && attempt < treeCount * 20; attempt++) {
+          const x = (Math.random() - 0.5) * treeArea * 2;
+          const z = (Math.random() - 0.5) * treeArea * 2;
+          if (isReserved(x, z)) continue;
+
+          const tree = template.clone();
+          tree.position.set(x, sampleGroundY(x, z) ?? 0, z);
+          tree.rotation.y = Math.random() * Math.PI * 2;
+          tree.scale.setScalar(THREE.MathUtils.randFloat(0.8, 1.3));
+          scene.add(tree);
+          registerCollider(tree);
+          placed++;
+        }
+      }
+
+      function populateDogs(template) {
+        enableShadows(template);
+        for (let i = 0; i < CFG.dog.count; i++) {
+          let x;
+          let z;
+          do {
+            x = (Math.random() - 0.5) * 80;
+            z = (Math.random() - 0.5) * 80;
+          } while (isReserved(x, z));
+
+          const mesh = SkeletonUtils.clone(template);
+          const y = sampleGroundY(x, z) ?? 0;
+          mesh.position.set(x, y, z);
+          mesh.rotation.y = Math.random() * Math.PI * 2;
+          mesh.visible = false;
+          scene.add(mesh);
+
+          dogs.push({
+            mesh,
+            state: "wander",
+            wanderTarget: new THREE.Vector3(x, 0, z),
+            wanderSpeed: THREE.MathUtils.randFloat(...CFG.dog.wanderSpeed),
+            chaseSpeed: THREE.MathUtils.randFloat(...CFG.dog.chaseSpeed),
+            groundY: y,
+            groundTimer: Math.random() * 0.25,
+          });
+        }
+      }
+
+      async function loadWorld() {
+        const entries = Object.entries(MODEL_URLS);
+        const results = await Promise.allSettled(
+          entries.map(([, url]) => gltfLoader.loadAsync(url)),
+        );
+
+        const models = {};
+        results.forEach((result, i) => {
+          const [name, url] = entries[i];
+          if (result.status === "fulfilled") models[name] = result.value.scene;
+          else console.error(`Failed to load ${url}`, result.reason);
+        });
+
+        if (!models.land || !models.player) {
+          throw new Error("Essential models (land, player) failed to load.");
+        }
+
+        setupLand(models.land);
+        setupPlayer(models.player);
+        if (models.home) setupHome(models.home);
+        if (models.house2) setupHouse2(models.house2);
+        if (models.streetlight) setupStreetlight(models.streetlight);
+        if (models.tree) populateTrees(models.tree);
+        if (models.dog) populateDogs(models.dog);
+
+        settlePlayer();
+      }
+
+      /* =====================================================================
+       * Player
+       * ===================================================================*/
+      function settlePlayer() {
+        // Drop the player onto the floor once so spawn and respawn are grounded.
+        player.position.copy(SPAWN);
+        state.velocityY = 0;
+        state.grounded = false;
+        for (let i = 0; i < 240 && !state.grounded; i++) {
+          stepVertical(1 / 60, collectNearby(player.position, 4), false);
+        }
+        if (state.grounded) spawnPoint.copy(player.position);
+        else spawnPoint.copy(SPAWN);
+        player.position.copy(spawnPoint);
+        state.velocityY = 0;
+      }
+
+      function teleportToSpawn() {
+        player.position.copy(spawnPoint);
+        state.velocityY = 0;
+      }
+
+      function tryMove(dx, dz, near) {
+        const length = Math.hypot(dx, dz);
+        if (length < 1e-6) return false;
+        _origin.set(player.position.x, player.position.y + 1, player.position.z);
+        _dir.set(dx / length, 0, dz / length);
+        if (castRay(_origin, _dir, CFG.player.radius + length, near)) return false;
+        player.position.x += dx;
+        player.position.z += dz;
+        return true;
+      }
+
+      function handleMovement(dt, near) {
+        const ix = Number(input.right) - Number(input.left);
+        const iz = Number(input.back) - Number(input.forward);
+        if (ix === 0 && iz === 0) return;
+
+        const length = Math.hypot(ix, iz);
+        const sin = Math.sin(state.yaw);
+        const cos = Math.cos(state.yaw);
+        const dirX = (ix * cos + iz * sin) / length;
+        const dirZ = (-ix * sin + iz * cos) / length;
+        const step = CFG.player.speed * dt;
+
+        // Full move first, then slide along each axis.
+        if (!tryMove(dirX * step, dirZ * step, near)) {
+          if (!tryMove(dirX * step, 0, near)) tryMove(0, dirZ * step, near);
+        }
+        turnToward(player, Math.atan2(dirX, dirZ), 9.75, dt);
+      }
+
+      function stepVertical(dt, near, wantsJump) {
+        const p = CFG.player;
+        if (wantsJump && state.grounded) {
+          state.velocityY = p.jumpSpeed;
+          state.grounded = false;
+        }
+
+        state.velocityY = Math.max(state.velocityY + p.gravity * dt, p.terminalSpeed);
+        player.position.y += state.velocityY * dt;
+
+        if (state.velocityY > 0) {
+          // Head bump against ceilings.
+          _origin.set(player.position.x, player.position.y + 1.7, player.position.z);
+          if (castRay(_origin, UP, state.velocityY * dt + 0.1, near)) state.velocityY = 0;
+          state.grounded = false;
+          return;
+        }
+
+        _origin.set(player.position.x, player.position.y + p.stepHeight, player.position.z);
+        const reach = p.stepHeight + p.groundSnap + -state.velocityY * dt;
+        const hit = castRay(_origin, DOWN, reach, near);
+        if (hit) {
+          player.position.y = hit.point.y;
+          state.velocityY = 0;
+          state.grounded = true;
+        } else {
+          state.grounded = false;
+        }
+      }
+
+      function updatePlayer(dt) {
+        const near = collectNearby(player.position, 4);
+        if (state.isDead) {
+          player.rotation.x = THREE.MathUtils.damp(player.rotation.x, -Math.PI / 2, 5, dt);
+        } else {
+          handleMovement(dt, near);
+        }
+        stepVertical(dt, near, !state.isDead && input.jump);
+        if (player.position.y < CFG.player.voidY) teleportToSpawn();
+      }
+
+      function damagePlayer(amount) {
+        state.energy = Math.max(0, state.energy - amount);
+        state.damageTimer = CFG.dog.attackCooldown;
+        updateHealthUI();
+        ui.flash.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 450, easing: "ease-out" });
+        if (state.energy <= 0) killPlayer();
+      }
+
+      function killPlayer() {
+        state.isDead = true;
+        state.deadFor = 0;
+        setFlashlight(false);
+        releaseAllInput();
+        syncUI();
+      }
+
+      function respawnPlayer() {
+        state.energy = CFG.player.maxEnergy;
+        state.isDead = false;
+        state.deadFor = 0;
+        state.damageTimer = CFG.respawnGrace;
+        player.rotation.x = 0;
+        teleportToSpawn();
+        setFlashlight(false);
+        for (const dog of dogs) dog.state = "wander";
+        updateHealthUI();
+        syncUI();
+      }
+
+      function tryRespawn() {
+        if (
+          state.mode === "playing" &&
+          state.isDead &&
+          state.deadFor >= CFG.respawnDelay
+        ) {
+          respawnPlayer();
+        }
+      }
+
+      function resetGame() {
+        state.timeOfDay = CFG.startTimeOfDay;
+        state.yaw = 0;
+        state.pitch = 0.1;
+        respawnPlayer();
+      }
+
+      /* =====================================================================
+       * Dogs
+       * ===================================================================*/
+      function pickWanderTarget(dog) {
+        const p = dog.mesh.position;
+        const limit = CFG.world.limit;
+        for (let i = 0; i < 10; i++) {
+          const nx = THREE.MathUtils.clamp(p.x + (Math.random() - 0.5) * 30, -limit, limit);
+          const nz = THREE.MathUtils.clamp(p.z + (Math.random() - 0.5) * 30, -limit, limit);
+          if (!isInSafeZone(nx, nz)) {
+            dog.wanderTarget.set(nx, 0, nz);
+            return;
+          }
+        }
+        dog.wanderTarget.set(p.x, 0, p.z);
+      }
+
+      function ejectFromSafeZone(position) {
+        if (!isInSafeZone(position.x, position.z)) return;
+        const r = CFG.world.safeZone;
+        const penetrationX = r - Math.abs(position.x);
+        const penetrationZ = r - Math.abs(position.z);
+        if (penetrationX < penetrationZ) position.x = (Math.sign(position.x) || 1) * r;
+        else position.z = (Math.sign(position.z) || 1) * r;
+      }
+
+      function updateDogs(dt, isNight) {
+        const playerSafe = isInSafeZone(player.position.x, player.position.z);
+        const canChase = !state.isDead && !playerSafe;
+        const limit = CFG.world.limit;
+
+        for (const dog of dogs) {
+          const mesh = dog.mesh;
+          if (!isNight) {
+            mesh.visible = false;
+            dog.state = "wander";
+            continue;
+          }
+          mesh.visible = true;
+
+          const pos = mesh.position;
+          const dx = player.position.x - pos.x;
+          const dz = player.position.z - pos.z;
+          const dist = Math.hypot(dx, dz);
+
+          if (canChase && dist < CFG.dog.chaseStart) dog.state = "chase";
+          else if (!canChase || dist > CFG.dog.chaseStop) dog.state = "wander";
+
+          let speed;
+          if (dog.state === "chase") {
+            turnToward(mesh, Math.atan2(dx, dz), 6.3, dt);
+            speed = dog.chaseSpeed;
+            if (
+              state.mode === "playing" &&
+              state.damageTimer <= 0 &&
+              dist < CFG.dog.attackRange &&
+              Math.abs(player.position.y - pos.y) < 2
+            ) {
+              damagePlayer(CFG.dog.attackDamage);
+            }
+          } else {
+            const tx = dog.wanderTarget.x - pos.x;
+            const tz = dog.wanderTarget.z - pos.z;
+            if (Math.hypot(tx, tz) < 2) pickWanderTarget(dog);
+            turnToward(mesh, Math.atan2(tx, tz), 3.1, dt);
+            speed = dog.wanderSpeed;
+          }
+
+          pos.x = THREE.MathUtils.clamp(pos.x + Math.sin(mesh.rotation.y) * speed * dt, -limit, limit);
+          pos.z = THREE.MathUtils.clamp(pos.z + Math.cos(mesh.rotation.y) * speed * dt, -limit, limit);
+          ejectFromSafeZone(pos);
+
+          dog.groundTimer -= dt;
+          if (dog.groundTimer <= 0) {
+            dog.groundTimer = 0.25;
+            const groundY = sampleGroundY(pos.x, pos.z);
+            if (groundY !== null) dog.groundY = groundY;
+          }
+          pos.y = THREE.MathUtils.damp(pos.y, dog.groundY, 12, dt);
+        }
+      }
+
+      /* =====================================================================
+       * Environment, lights, interaction
+       * ===================================================================*/
+      function updateEnvironment(dt) {
+        state.timeOfDay = (state.timeOfDay + dt / settings.dayLength) % 1;
+        const angle = state.timeOfDay * Math.PI * 2;
+        const sunHeight = Math.sin(angle);
+        const focus = player.position;
+
+        // The sun (and its shadow frustum) follows the player.
+        sun.position.set(
+          focus.x + Math.cos(angle) * 50,
+          focus.y + sunHeight * 50,
+          focus.z + Math.cos(angle) * 25,
+        );
+        sun.target.position.copy(focus);
+        sun.intensity = Math.max(0, sunHeight);
+        ambient.intensity = 0.02 + sun.intensity * 0.5;
+
+        const dayMix = THREE.MathUtils.clamp(sunHeight * 2, 0, 1);
+        scene.background.copy(NIGHT_COLOR).lerp(DAY_COLOR, dayMix);
+        scene.fog.color.copy(scene.background);
+
+        const isNight = sunHeight < 0;
+        const streetTarget = isNight ? CFG.lights.street : 0;
+        for (const light of streetLights) {
+          light.intensity = THREE.MathUtils.damp(light.intensity, streetTarget, 3, dt);
+        }
+        for (const light of roomLights) {
+          light.intensity = THREE.MathUtils.damp(light.intensity, light.userData.targetIntensity, 8, dt);
+        }
+        return isNight;
+      }
+
+      const _chest = new THREE.Vector3();
+      function updateInteraction() {
+        let best = null;
+        let bestDistance = CFG.lights.interactRange;
+        if (!state.isDead) {
+          _chest.set(player.position.x, player.position.y + 1, player.position.z);
+          for (const sw of interactiveSwitches) {
+            const d = sw.position.distanceTo(_chest);
+            if (d < bestDistance) {
+              best = sw;
+              bestDistance = d;
+            }
+          }
+        }
+        if (best !== activeSwitch) {
+          activeSwitch = best;
+          ui.hint.hidden = !best;
+          ui.interactBtn.hidden = !best;
+        }
+      }
+
+      function setFlashlight(on) {
+        state.flashlightOn = on;
+        if (flashlight) flashlight.intensity = on ? CFG.lights.torch : 0;
+        ui.torchBtn.classList.toggle("is-on", on);
+      }
+
+      function toggleFlashlight() {
+        if (state.mode === "playing" && !state.isDead) setFlashlight(!state.flashlightOn);
+      }
+
+      function toggleRoomLight() {
+        if (state.mode !== "playing" || state.isDead || !activeSwitch?.light) return;
+        const light = activeSwitch.light;
+        light.userData.targetIntensity = light.userData.targetIntensity > 0 ? 0 : CFG.lights.room;
+      }
+
+      /* =====================================================================
+       * Cameras
+       * ===================================================================*/
+      const _lookTarget = new THREE.Vector3();
+      function updateGameplayCamera() {
+        const c = CFG.camera;
+        const cosPitch = Math.cos(state.pitch);
+        _lookTarget.set(player.position.x, player.position.y + c.lookHeight, player.position.z);
+        camera.position.set(
+          _lookTarget.x + Math.sin(state.yaw) * cosPitch * state.cameraDistance,
+          _lookTarget.y + c.heightOffset + Math.sin(state.pitch) * state.cameraDistance,
+          _lookTarget.z + Math.cos(state.yaw) * cosPitch * state.cameraDistance,
+        );
+        camera.position.y = Math.max(camera.position.y, player.position.y + 0.5);
+        camera.lookAt(_lookTarget);
+      }
+
+      function updateMenuCamera(dt) {
+        state.menuAngle += dt * 0.1;
+        const c = spawnPoint;
+        camera.position.set(
+          c.x + Math.sin(state.menuAngle) * 16,
+          c.y + 7,
+          c.z + Math.cos(state.menuAngle) * 16,
+        );
+        camera.lookAt(c.x, c.y + 2, c.z);
+      }
+
+      /* =====================================================================
+       * HUD
+       * ===================================================================*/
+      const HEART_PATH =
+        "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
+      const heartFills = [];
+
+      function buildHealthBar() {
+        const NS = "http://www.w3.org/2000/svg";
+        const make = (tag, attrs, parent) => {
+          const el = document.createElementNS(NS, tag);
+          for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+          parent.appendChild(el);
+          return el;
+        };
+
+        for (let i = 0; i < 10; i++) {
+          const svg = make("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, ui.healthBar);
+          const defs = make("defs", {}, svg);
+          const clip = make("clipPath", { id: `heart-clip-${i}` }, defs);
+          heartFills.push(make("rect", { x: "0", y: "0", width: "24", height: "24" }, clip));
+          make("path", { d: HEART_PATH, fill: "#444" }, svg);
+          make("path", { d: HEART_PATH, fill: "#ff2d44", "clip-path": `url(#heart-clip-${i})` }, svg);
+        }
+      }
+
+      function updateHealthUI() {
+        heartFills.forEach((rect, i) => {
+          const fraction = THREE.MathUtils.clamp(state.energy - i * 10, 0, 10) / 10;
+          rect.setAttribute("width", String(24 * fraction));
+        });
+        ui.healthBar.setAttribute("aria-valuenow", String(state.energy));
+      }
+
+      let fpsFrames = 0;
+      let fpsTime = 0;
+      function tickFps(dt) {
+        fpsFrames++;
+        fpsTime += dt;
+        if (fpsTime >= 0.5) {
+          ui.fps.textContent = `${Math.round(fpsFrames / fpsTime)} fps`;
+          fpsFrames = 0;
+          fpsTime = 0;
+        }
+      }
+
+      /* =====================================================================
+       * Screens / mode management
+       * ===================================================================*/
+      const SCREEN_FOR_MODE = Object.freeze({
+        loading: "menu",
+        menu: "menu",
+        paused: "menu",
+        exited: "exit",
+        playing: null,
+      });
+
+      function syncUI() {
+        const playing = state.mode === "playing";
+        ui.hud.hidden = !playing;
+        ui.screens.death.hidden = !(playing && state.isDead);
+        ui.screens.menu.hidden = state.screen !== "menu";
+        ui.screens.settings.hidden = state.screen !== "settings";
+        ui.screens.exit.hidden = state.screen !== "exit";
+
+        ui.loading.hidden = state.mode !== "loading";
+        ui.playBtn.disabled = state.mode === "loading";
+        ui.playBtn.textContent = state.mode === "paused" ? "Resume" : "Play";
+
+        if (!playing) {
+          activeSwitch = null;
+          ui.hint.hidden = true;
+          ui.interactBtn.hidden = true;
+        }
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        state.screen = SCREEN_FOR_MODE[mode];
+        syncUI();
+        if (state.screen === "menu") focusPlay();
+      }
+
+      function focusPlay() {
+        requestAnimationFrame(() => {
+          if (!ui.playBtn.disabled && !ui.screens.menu.hidden) ui.playBtn.focus({ preventScroll: true });
+        });
+      }
+
+      /* =====================================================================
+       * Fullscreen & pointer lock
+       * ===================================================================*/
+      let fullscreenEntered = false;
+      const fullscreenElement = () => document.fullscreenElement ?? document.webkitFullscreenElement ?? null;
+
+      async function enterFullscreen() {
+        if (!settings.fullscreen || fullscreenElement()) return;
+        const root = document.documentElement;
+        const request = root.requestFullscreen ?? root.webkitRequestFullscreen;
+        if (!request) return;
+        try {
+          await request.call(root, { navigationUI: "hide" });
+          fullscreenEntered = true;
+          if (isTouchDevice) await screen.orientation?.lock?.("landscape").catch(() => {});
+        } catch (error) {
+          console.warn("Fullscreen unavailable:", error);
+        }
+      }
+
+      function leaveFullscreen() {
+        fullscreenEntered = false;
+        if (!fullscreenElement()) return;
+        try {
+          const exit = document.exitFullscreen ?? document.webkitExitFullscreen;
+          const result = exit?.call(document);
+          if (result?.catch) result.catch(() => {});
+        } catch {
+          /* ignore */
+        }
+      }
+
+      function lockPointer() {
+        if (isTouchDevice || document.pointerLockElement === ui.canvas) return;
+        const fallback = () => {
+          try {
+            ui.canvas.requestPointerLock();
+          } catch {
+            /* ignore */
+          }
+        };
+        try {
+          const result = ui.canvas.requestPointerLock({ unadjustedMovement: true });
+          if (result?.catch) result.catch(fallback);
+        } catch {
+          fallback();
+        }
+      }
+
+      function unlockPointer() {
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+
+      /* =====================================================================
+       * Flow actions
+       * ===================================================================*/
+      async function startOrResume() {
+        if (state.mode !== "menu" && state.mode !== "paused") return;
+        setMode("playing");
+        await enterFullscreen();
+        if (state.mode === "playing") lockPointer();
+      }
+
+      function pause() {
+        if (state.mode !== "playing") return;
+        releaseAllInput();
+        unlockPointer();
+        setMode("paused");
+      }
+
+      function exitGame() {
+        releaseAllInput();
+        unlockPointer();
+        leaveFullscreen();
+        try {
+          window.close(); // only works for tabs opened by script
+        } catch {
+          /* ignore */
+        }
+        setMode("exited");
+        renderer.setAnimationLoop(null);
+      }
+
+      function backToMenu() {
+        resetGame();
+        setMode("menu");
+        clock.getDelta(); // discard the time spent on the exit screen
+        renderer.setAnimationLoop(frame);
+      }
+
+      function openSettings() {
+        state.screen = "settings";
+        syncUI();
+        ui.screens.settings.querySelector("input")?.focus({ preventScroll: true });
+      }
+
+      function closeSettings() {
+        state.screen = "menu";
+        syncUI();
+        focusPlay();
+      }
+
+      const settingRenderers = [];
+      function resetSettings() {
+        for (const [key, def] of Object.entries(SETTING_DEFS)) settings[key] = def.def;
+        applySettings();
+        settingRenderers.forEach((render) => render());
+        saveSettings();
+      }
+
+      const actions = Object.freeze({
+        play: startOrResume,
+        pause,
+        settings: openSettings,
+        back: closeSettings,
+        resetSettings,
+        exit: exitGame,
+        menu: backToMenu,
+        respawn: tryRespawn,
+        torch: toggleFlashlight,
+        interact: toggleRoomLight,
+      });
+
+      document.addEventListener("click", (event) => {
+        const button = event.target instanceof Element ? event.target.closest("[data-action]") : null;
+        if (!button) return;
+        const action = button.dataset.action;
+        if (Object.hasOwn(actions, action)) actions[action]();
+      });
+
+      /* =====================================================================
+       * Settings UI
+       * ===================================================================*/
+      function applySettings() {
+        camera.fov = settings.fov;
+        camera.updateProjectionMatrix();
+        setShadowsEnabled(settings.shadows);
+        ui.fps.hidden = !settings.showFps;
+      }
+
+      function setShadowsEnabled(enabled) {
+        if (renderer.shadowMap.enabled === enabled) return;
+        renderer.shadowMap.enabled = enabled;
+        scene.traverse((object) => {
+          if (!object.material) return;
+          for (const material of [].concat(object.material)) material.needsUpdate = true;
+        });
+      }
+
+      function bindSettings() {
+        document.querySelectorAll("[data-setting]").forEach((control) => {
+          const key = control.dataset.setting;
+          if (!Object.hasOwn(SETTING_DEFS, key)) return;
+          const output = control.closest(".row")?.querySelector("output");
+
+          const render = () => {
+            if (control.type === "checkbox") {
+              control.checked = settings[key];
+              return;
+            }
+            control.value = String(settings[key]);
+            if (output) {
+              const decimals = control.step.includes(".") ? 1 : 0;
+              output.textContent = `${Number(settings[key]).toFixed(decimals)}${output.dataset.unit ?? ""}`;
+            }
+          };
+
+          control.addEventListener("input", () => {
+            const raw = control.type === "checkbox" ? control.checked : Number(control.value);
+            settings[key] = sanitizeSetting(key, raw);
+            applySettings();
+            render();
+          });
+          control.addEventListener("change", saveSettings);
+
+          settingRenderers.push(render);
+          render();
+        });
+      }
+
+      /* =====================================================================
+       * Input
+       * ===================================================================*/
+      const KEY_BINDINGS = Object.freeze({
+        KeyW: "forward",
+        ArrowUp: "forward",
+        KeyS: "back",
+        ArrowDown: "back",
+        KeyA: "left",
+        ArrowLeft: "left",
+        KeyD: "right",
+        ArrowRight: "right",
+        Space: "jump",
+      });
+
+      function releaseAllInput() {
+        for (const key of Object.keys(input)) input[key] = false;
+        document.querySelectorAll("[data-hold].is-down").forEach((el) => el.classList.remove("is-down"));
+        lookPointerId = null;
+      }
+
+      window.addEventListener("keydown", (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+        if (state.screen === "settings" && event.code === "Escape") {
+          closeSettings();
+          return;
+        }
+        if (state.mode !== "playing") return;
+
+        if (Object.hasOwn(KEY_BINDINGS, event.code)) {
+          if (!state.isDead) input[KEY_BINDINGS[event.code]] = true;
+          event.preventDefault();
+          return;
+        }
+        if (event.repeat) return;
+
+        switch (event.code) {
+          case "KeyT":
+            toggleFlashlight();
+            break;
+          case "KeyE":
+            toggleRoomLight();
+            break;
+          case "Enter":
+            if (state.isDead) {
+              event.preventDefault();
+              tryRespawn();
+            }
+            break;
+          case "Escape":
+            pause();
+            break;
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        if (Object.hasOwn(KEY_BINDINGS, event.code)) input[KEY_BINDINGS[event.code]] = false;
+      });
+
+      window.addEventListener("blur", releaseAllInput);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) pause();
+      });
+      window.addEventListener("contextmenu", (event) => {
+        if (state.mode === "playing") event.preventDefault();
+      });
+
+      // On-screen hold buttons (touch)
+      document.querySelectorAll("[data-hold]").forEach((button) => {
+        const action = button.dataset.hold;
+        if (!Object.hasOwn(input, action)) return;
+
+        const press = (event) => {
+          event.preventDefault();
+          try {
+            button.setPointerCapture(event.pointerId);
+          } catch {
+            /* ignore */
+          }
+          if (!state.isDead) input[action] = true;
+          button.classList.add("is-down");
+        };
+        const release = () => {
+          input[action] = false;
+          button.classList.remove("is-down");
+        };
+
+        button.addEventListener("pointerdown", press);
+        button.addEventListener("pointerup", release);
+        button.addEventListener("pointercancel", release);
+        button.addEventListener("lostpointercapture", release);
+      });
+
+      // Camera look: mouse (pointer lock) and touch (drag on canvas)
+      const MOUSE_LOOK = 0.005;
+      let lookPointerId = null;
+      let lastLookX = 0;
+      let lastLookY = 0;
+
+      function look(dx, dy) {
+        const sensitivity = MOUSE_LOOK * settings.lookSensitivity;
+        state.yaw -= dx * sensitivity;
+        state.pitch = THREE.MathUtils.clamp(
+          state.pitch + dy * sensitivity,
+          CFG.camera.pitchMin,
+          CFG.camera.pitchMax,
+        );
+      }
+
+      ui.canvas.addEventListener("pointerdown", (event) => {
+        if (state.mode !== "playing") return;
+        if (event.pointerType === "mouse") {
+          if (event.button === 0) lockPointer();
+          return;
+        }
+        if (lookPointerId === null) {
+          lookPointerId = event.pointerId;
+          lastLookX = event.clientX;
+          lastLookY = event.clientY;
+          try {
+            ui.canvas.setPointerCapture(event.pointerId);
+          } catch {
+            /* ignore */
+          }
+        }
+      });
+
+      ui.canvas.addEventListener("pointermove", (event) => {
+        if (state.mode !== "playing") return;
+        if (event.pointerType === "mouse") {
+          if (document.pointerLockElement === ui.canvas) {
+            look(
+              THREE.MathUtils.clamp(event.movementX, -120, 120),
+              THREE.MathUtils.clamp(event.movementY, -120, 120),
+            );
+          }
+          return;
+        }
+        if (event.pointerId !== lookPointerId) return;
+        look(event.clientX - lastLookX, event.clientY - lastLookY);
+        lastLookX = event.clientX;
+        lastLookY = event.clientY;
+      });
+
+      const endLook = (event) => {
+        if (event.pointerId === lookPointerId) lookPointerId = null;
+      };
+      ui.canvas.addEventListener("pointerup", endLook);
+      ui.canvas.addEventListener("pointercancel", endLook);
+
+      window.addEventListener(
+        "wheel",
+        (event) => {
+          if (state.mode !== "playing") return;
+          const delta = THREE.MathUtils.clamp(event.deltaY * 0.005, -1.5, 1.5);
+          state.cameraDistance = THREE.MathUtils.clamp(
+            state.cameraDistance + delta,
+            CFG.camera.min,
+            CFG.camera.max,
+          );
+        },
+        { passive: true },
+      );
+
+      document.addEventListener("pointerlockchange", () => {
+        if (document.pointerLockElement !== ui.canvas && !isTouchDevice) pause();
+      });
+      document.addEventListener("pointerlockerror", () => console.warn("Pointer lock was denied."));
+
+      const onFullscreenChange = () => {
+        onResize();
+        if (!fullscreenElement() && fullscreenEntered) {
+          fullscreenEntered = false;
+          pause();
+        }
+      };
+      document.addEventListener("fullscreenchange", onFullscreenChange);
+      document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener("resize", onResize);
+
+      /* =====================================================================
+       * Main loop
+       * ===================================================================*/
+      const clock = new THREE.Clock();
+
+      function frame() {
+        const dt = Math.min(clock.getDelta(), 0.05);
+
+        if (state.ready) {
+          if (state.mode === "menu") {
+            const isNight = updateEnvironment(dt);
+            updateDogs(dt, isNight);
+            updateMenuCamera(dt);
+          } else if (state.mode === "playing") {
+            state.damageTimer = Math.max(0, state.damageTimer - dt);
+            if (state.isDead) state.deadFor += dt;
+            updatePlayer(dt);
+            const isNight = updateEnvironment(dt);
+            updateDogs(dt, isNight);
+            updateInteraction();
+            updateGameplayCamera();
+          }
+        }
+
+        renderer.render(scene, camera);
+        if (settings.showFps) tickFps(dt);
+      }
+
+      /* =====================================================================
+       * Boot
+       * ===================================================================*/
+      async function init() {
+        buildHealthBar();
+        bindSettings();
+        applySettings();
+        updateHealthUI();
+        setMode("loading");
+        renderer.setAnimationLoop(frame);
+
+        try {
+          await loadWorld();
+        } catch (error) {
+          console.error(error);
+          state.loadError = true;
+          ui.progress.hidden = true;
+          ui.status.textContent =
+            "Couldn't load the game files. Check the models folder, then reload the page.";
+          return;
+        }
+
+        applySettings();
+        state.ready = true;
+        setMode("menu");
+      }
+
+      init();
+    </script>
+  </body>
+</html>

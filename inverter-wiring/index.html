@@ -443,6 +443,94 @@
   color: var(--text-dim);
   cursor: not-allowed;
 }
+
+
+
+.viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  isolation: isolate;
+}
+
+.viewer-container model-viewer {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Floating menu in the top-left corner */
+.viewer-menu {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  
+  display: flex;
+display: none;
+  flex-direction: column;
+  gap: 6px;
+  
+  padding: 8px;
+  max-width: calc(100% - 32px);
+  
+  background: rgba(20, 24, 32, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.viewer-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  padding: 10px 12px;
+  border-radius: 8px;
+  
+  color: #fff;
+  font: 500 13px/1.4 system-ui, sans-serif;
+  text-decoration: none;
+  white-space: normal;
+  
+  transition: background 0.2s ease;
+}
+
+.viewer-menu a span {
+  width: 18px;
+  text-align: center;
+  color: #7dd3fc;
+  font-size: 17px;
+}
+
+.viewer-menu a:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.viewer-menu a:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .viewer-container {
+    /*height: 450px;*/
+  }
+  
+  .viewer-menu {
+    top: 10px;
+    left: 10px;
+  }
+  
+  .viewer-menu a {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
   </style>
 </head>
 
@@ -549,33 +637,59 @@
     </div>
 
     <!-- Model viewer -->
-    <model-viewer
-      id="viewer"
-      alt="Inverter wiring diagram 3D model"
-      src="./inverter_wiring.glb"
-      poster="./poster.png"
-      environment-image="./env.hdr"
-      shadow-intensity="1"
-      shadow-softness="1"
-      exposure="1"
-      camera-controls
-      touch-action="manipulation"
-      interaction-prompt="none"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      loading="eager"
-      reveal="manual">
+    <div class="viewer-container">
 
-      <button slot="ar-button" style="display:none;"></button>
+  <model-viewer
+    id="viewer"
+    alt="Inverter wiring diagram 3D model"
+    src="./inverter_wiring.glb"
+    poster="./poster.png"
+    environment-image="./env.hdr"
+    shadow-intensity="1"
+    shadow-softness="1"
+    exposure="1"
+    camera-controls
+    touch-action="manipulation"
+    interaction-prompt="none"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    loading="eager"
+    reveal="manual">
 
-      <div class="hotspot" slot="hotspot-dc" data-position="4 2 0" data-normal="0 1 0"
-           title="DC input terminal">
-        <div class="hotspot-annotation" onclick="warnOverlay.classList.add('show');">
-          Do not plug in your devices here!
-        </div>
+    <button slot="ar-button" style="display:none;"></button>
+
+    <div
+      class="hotspot"
+      slot="hotspot-dc"
+      data-position="4 2 0"
+      data-normal="0 1 0"
+      title="DC input terminal">
+
+      <div
+        class="hotspot-annotation"
+        onclick="warnOverlay.classList.add('show');">
+        Do not plug in your devices here!
       </div>
-    </model-viewer>
-    
+    </div>
+
+  </model-viewer>
+
+  <!-- Top-left navigation menu -->
+  <nav class="viewer-menu" aria-label="3D project navigation">
+    <a href="https://saheerlab.vercel.app/">
+      <span>⌂</span> Go to Saheer's Lab
+    </a>
+
+    <a href="./home-tour.html">
+      <span>⌖</span> Take a tour of the home
+    </a>
+
+    <a href="./projects.html">
+      <span>◈</span> Show all 3D projects
+    </a>
+  </nav>
+
+</div>
     
     
     <!-- Warning popup -->

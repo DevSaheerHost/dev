@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Web Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #87ceeb;
+      }
+      canvas {
+        display: block;
+      }
+      #ui-controls {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        user-select: none;
+        touch-action: none;
+        z-index: 10;
+      }
+
+      #ui-controls div {
+        display: flex;
+        gap: 10px;
+      }
+
+      #ui-controls button {
+        width: 60px;
+        height: 60px;
+        margin: 5px;
+        font-size: 24px;
+        font-weight: bold;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.4);
+        border: 2px solid #333;
+        cursor: pointer;
+        touch-action: none;
+      }
+
+      #ui-controls button:active,
+      #ui-controls button:focus {
+        background: rgba(255, 255, 255, 0.9);
+        outline: none;
+      }
+
+      /* Hide UI controls on large screens (PC) */
+      @media (min-width: 768px) {
+        #ui-controls {
+          display: none;
+        }
+      }
+    </style>
+    <!-- Using Import Map for Three.js without a bundler -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="ui-controls">
+      <button
+        id="btn-space"
+        style="margin-bottom: 20px; width: 80px; border-radius: 10px"
+      >
+        JUMP
+      </button>
+<button id="btn-t" style="margin-bottom: 20px; width: 80px; border-radius: 10px;">TORCH</button>
+
+      <button id="btn-w">W</button>
+      <div>
+        <button id="btn-a">A</button>
+        <button id="btn-s">S</button>
+        <button id="btn-d">D</button>
+      </div>
+    </div>
+
+    <script type="module">
+        import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+// Initialize this once in your setup for RectAreaLight to work properly
+RectAreaLightUniformsLib.init();
+
+const roomLights = [];
+
+// Load House Model
+loader.load(
+  "models/home.glb",
+  (gltf) => {
+    const house = gltf.scene;
+
+    house.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+
+      // Find placeholders added in Blender (e.g., named "light_point_1")
+      if (child.name.includes("light_point")) {
+        
+        // Option 1: PointLight (Standard bulb)
+        const pointLight = new THREE.PointLight(0xffddaa, 10, 15);
+        pointLight.position.copy(child.position);
+        house.add(pointLight);
+        roomLights.push(pointLight);
+
+        // Option 2: RectAreaLight (Window light / Tube light / Panel light)
+        // Note: RectAreaLight does not support shadows in Three.js natively
+        /*
+        const areaLight = new THREE.RectAreaLight(0xffffff, 5, 2, 2); // color, intensity, width, height
+        areaLight.position.copy(child.position);
+        areaLight.lookAt(0, -1, 0); // Point the light downwards
+        house.add(areaLight);
+        roomLights.push(areaLight);
+        */
+      }
+    });
+
+    scene.add(house);
+  },
+  undefined,
+  (error) => {
+    console.error("Error loading house:", error);
+  }
+);
+
+    </script>
+  </body>
+</html>
