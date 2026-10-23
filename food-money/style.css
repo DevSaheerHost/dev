@@ -1,0 +1,146 @@
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+:root{
+  --accent: #0080FF;
+  --accent-bg : #DFEFFF;
+  --text-dim: #909090;
+  --bg: #F4F4F4;
+  --white: #ffffff;
+  --gray: #E4E4E4;
+  --black: #363636;
+  --border: 1px solid #D8D8D8
+}
+body{
+  background: var(--bg);
+  color: var(--black);
+}
+header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem;
+}
+header p{
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+  font-size: 16px;
+}
+header span{
+  color: var(--accent);
+  font-size: 23px;
+  background: var(--accent-bg);
+  padding: .5rem;
+  border-radius: 10px;
+}
+.card{
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--white);
+  margin: 1rem;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.card .date-wrap
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card .date-wrap p{
+  color: var(--text-dim);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 0.4rem;
+}
+.card .date-wrap span{
+  background: var(--bg);
+  padding: 0.4rem;
+  border-radius: 10px;
+}
+.card .chips{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-bottom: var(--border)
+}
+.chips .chip{
+  flex: 1;
+  padding: 0.4rem;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.chips .expected {
+  background: var(--bg);
+  color: var(--black);
+}
+.chips .chip .amount{
+  margin-top: 0.3rem;
+  font-size: 18px;
+  font-weight: bold;
+}
+.chips .received{
+  background: #CAEECA;
+  color: #0B710B;
+  
+}
+.chips .pending{
+  background: #FFF0CC;
+  color: #9D7720;
+}
+
+
+
+
+
+
+.calendar{
+  margin-top: 1rem;
+}
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-weekdays {
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.calendar-grid .date {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.calendar-grid .date.paid {
+  background: #d9f7e5;
+  border-color: #34a66a;
+  color: #187743;
+}
+
+.calendar-grid .date.today {
+  outline: 2px solid #0ba2ff;
+  outline-offset: 1px;
+}
+
+
+.calendar-grid .date:active {
+  transform: scale(0.95);
+}
