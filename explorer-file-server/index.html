@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Releases · Explorer File Server</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;--muted:#9198a1;--text:#e6edf3;--green:#3fb950;--blue:#2f81f7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:36px 22px 70px}.top{display:flex;align-items:center;gap:14px;margin-bottom:28px}.logo{width:44px;height:44px;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;background:var(--panel);font-size:22px}.eyebrow{color:var(--muted);font-size:13px}.top h1{font-size:25px;margin:0;font-weight:650;letter-spacing:-.5px}
+.tabs{display:flex;gap:25px;border-bottom:1px solid var(--line);margin-bottom:30px;overflow:auto}.tab{padding:12px 2px;color:var(--muted);white-space:nowrap}.tab.active{color:var(--text);border-bottom:2px solid #f78166;font-weight:600}
+.heading{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:22px}.heading h2{font-size:22px;margin:0 0 4px}.heading p{margin:0;color:var(--muted)}.count{border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--muted);font-size:12px}
+.release{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:0 0 20px;overflow:hidden}.release-head{display:flex;align-items:flex-start;gap:13px;padding:20px;border-bottom:1px solid var(--line)}.tag{font-size:12px;font-weight:650;color:#7ee787;background:#173923;border:1px solid #28643a;border-radius:20px;padding:3px 9px;white-space:nowrap}.release-title{font-size:19px;font-weight:650;margin:0}.meta{font-size:13px;color:var(--muted);margin-top:4px}.notes{padding:18px 20px;border-bottom:1px solid var(--line)}.notes p{margin:0 0 8px}.notes ul{margin:6px 0 0;padding-left:22px;color:#c9d1d9}.assets-title{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 8px;font-weight:650}.assets-title small{font-weight:400;color:var(--muted)}.asset{display:flex;gap:13px;align-items:center;padding:13px 20px;border-top:1px solid #252b33}.file-icon{width:38px;height:38px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;background:#0d1117;font-size:18px;flex-shrink:0}.file-info{min-width:0;flex:1}.file-name{font-weight:600;overflow-wrap:anywhere}.file-name a{color:#a5d6ff;text-decoration:none}.file-name a:hover{text-decoration:underline}.file-meta{color:var(--muted);font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#212830;color:var(--text);padding:7px 11px;border-radius:7px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}.btn:hover{border-color:#8b949e;background:#30363d}.btn.primary{background:#238636;border-color:#2ea043;color:#fff}.btn.primary:hover{background:#2ea043}.previous{border:1px solid var(--line);border-radius:10px;overflow:hidden}.previous summary{cursor:pointer;padding:16px 18px;background:var(--panel);font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}.previous summary:after{content:"＋";color:var(--muted)}.previous[open] summary:after{content:"−"}.previous .asset{background:var(--panel)}.search{width:100%;padding:11px 13px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;margin-bottom:20px}.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:28px}.notice{border:1px solid #6e5b24;background:#2a2413;color:#eacb72;border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:20px}
+@media(max-width:600px){.wrap{padding:24px 13px}.heading{align-items:center}.release-head{flex-wrap:wrap}.asset{align-items:flex-start;flex-wrap:wrap;padding:13px}.file-info{min-width:calc(100% - 55px)}.actions{padding-left:51px}.top h1{font-size:21px}.tabs{gap:18px}.notes,.release-head{padding:16px}.assets-title{padding:13px 16px 8px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="logo">📦</div>
+    <div><div class="eyebrow">SAHEER / Explorer file server</div><h1>Explorer File Server</h1></div>
+  </header>
+  <nav class="tabs"><div class="tab">Code</div><div class="tab">Issues</div><div class="tab">Pull requests</div><div class="tab active">Releases</div></nav>
+  <section class="heading"><div><h2>Releases</h2><p>Download builds, browse release assets, and read version notes.</p></div><span class="count">2 releases</span></section>
+  <div class="notice">Demo content: replace the sample filenames and <code>files/...</code> links with your actual downloadable files.</div>
+  <input id="search" class="search" placeholder="Search releases and files…" aria-label="Search releases and files">
+  <section class="release searchable">
+    <div class="release-head"><span class="tag">Latest</span><div><h3 class="release-title">Explorer File Server v1.5.0</h3><div class="meta">v1.5.0 · Released Oct 26, 2026 · Stable</div></div></div>
+    <div class="notes"><p><strong>What's new</strong></p><ul><li>Added This PC-style storage locations.</li><li>Browse and download release files from one place.</li><li>Improved file listing and mobile layout.</li></ul></div>
+    <div class="assets-title">Assets <small>3 files · 18.4 MB</small></div>
+    <div class="asset searchable">
+      <div class="file-icon">📦</div><div class="file-info"><div class="file-name"><a href="./files/explorer-file-server-v1.5.zip" download>explorer-file-server-v1.5.zip</a></div><div class="file-meta">ZIP archive · 18.2 MB</div></div>
+      <div class="actions"><a class="btn" href="./files/explorer-file-server-v1.5.zip" target="_blank" rel="noopener">Read / Preview</a><a class="btn primary" href="./files/explorer-file-server-v1.5.zip" download>↓ Download</a></div>
+    </div>
+    <div class="asset searchable">
+      <div class="file-icon">📄</div><div class="file-info"><div class="file-name"><a href="./files/README-v1.5.txt" target="_blank" rel="noopener">README-v1.5.txt</a></div><div class="file-meta">Text document · 12 KB</div></div>
+      <div class="actions"><a class="btn" href="./files/README-v1.5.txt" target="_blank" rel="noopener">Read</a><a class="btn primary" href="./files/README-v1.5.txt" download>↓ Download</a></div>
+    </div>
+    <div class="asset searchable">
+      <div class="file-icon">🧾</div><div class="file-info"><div class="file-name"><a href="./files/checksums.txt" target="_blank" rel="noopener">checksums.txt</a></div><div class="file-meta">SHA-256 checksums · 1 KB</div></div>
+      <div class="actions"><a class="btn" href="./files/checksums.txt" target="_blank" rel="noopener">Read</a><button class="btn" onclick="copyLink('./files/checksums.txt')">Copy link</button></div>
+    </div>
+  </section>
+  <details class="previous searchable">
+    <summary><span>Explorer File Server v1.0.0 <span class="meta"> · Aug 12, 2026</span></span><span class="tag">Previous</span></summary>
+    <div class="asset searchable"><div class="file-icon">📦</div><div class="file-info"><div class="file-name"><a href="./files/explorer-file-server-v1.0.zip" download>explorer-file-server-v1.0.zip</a></div><div class="file-meta">ZIP archive · 15.6 MB</div></div><div class="actions"><a class="btn" href="./files/explorer-file-server-v1.0.zip" target="_blank" rel="noopener">Read / Preview</a><a class="btn primary" href="./files/explorer-file-server-v1.0.zip" download>↓ Download</a></div></div>
+    <div class="asset searchable"><div class="file-icon">📄</div><div class="file-info"><div class="file-name"><a href="./files/CHANGELOG-v1.0.txt" target="_blank" rel="noopener">CHANGELOG-v1.0.txt</a></div><div class="file-meta">Text document · 4 KB</div></div><div class="actions"><a class="btn" href="./files/CHANGELOG-v1.0.txt" target="_blank" rel="noopener">Read</a><a class="btn primary" href="./files/CHANGELOG-v1.0.txt" download>↓ Download</a></div></div>
+  </details>
+  <p class="foot">Explorer File Server · Release archive</p>
+</main>
+<script>
+const search = document.getElementById('search');
+search.addEventListener('input', () => {
+  const q = search.value.trim().toLowerCase();
+  document.querySelectorAll('.release, .previous').forEach(group => {
+    const items = [...group.querySelectorAll('.searchable')];
+    let any = group.textContent.toLowerCase().includes(q);
+    items.forEach(item => {
+      const match = item.textContent.toLowerCase().includes(q);
+      item.style.display = (!q || match) ? '' : 'none';
+      if (match) any = true;
+    });
+    group.style.display = (!q || any) ? '' : 'none';
+    if (group.tagName === 'DETAILS' && q && any) group.open = true;
+  });
+});
+async function copyLink(path) {
+  const url = new URL(path, location.href).href;
+  try { await navigator.clipboard.writeText(url); alert('Link copied'); }
+  catch { prompt('Copy this link:', url); }
+}
+</script>
+</body>
+</html>
