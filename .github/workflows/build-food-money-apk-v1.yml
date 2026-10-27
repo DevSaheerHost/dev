@@ -28,11 +28,11 @@ jobs:
 
       - name: Prepare web app
         run: |
-          mkdir -p .apk-build/www
-          cp -R food-money/. .apk-build/www/
+          mkdir -p apk-build/www
+          cp -R food-money/. apk-build/www/
 
       - name: Configure Capacitor
-        working-directory: .apk-build
+        working-directory: apk-build
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/android
@@ -42,7 +42,7 @@ jobs:
           npx cap sync android
 
       - name: Build APK
-        working-directory: .apk-build/android
+        working-directory: apk-build/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -51,6 +51,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Food-Money-APK
-          path: .apk-build/android/app/build/outputs/apk/debug/app-debug.apk
+          path: apk-build/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           
