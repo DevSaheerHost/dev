@@ -1,0 +1,56 @@
+
+name: Build Food Money APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Prepare web app
+        run: |
+          mkdir -p .apk-build/www
+          cp -R food-money/. .apk-build/www/
+
+      - name: Configure Capacitor
+        working-directory: .apk-build
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/android
+          npm install --save-dev @capacitor/cli
+          npx cap init "Food Money" com.saheerlab.foodmoney --web-dir=www
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK
+        working-directory: .apk-build/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Food-Money-APK
+          path: .apk-build/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          
