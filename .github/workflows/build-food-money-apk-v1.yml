@@ -41,6 +41,57 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Configure Status Bar Colors
+        working-directory: apk-build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          styles = Path("android/app/src/main/res/values/styles.xml")
+          content = styles.read_text()
+
+          def update_style(content, name):
+              pattern = r'<style name="' + re.escape(name) + r'"([^>]*)>(.*?)</style>'
+              match = re.search(pattern, content, re.DOTALL)
+
+              if not match:
+                  raise SystemExit(f"Style not found: {name}")
+
+              attrs, body = match.group(1), match.group(2)
+
+              items = {
+                  "android:statusBarColor": "#F4F4F4",
+                  "android:windowLightStatusBar": "true",
+                  "android:navigationBarColor": "#F4F4F4",
+                  "android:windowLightNavigationBar": "true"
+              }
+
+              for key, value in items.items():
+                  item = re.compile(
+                      r'<item name="' + re.escape(key) + r'">.*?</item>',
+                      re.DOTALL
+                  )
+                  replacement = f'<item name="{key}">{value}</item>'
+
+                  if item.search(body):
+                      body = item.sub(replacement, body)
+                  else:
+                      body += f"\n        {replacement}"
+
+              return content[:match.start()] + (
+                  f'<style name="{name}"{attrs}>{body}\n    </style>'
+              ) + content[match.end():]
+
+          content = update_style(content, "AppTheme.NoActionBar")
+
+          if re.search(r'<style name="AppTheme.NoActionBarLaunch"[^>]*>', content):
+              content = update_style(content, "AppTheme.NoActionBarLaunch")
+
+          styles.write_text(content)
+          print("Status and navigation bar theme colors configured.")
+          PY
+
       - name: Build APK
         working-directory: apk-build/android
         run: |
@@ -53,4 +104,3 @@ jobs:
           name: Food-Money-APK
           path: apk-build/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          
