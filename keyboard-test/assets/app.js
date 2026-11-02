@@ -18,9 +18,28 @@ import { BLOCKS, LAYOUTS, codesFor } from './layout.js';
 
 const $ = (id) => document.getElementById(id);
 
-/* Shortcuts the browser keeps, so a tester can never trap someone on the page. */
-const NEVER_BLOCK = new Set(['F5', 'F11', 'F12']);
-const NEVER_BLOCK_WITH_MODIFIER = new Set(['KeyW', 'KeyT', 'KeyN', 'KeyR', 'KeyQ']);
+/*
+ * Keys that would throw away a half-finished test if they got through: a
+ * reload, full screen, dev tools, closing the tab. They are held back on the
+ * first press and let through on a second press straight after, so the page
+ * protects the test without ever trapping anyone on it.
+ */
+const CONFIRM_CODES = new Map([
+  ['F5', 'reload the page'],
+  ['F11', 'go full screen'],
+  ['F12', 'open developer tools'],
+]);
+
+const CONFIRM_WITH_MODIFIER = new Map([
+  ['KeyR', 'reload the page'],
+  ['KeyW', 'close this tab'],
+  ['KeyT', 'open a new tab'],
+  ['KeyN', 'open a new window'],
+  ['KeyQ', 'quit the browser'],
+]);
+
+/** A second press within this long passes the shortcut through. */
+const CONFIRM_WINDOW_MS = 1600;
 
 const LOCATION_NAMES = ['standard', 'left', 'right', 'numpad'];
 const MAX_HISTORY = 40;
@@ -179,6 +198,54 @@ function renderBoard() {
 const UNIT_BASE = 50;
 const UNIT_MIN = 26;
 
+const PROGRESS_KEY = 'keyscope.progress';
+
+/**
+ * A reload should not cost you the test.
+ *
+ * Progress is kept in sessionStorage, so it survives a refresh — deliberate or
+ * not, and including the ones the browser refuses to let the page block — but
+ * is gone once the tab closes. Reset clears it outright.
+ */
+function saveProgress() {
+  try {
+    window.sessionStorage.setItem(
+      PROGRESS_KEY,
+      JSON.stringify({
+        tested: [...state.tested],
+        presses: state.presses,
+        rollover: state.rollover,
+      }),
+    );
+  } catch {
+    /* storage blocked: the test still works, it just will not survive a reload */
+  }
+}
+
+function restoreProgress() {
+  try {
+    const raw = window.sessionStorage.getItem(PROGRESS_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (!saved || !Array.isArray(saved.tested) || saved.tested.length === 0) return false;
+
+    state.tested = new Set(saved.tested.filter((code) => typeof code === 'string').slice(0, 400));
+    state.presses = Number(saved.presses) || state.tested.size;
+    state.rollover = Number(saved.rollover) || 0;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearProgress() {
+  try {
+    window.sessionStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
 /**
  * Scale the board to the width it actually has.
  *
@@ -225,54 +292,106 @@ function repaintTested() {
   }
 }
 
+/* ----------------------------------------------------------------- toast */
+
+let toastTimer = 0;
+
+/** A short message that does not steal focus from the keys being tested. */
+function toast(message) {
+  const node = $('toast');
+  node.textContent = message;
+  node.classList.add('is-shown');
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => node.classList.remove('is-shown'), 3400);
+}
+
 /* ---------------------------------------------------------------- events */
+
+/** The action a key would take, or null when it is safe to block outright. */
+function confirmableAction(event) {
+  if (CONFIRM_CODES.has(event.code)) return CONFIRM_CODES.get(event.code);
+  if ((event.ctrlKey || event.metaKey) && CONFIRM_WITH_MODIFIER.has(event.code)) {
+    return CONFIRM_WITH_MODIFIER.get(event.code);
+  }
+  return null;
+}
+
+let pendingConfirm = { code: '', at: 0 };
 
 function shouldBlock(event) {
   if (!state.capture) return false;
-  if (NEVER_BLOCK.has(event.code)) return false;
-  const withModifier = event.ctrlKey || event.metaKey;
-  if (withModifier && NEVER_BLOCK_WITH_MODIFIER.has(event.code)) return false;
+
+  const action = confirmableAction(event);
+  if (!action) return true;
+
+  const now = performance.now();
+  const isSecondPress =
+    pendingConfirm.code === event.code && now - pendingConfirm.at < CONFIRM_WINDOW_MS;
+
+  if (isSecondPress) {
+    pendingConfirm = { code: '', at: 0 };
+    return false; // let it do its job
+  }
+
+  pendingConfirm = { code: event.code, at: now };
+  const name = event.code.startsWith('F') ? event.code : `${event.metaKey ? 'Cmd' : 'Ctrl'}+${event.code.replace('Key', '')}`;
+  toast(`${name} held back so the test survives. Press it again to ${action}.`);
   return true;
+}
+
+/** Record one press. Called from keydown, or from keyup for keys that skip it. */
+function registerPress(event, code, { held } = {}) {
+  state.presses += 1;
+  if (!held) {
+    state.down.set(code, performance.now());
+    state.rollover = Math.max(state.rollover, state.down.size);
+  }
+
+  if (state.codes.has(code)) state.tested.add(code);
+
+  const cap = caps.get(code);
+  if (cap) {
+    if (!held) cap.classList.add('is-down');
+    if (state.codes.has(code)) cap.classList.add('is-done');
+    restartRipple(cap);
+    scrollCapIntoView(cap);
+  }
+
+  addHistory(event, code);
+  updateProgress();
+  saveProgress();
+  return cap;
 }
 
 function onKeyDown(event) {
   if (shouldBlock(event)) event.preventDefault();
 
   const code = event.code || `Key${event.keyCode}`;
-  const cap = caps.get(code);
-
-  if (!event.repeat) {
-    state.presses += 1;
-    state.down.set(code, performance.now());
-    state.rollover = Math.max(state.rollover, state.down.size);
-
-    if (state.codes.has(code)) state.tested.add(code);
-
-    if (cap) {
-      cap.classList.add('is-down');
-      if (state.codes.has(code)) cap.classList.add('is-done');
-      restartRipple(cap);
-      scrollCapIntoView(cap);
-    }
-
-    addHistory(event, code);
-    updateProgress();
-  }
-
+  const cap = event.repeat ? caps.get(code) : registerPress(event, code);
   showReadout(event, code, cap);
 }
 
 function onKeyUp(event) {
+  if (state.capture && confirmableAction(event) === null) event.preventDefault();
+
   const code = event.code || `Key${event.keyCode}`;
   const pressedAt = state.down.get(code);
-  state.down.delete(code);
 
-  const cap = caps.get(code);
-  if (cap) cap.classList.remove('is-down');
-
-  if (pressedAt !== undefined) {
-    $('fHeld').textContent = `${Math.round(performance.now() - pressedAt)} ms`;
+  /*
+   * Windows handles PrintScreen itself and some keyboards deliver only a
+   * keyup for it. A key we never saw go down still counts as proven — it
+   * answered, just late.
+   */
+  if (pressedAt === undefined) {
+    registerPress(event, code, { held: true });
+    showReadout(event, code, caps.get(code));
+    $('fHeld').textContent = 'keyup only';
+    return;
   }
+
+  state.down.delete(code);
+  caps.get(code)?.classList.remove('is-down');
+  $('fHeld').textContent = `${Math.round(performance.now() - pressedAt)} ms`;
 
   if (state.down.size === 0) {
     $('liveState').textContent = 'Released';
@@ -412,6 +531,7 @@ function resetTest() {
   state.tested.clear();
   state.presses = 0;
   state.rollover = 0;
+  clearProgress();
   releaseAll();
   repaintTested();
   updateProgress();
@@ -427,6 +547,7 @@ function resetTest() {
   $('readoutBig').hidden = true;
   for (const id of ['fKey', 'fCode', 'fKeyCode', 'fLocation', 'fHeld']) $(id).textContent = '—';
   $('announce').textContent = 'Test reset';
+  toast('Test reset.');
 }
 
 function currentTheme() {
@@ -487,12 +608,24 @@ function wire() {
   $('theme').addEventListener('click', toggleTheme);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeButton);
 
-  /* The controls are buttons; keep them from swallowing the keys under test. */
-  for (const control of document.querySelectorAll('.btn, .switch input, .seg label')) {
-    control.addEventListener('keydown', (event) => event.stopPropagation(), true);
+  /*
+   * After a control is clicked with a mouse, hand focus back to the page.
+   * Otherwise the next Space or Enter would re-trigger that button instead of
+   * being tested. Keyboard users keep focus, so they can still operate the
+   * controls the normal way.
+   */
+  for (const control of document.querySelectorAll('.btn, .seg label')) {
+    control.addEventListener('mouseup', () => {
+      window.setTimeout(() => control.blur(), 0);
+    });
   }
 }
 
+const restored = restoreProgress();
 renderBoard();
 wire();
 syncThemeButton();
+
+if (restored) {
+  toast(`Picked up where you left off — ${state.tested.size} keys already tested.`);
+}

@@ -226,6 +226,7 @@
   </main>
 
   <p class="sr-only" role="status" aria-live="polite" id="announce"></p>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <section class="notes">
     <div class="note touch-note warn">
@@ -239,9 +240,17 @@
       web page. They are not broken — they simply never arrive.
     </div>
     <div class="note">
-      <b>A few shortcuts belong to the browser</b>
-      F5, F11, F12 and Ctrl/Cmd with W, T, N or R stay with the browser so you are never trapped on
-      this page. Everything else is held back while <em>Hold shortcuts</em> is on.
+      <b>Reload and friends are held back</b>
+      F5, F11, F12 and Ctrl/Cmd with R, W, T, N or Q would throw away a half-finished test, so the
+      first press is swallowed and only a second press straight after goes through. Your progress
+      also survives a refresh either way. Turn off <em>Hold shortcuts</em> to let everything
+      through.
+    </div>
+    <div class="note">
+      <b>Print Screen and the Windows key</b>
+      Both are taken by the operating system before the browser sees them, so they may screenshot
+      or open the Start menu whatever this page does. Print Screen often reports only a key
+      release, which still counts as tested here.
     </div>
     <div class="note">
       <b>Keys at once</b>

@@ -40,13 +40,21 @@ scrolls sideways.
 The numpad is a CSS grid rather than flex rows, because `+` and `enter` are two
 rows tall and a span is the honest way to say that.
 
-## Keys the page cannot see
+## Keys that fight back
 
+- **Reload and friends are held back.** F5, F11, F12 and Ctrl/Cmd with R, W, T,
+  N or Q would throw a half-finished test away, so the first press is swallowed
+  and a toast says what it would have done. A second press within 1.6 seconds
+  goes through, so you are never trapped on the page — and turning off
+  *Hold shortcuts* releases the keyboard entirely.
+- **Progress survives a reload anyway.** The tested set is kept in
+  `sessionStorage`, so a refresh the browser insists on (or one you meant)
+  picks up where you left off. Reset clears it.
+- **Print Screen and the Windows key** are taken by the operating system before
+  the browser sees them. Print Screen often reports only a key release, which
+  this page counts as tested rather than ignoring.
 - **Fn and most media keys** are handled inside the keyboard's firmware and
   never reach any web page. They are not broken.
-- **F5, F11, F12 and Ctrl/Cmd with W, T, N, R or Q** stay with the browser, so
-  the page can never trap you. Everything else is held back while
-  *Hold shortcuts* is on.
 - **macOS** does not always deliver `keyup` for keys released under ⌘, so the
   board clears every held key when the window loses focus.
 
