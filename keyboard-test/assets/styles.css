@@ -1,0 +1,660 @@
+/* ===========================================================================
+   Keyscope — keyboard tester
+
+   Palette: cool graphite neutrals, violet for the key under your finger,
+   green for keys already proven. Two states that mean two different things,
+   so they get two colours; nothing else does.
+
+   Keycaps are drawn as real objects — a top face, a side wall, and a shadow
+   that collapses when the cap travels down. The press animation is the whole
+   point of the page, so it gets the detail; everything else stays quiet.
+   =========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg: #eceef2;
+  --bg-grid: #dfe3ea;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --ink: #14161c;
+  --ink-2: #474d59;
+  --ink-3: #6f7683;
+  --line: #dfe3ea;
+  --line-strong: #c4cad4;
+
+  --cap: #fcfcfd;
+  --cap-2: #f1f3f7;
+  --cap-side: #cfd5df;
+  --cap-ink: #262b35;
+
+  --accent: #6c4cf1;
+  --accent-ink: #5334e0;
+  --accent-soft: #ebe6fe;
+  --accent-glow: rgba(108, 76, 241, 0.45);
+
+  --done: #1f9d62;
+  --done-soft: #e2f3ea;
+  --done-ink: #17784b;
+
+  --warn: #b26a12;
+  --warn-soft: #fbeedb;
+  --danger: #c0392b;
+
+  --shadow-card: 0 1px 2px rgb(20 22 28 / 0.05), 0 12px 30px rgb(20 22 28 / 0.07);
+  --radius: 16px;
+
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* One unit = one letter key. Scaled to the board's own width at runtime. */
+  --u: 44px;
+  --gap: calc(var(--u) * 0.1);
+  --travel: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #0d0f14;
+    --bg-grid: #161a22;
+    --surface: #14171e;
+    --surface-2: #1a1e27;
+    --ink: #e9ecf3;
+    --ink-2: #aeb5c2;
+    --ink-3: #7b8290;
+    --line: #242933;
+    --line-strong: #333a47;
+
+    --cap: #222733;
+    --cap-2: #1a1f29;
+    --cap-side: #0e1218;
+    --cap-ink: #dfe4ee;
+
+    --accent: #8b74ff;
+    --accent-ink: #a894ff;
+    --accent-soft: #221b46;
+    --accent-glow: rgba(139, 116, 255, 0.5);
+
+    --done: #3fbf84;
+    --done-soft: #112a20;
+    --done-ink: #5bd49b;
+
+    --warn: #e0a458;
+    --warn-soft: #2a2114;
+    --danger: #ef7f72;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 34px rgb(0 0 0 / 0.3);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0d0f14;
+  --bg-grid: #161a22;
+  --surface: #14171e;
+  --surface-2: #1a1e27;
+  --ink: #e9ecf3;
+  --ink-2: #aeb5c2;
+  --ink-3: #7b8290;
+  --line: #242933;
+  --line-strong: #333a47;
+
+  --cap: #222733;
+  --cap-2: #1a1f29;
+  --cap-side: #0e1218;
+  --cap-ink: #dfe4ee;
+
+  --accent: #8b74ff;
+  --accent-ink: #a894ff;
+  --accent-soft: #221b46;
+  --accent-glow: rgba(139, 116, 255, 0.5);
+
+  --done: #3fbf84;
+  --done-soft: #112a20;
+  --done-ink: #5bd49b;
+
+  --warn: #e0a458;
+  --warn-soft: #2a2114;
+  --danger: #ef7f72;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 34px rgb(0 0 0 / 0.3);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, var(--bg-grid), transparent 70%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+h1, h2, h3, p, ul, figure { margin: 0; }
+ul { padding: 0; list-style: none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ chrome */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px clamp(14px, 3vw, 28px);
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.brand-name { font-size: 15.5px; font-weight: 650; letter-spacing: -0.01em; }
+.brand-sub {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.seg {
+  display: flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+
+.seg label {
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--ink-2);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.seg label:hover { color: var(--ink); }
+
+.seg input:checked + label {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.btn:active { transform: translateY(1px); }
+
+.btn-accent {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.btn-accent:hover { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+.switch input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+/* -------------------------------------------------------------------- lede */
+
+.lede {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 30px) clamp(14px, 3vw, 28px) 4px;
+}
+
+.lede h1 {
+  font-size: clamp(23px, 3vw, 32px);
+  font-weight: 680;
+  letter-spacing: -0.028em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.lede p {
+  margin-top: 8px;
+  max-width: 62ch;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
+/* ------------------------------------------------------------------- board */
+
+.stage {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 18px clamp(14px, 3vw, 28px) 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+}
+
+.board-shell {
+  padding: clamp(12px, 1.6vw, 20px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.26);
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+}
+
+/* A deck is one horizontal band: function row, or main + nav + numpad. */
+.deck { display: flex; align-items: flex-start; gap: calc(var(--u) * 0.5); }
+
+.block { display: flex; flex-direction: column; gap: var(--gap); }
+.block-row { display: flex; gap: var(--gap); }
+
+/* The numpad is a real grid, so a two-row key spans two rows of caps. */
+.block-numpad {
+  display: grid;
+  grid-template-columns: repeat(4, var(--u));
+  grid-auto-rows: var(--u);
+  gap: var(--gap);
+}
+
+.block-numpad .key { width: auto; height: auto; }
+
+/* The arrow cluster sits under the nav block, bottom-aligned with the board. */
+.block-nav { justify-content: flex-start; }
+
+/*
+ * The nav stack is as tall as the main block, so the arrow cluster can sit on
+ * the bottom row where it does on a real keyboard, with the empty row above it.
+ */
+.nav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.5);
+  align-self: stretch;
+}
+
+.nav-stack .block-arrows { margin-top: auto; }
+
+.spacer { flex: 0 0 auto; }
+
+/* ----------------------------------------------------------------- keycaps */
+
+.key {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--u) * var(--kw, 1) + var(--gap) * (var(--kw, 1) - 1));
+  height: calc(var(--u) * var(--kh, 1) + var(--gap) * (var(--kh, 1) - 1));
+  display: grid;
+  place-items: center;
+  padding: 0 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: calc(var(--u) * 0.16);
+  background: linear-gradient(180deg, var(--cap) 0%, var(--cap-2) 100%);
+  color: var(--cap-ink);
+  font-family: var(--mono);
+  font-size: calc(var(--u) * 0.3);
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: center;
+  user-select: none;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 2px 0 var(--cap-side),
+    0 3px 5px rgb(10 12 18 / 0.14);
+  transition:
+    transform 0.09s cubic-bezier(0.2, 0.8, 0.3, 1),
+    box-shadow 0.09s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+/* Legends that are words, not glyphs, need to shrink to fit the cap. */
+.key.wide { font-size: calc(var(--u) * 0.2); letter-spacing: 0.01em; }
+
+.key .legend { display: grid; gap: 1px; }
+.key .legend .top { font-size: 0.84em; color: var(--ink-3); }
+
+/* --- held right now --------------------------------------------------- */
+
+.key.is-down {
+  transform: translateY(var(--travel));
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-ink) 100%);
+  border-color: var(--accent-ink);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.25),
+    0 0 0 1px var(--accent-ink),
+    0 0 22px var(--accent-glow);
+}
+
+.key.is-down .legend .top { color: rgb(255 255 255 / 0.75); }
+
+/* --- proven at least once --------------------------------------------- */
+
+.key.is-done {
+  background: linear-gradient(180deg, var(--done-soft) 0%, var(--done-soft) 100%);
+  border-color: color-mix(in srgb, var(--done) 42%, transparent);
+  color: var(--done-ink);
+}
+
+.key.is-done.is-down {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-ink) 100%);
+  color: #fff;
+}
+
+/* --- the ripple that leaves the cap on each press ---------------------- */
+
+.key::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.key.is-hit::after { animation: ripple 0.42s ease-out; }
+
+@keyframes ripple {
+  0% { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+/* ------------------------------------------------------------------ panel */
+
+.panel { display: grid; gap: 14px; }
+
+@media (min-width: 1181px) {
+  .panel { position: sticky; top: 74px; }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-head h2 { font-size: 13px; font-weight: 650; letter-spacing: -0.01em; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* --- live readout ------------------------------------------------------ */
+
+.readout { padding: 16px; display: grid; gap: 14px; }
+
+.readout-key {
+  display: grid;
+  place-items: center;
+  min-height: 94px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+}
+
+.readout-key.is-live {
+  background: var(--accent-soft);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.readout-key .big {
+  font-family: var(--mono);
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.readout-key.is-live .big { color: var(--accent-ink); }
+.readout-key .idle { font-size: 13.5px; color: var(--ink-3); text-align: center; }
+.readout-key.is-pulse { animation: pulse 0.3s ease-out; }
+
+@keyframes pulse {
+  0% { transform: scale(0.97); }
+  60% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+
+.fields { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+.field { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--surface); }
+.field dt { font-size: 12px; color: var(--ink-3); }
+.field dd { margin: 0; font-family: var(--mono); font-size: 12.5px; font-weight: 500; overflow-wrap: anywhere; text-align: right; }
+
+.mods { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.mod {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.mod.on {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent-ink);
+}
+
+/* --- progress ---------------------------------------------------------- */
+
+.progress { padding: 14px 16px 16px; display: grid; gap: 12px; }
+
+.progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.progress-top .count { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.progress-top .of { color: var(--ink-3); font-size: 13px; }
+
+.bar { height: 7px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.bar > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--done));
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+.tile { background: var(--surface); padding: 9px 10px; }
+.tile dt { font-size: 10px; font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.tile dd { margin: 2px 0 0; font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+
+.done-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border-radius: 11px;
+  background: var(--done-soft);
+  border: 1px solid color-mix(in srgb, var(--done) 35%, transparent);
+  color: var(--done-ink);
+  font-size: 13px;
+  font-weight: 550;
+  animation: rise 0.35s ease-out;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- history ----------------------------------------------------------- */
+
+.history { max-height: 232px; overflow-y: auto; }
+.history li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  animation: slide-in 0.26s ease-out;
+}
+
+.history li:last-child { border-bottom: none; }
+.history .hk { font-family: var(--mono); font-weight: 600; color: var(--ink); min-width: 4.5ch; }
+.history .hc { font-family: var(--mono); color: var(--ink-3); flex: 1; overflow-wrap: anywhere; }
+.history .hd { font-family: var(--mono); color: var(--ink-3); font-size: 11.5px; }
+.history .empty { color: var(--ink-3); justify-content: center; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ------------------------------------------------------------------ notes */
+
+.notes {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px clamp(14px, 3vw, 28px) 40px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.note {
+  padding: 13px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.note b { display: block; color: var(--ink); font-size: 12.5px; margin-bottom: 3px; }
+.note.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, transparent); color: var(--warn); }
+.note.warn b { color: var(--warn); }
+
+.touch-note { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .touch-note { display: block; }
+}
+
+.foot {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 clamp(14px, 3vw, 28px) 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.foot a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.foot a:hover { color: var(--accent); border-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .key.is-down { transform: none; }
+}
