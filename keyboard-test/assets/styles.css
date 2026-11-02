@@ -37,6 +37,13 @@
   --done-soft: #e2f3ea;
   --done-ink: #17784b;
 
+  /* A tested cap is filled, not tinted: it has to read across a whole board. */
+  --done-cap-top: #35b67c;
+  --done-cap-bottom: #2aa36d;
+  --done-cap-edge: #167a4f;
+  --done-cap-ink: #042516;
+  --done-cap-glow: rgba(31, 157, 98, 0.32);
+
   --warn: #b26a12;
   --warn-soft: #fbeedb;
   --danger: #c0392b;
@@ -82,6 +89,14 @@
     --done-soft: #112a20;
     --done-ink: #5bd49b;
 
+    /* The same lit cap as in light mode: a proven key is a property of the
+       key, not of the theme, and a dark green would vanish into a dark cap. */
+    --done-cap-top: #35b67c;
+    --done-cap-bottom: #2aa36d;
+    --done-cap-edge: #1d8c5d;
+    --done-cap-ink: #042516;
+    --done-cap-glow: rgba(63, 191, 132, 0.28);
+
     --warn: #e0a458;
     --warn-soft: #2a2114;
     --danger: #ef7f72;
@@ -116,6 +131,12 @@
   --done: #3fbf84;
   --done-soft: #112a20;
   --done-ink: #5bd49b;
+
+  --done-cap-top: #35b67c;
+  --done-cap-bottom: #2aa36d;
+  --done-cap-edge: #1d8c5d;
+  --done-cap-ink: #042516;
+  --done-cap-glow: rgba(63, 191, 132, 0.28);
 
   --warn: #e0a458;
   --warn-soft: #2a2114;
@@ -439,10 +460,16 @@ ul { padding: 0; list-style: none; }
 /* --- proven at least once --------------------------------------------- */
 
 .key.is-done {
-  background: linear-gradient(180deg, var(--done-soft) 0%, var(--done-soft) 100%);
-  border-color: color-mix(in srgb, var(--done) 42%, transparent);
-  color: var(--done-ink);
+  background: linear-gradient(180deg, var(--done-cap-top) 0%, var(--done-cap-bottom) 100%);
+  border-color: var(--done-cap-edge);
+  color: var(--done-cap-ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 2px 0 var(--done-cap-edge),
+    0 3px 10px var(--done-cap-glow);
 }
+
+.key.is-done .legend .top { color: color-mix(in srgb, var(--done-cap-ink) 68%, transparent); }
 
 .key.is-done.is-down {
   background: linear-gradient(180deg, var(--accent) 0%, var(--accent-ink) 100%);
