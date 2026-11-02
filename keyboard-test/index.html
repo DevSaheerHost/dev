@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Keyscope — Online Keyboard Test</title>
-  <meta name="description" content="Test every key on your keyboard in the browser. Press a key and see it light up, with its key name, code, keyCode and modifiers, plus a count of which keys you have proven and which are still untested.">
+  <title>Keyboard Test — Keyscope &middot; Saheer's Lab</title>
+  <meta name="description" content="Free online keyboard test from Saheer's Lab. Press any key and see it light up, with its key name, code and keyCode, and check which keys still do not register. Works for full size, tenkeyless and 60% keyboards.">
   <meta name="author" content="Saheer Babu">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#eceef2" media="(prefers-color-scheme: light)">
@@ -14,11 +14,16 @@
   <link rel="canonical" href="https://saheerlab.vercel.app/keyboard-test/">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Keyscope — Online Keyboard Test">
+  <meta property="og:title" content="Keyboard Test — Keyscope &middot; Saheer's Lab">
   <meta property="og:description" content="Press any key and watch it light up. Check every switch on your keyboard, see exactly what the browser reports, and find the key that stopped working.">
   <meta property="og:url" content="https://saheerlab.vercel.app/keyboard-test/">
   <meta property="og:site_name" content="Saheer's Lab">
   <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Keyboard Test — Keyscope">
+  <meta name="twitter:description" content="Press any key and watch it light up. Find the switch that stopped working.">
+  <meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
 
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -33,13 +38,51 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Keyscope",
-    "url": "https://saheerlab.vercel.app/keyboard-test/",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "Any",
-    "description": "Online keyboard tester: press keys and see which ones register.",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://saheerlab.vercel.app/keyboard-test/#app",
+        "name": "Keyscope Keyboard Test",
+        "alternateName": ["Keyboard Test", "Saheer's Lab Keyboard Test"],
+        "url": "https://saheerlab.vercel.app/keyboard-test/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any browser",
+        "browserRequirements": "Requires JavaScript and a physical keyboard",
+        "description": "Online keyboard tester: press any key and see whether it registers, with its key name, code and keyCode.",
+        "featureList": [
+          "Live key highlighting",
+          "Full size, tenkeyless and 60% layouts",
+          "event.key, event.code and keyCode readout",
+          "Simultaneous key rollover check"
+        ],
+        "isPartOf": { "@id": "https://saheerlab.vercel.app/#website" },
+        "publisher": { "@id": "https://saheerlab.vercel.app/#website" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://saheerlab.vercel.app/#website",
+        "name": "Saheer's Lab",
+        "alternateName": ["Saheers Lab", "Saheer Lab", "saheerlab"],
+        "url": "https://saheerlab.vercel.app/"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Saheer's Lab",
+            "item": "https://saheerlab.vercel.app/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Keyboard Test"
+          }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -87,7 +130,14 @@
   </header>
 
   <section class="lede">
-    <h1>Press every key. Watch what answers.</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../">Saheer&rsquo;s Lab</a></li>
+        <li aria-current="page">Keyboard test</li>
+      </ol>
+    </nav>
+    <h1>Keyboard test</h1>
+    <p class="tagline">Press every key. Watch what answers.</p>
     <p>
       Each key lights up the moment your keyboard reports it, and stays green once it has proven
       itself. Anything still grey has not registered yet — that is the key worth worrying about.

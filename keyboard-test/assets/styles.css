@@ -272,12 +272,39 @@ ul { padding: 0; list-style: none; }
   padding: clamp(18px, 3vw, 30px) clamp(14px, 3vw, 28px) 4px;
 }
 
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.crumbs li + li::before { content: '\203A'; margin-right: 8px; color: var(--line-strong); }
+.crumbs a { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid transparent; }
+.crumbs a:hover { color: var(--accent); border-color: var(--accent); }
+
 .lede h1 {
-  font-size: clamp(23px, 3vw, 32px);
+  font-size: clamp(27px, 3.4vw, 38px);
   font-weight: 680;
-  letter-spacing: -0.028em;
-  line-height: 1.12;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
   text-wrap: balance;
+}
+
+.lede .tagline {
+  margin-top: 4px;
+  font-size: clamp(16px, 1.7vw, 19px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--accent-ink);
 }
 
 .lede p {

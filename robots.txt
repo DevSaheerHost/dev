@@ -1,0 +1,12 @@
+# Saheer's Lab — https://saheerlab.vercel.app/
+# Everything here is public and meant to be found.
+
+User-agent: *
+Allow: /
+
+# Build output and model assets are not useful search results on their own.
+Disallow: /transferbox/app/
+Disallow: /open_world_game/models/
+Disallow: /explorer-file-server/files/
+
+Sitemap: https://saheerlab.vercel.app/sitemap.xml

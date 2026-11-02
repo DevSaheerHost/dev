@@ -9,7 +9,7 @@
         title: "Keyscope",
         description: "Keyboard test. Press any key and watch it light up, see exactly what the browser reports, and find the switch that stopped working.",
         url: "./keyboard-test/",
-        tags: ["Utility", "Hardware", "Offline"],
+        tags: ["Keyboard", "Utility", "Hardware"],
         status: "live",
         color: "#6C4CF1",
         icon: "keyboard"
