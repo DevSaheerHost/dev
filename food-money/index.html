@@ -4,16 +4,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Food Money</title>
+  <title>Food Money — Daily Payment Tracker &middot; Saheer&rsquo;s Lab</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <!-- Search and social metadata -->
+  <meta name="description" content="Daily food payment tracker from Saheer's Lab. Mark what you paid on a monthly calendar, see what is still expected, and keep the month balanced.">
+  <meta name="author" content="Saheer Babu">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://saheerlab.vercel.app/food-money/">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Food Money — Daily Payment Tracker">
+  <meta property="og:description" content="Daily food payment tracker from Saheer's Lab. Mark what you paid on a monthly calendar, see what is still expected, and keep the month balanced.">
+  <meta property="og:url" content="https://saheerlab.vercel.app/food-money/">
+  <meta property="og:site_name" content="Saheer's Lab">
+  <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Food Money — Daily Payment Tracker">
+  <meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
+
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Food Money",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Any browser",
+      "description": "Daily payment tracker with a monthly calendar.",
+      "@id": "https://saheerlab.vercel.app/food-money/#app",
+      "url": "https://saheerlab.vercel.app/food-money/",
+      "isPartOf": {
+        "@id": "https://saheerlab.vercel.app/#website"
+      },
+      "publisher": {
+        "@id": "https://saheerlab.vercel.app/#website"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://saheerlab.vercel.app/#website",
+      "name": "Saheer's Lab",
+      "alternateName": [
+        "Saheers Lab",
+        "Saheer Lab",
+        "saheerlab"
+      ],
+      "url": "https://saheerlab.vercel.app/"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Saheer's Lab",
+          "item": "https://saheerlab.vercel.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Food Money"
+        }
+      ]
+    }
+  ]
+}
+  </script>
 </head>
 
 <body>
   <main>
     <header>
       <div>
-        <h2>Food Money</h2>
+        <h1>Food Money</h1>
         <p>Daily payment tracker</p>
       </div>
 <span><i class="fa-solid fa-wallet"></i>
