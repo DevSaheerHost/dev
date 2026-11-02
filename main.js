@@ -6,6 +6,33 @@
 
     const projects = [
       {
+        title: "Explorer File Server",
+        description: "Release hub for the Explorer file server. Browse versions, read release notes and download build assets.",
+        url: "./explorer-file-server/",
+        tags: ["Downloads", "Releases"],
+        status: "live",
+        color: "#9BA7B4",
+        icon: "server"
+      },
+      {
+        title: "Food Money",
+        description: "Daily payment tracker with a monthly calendar. Mark what you paid, see what is still expected and keep the month balanced.",
+        url: "./food-money/",
+        tags: ["Tracker", "Offline"],
+        status: "live",
+        color: "#3FBF7F",
+        icon: "wallet"
+      },
+      {
+        title: "Nightfall",
+        description: "A 3D open world you can walk through, with a home, streetlights and dogs that come out after dark. Built with Three.js.",
+        url: "./open_world_game/",
+        tags: ["3D", "Game", "Three.js"],
+        status: "live",
+        color: "#F2762E",
+        icon: "world"
+      },
+      {
         title: "TransferBox",
         description: "Move large text, images, videos and files between any two browsers. No accounts, QR and direct browser-to-browser transfer, encrypted private workspaces.",
         url: "./transferbox/",
@@ -87,6 +114,15 @@
         status: "live",
         color: "#ff6fb0",
         icon: "transfer"
+      },
+      {
+        title: "CellZone Spare Management",
+        description: "Spare parts inventory for a phone repair counter. Search stock by brand, model and part. Early build.",
+        url: "./cellzone/spare-managment/",
+        tags: ["Inventory", "Shop"],
+        status: "soon",
+        color: "#F2CB05",
+        icon: "inventory"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -104,6 +140,10 @@
       cube: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>',
       qr: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="17" y1="17" x2="17" y2="17.01"></line><line x1="14" y1="14" x2="14" y2="14.01"></line><line x1="21" y1="14" x2="21" y2="14.01"></line><line x1="14" y1="21" x2="14" y2="21.01"></line><line x1="21" y1="21" x2="21" y2="21.01"></line>',
       tag: '<path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h8.99l8.61 8.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle>',
+      world: '<circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8M3.6 15h16.8"></path><path d="M12 3a14 14 0 0 0 0 18 14 14 0 0 0 0-18z"></path>',
+      wallet: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a1 1 0 0 1 1 1v2"></path><rect x="3" y="7.5" width="18" height="12" rx="2"></rect><circle cx="16.5" cy="13.5" r="1.2"></circle>',
+      server: '<rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><line x1="7" y1="7.5" x2="7.01" y2="7.5"></line><line x1="7" y1="16.5" x2="7.01" y2="16.5"></line>',
+      inventory: '<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12.5 12 17l9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path>',
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
