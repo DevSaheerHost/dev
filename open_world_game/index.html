@@ -17,8 +17,8 @@
     />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#070b14" />
-    <link rel="icon" href="data:," />
-    <title>Nightfall</title>
+    
+    <title>Nightfall — 3D Open World Browser Game &middot; Saheer&rsquo;s Lab</title>
 
     <style>
       :root {
@@ -391,7 +391,82 @@
         }
       }
     </script>
-  </head>
+  
+  <!-- Search and social metadata -->
+  <meta name="description" content="Nightfall is a 3D open world you can walk through in the browser, from Saheer's Lab. Explore a small town with a home and streetlights, and stay inside after dark. No download, built with Three.js.">
+  <meta name="author" content="Saheer Babu">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://saheerlab.vercel.app/open_world_game/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Nightfall — a 3D open world in your browser">
+  <meta property="og:description" content="Nightfall is a 3D open world you can walk through in the browser, from Saheer's Lab. Explore a small town with a home and streetlights, and stay inside after dark. No download, built with Three.js.">
+  <meta property="og:url" content="https://saheerlab.vercel.app/open_world_game/">
+  <meta property="og:site_name" content="Saheer's Lab">
+  <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nightfall — a 3D open world in your browser">
+  <meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
+
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "VideoGame",
+      "name": "Nightfall",
+      "genre": [
+        "Open world",
+        "Adventure"
+      ],
+      "gamePlatform": "Web browser",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any browser",
+      "description": "A 3D open world with a home, streetlights and dogs that come out after dark.",
+      "@id": "https://saheerlab.vercel.app/open_world_game/#app",
+      "url": "https://saheerlab.vercel.app/open_world_game/",
+      "isPartOf": {
+        "@id": "https://saheerlab.vercel.app/#website"
+      },
+      "publisher": {
+        "@id": "https://saheerlab.vercel.app/#website"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://saheerlab.vercel.app/#website",
+      "name": "Saheer's Lab",
+      "alternateName": [
+        "Saheers Lab",
+        "Saheer Lab",
+        "saheerlab"
+      ],
+      "url": "https://saheerlab.vercel.app/"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Saheer's Lab",
+          "item": "https://saheerlab.vercel.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Nightfall"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+</head>
 
   <body>
     <canvas id="game"></canvas>

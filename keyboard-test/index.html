@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>Keyboard Test — Keyscope &middot; Saheer's Lab</title>
+  <meta name="description" content="Free online keyboard test from Saheer's Lab. Press any key and see it light up, with its key name, code and keyCode, and check which keys still do not register. Works for full size, tenkeyless and 60% keyboards.">
+  <meta name="author" content="Saheer Babu">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#eceef2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://saheerlab.vercel.app/keyboard-test/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Keyboard Test — Keyscope &middot; Saheer's Lab">
+  <meta property="og:description" content="Press any key and watch it light up. Check every switch on your keyboard, see exactly what the browser reports, and find the key that stopped working.">
+  <meta property="og:url" content="https://saheerlab.vercel.app/keyboard-test/">
+  <meta property="og:site_name" content="Saheer's Lab">
+  <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Keyboard Test — Keyscope">
+  <meta name="twitter:description" content="Press any key and watch it light up. Find the switch that stopped working.">
+  <meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
+
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./assets/styles.css">
+
+  <script src="./assets/theme.js"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://saheerlab.vercel.app/keyboard-test/#app",
+        "name": "Keyscope Keyboard Test",
+        "alternateName": ["Keyboard Test", "Saheer's Lab Keyboard Test"],
+        "url": "https://saheerlab.vercel.app/keyboard-test/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any browser",
+        "browserRequirements": "Requires JavaScript and a physical keyboard",
+        "description": "Online keyboard tester: press any key and see whether it registers, with its key name, code and keyCode.",
+        "featureList": [
+          "Live key highlighting",
+          "Full size, tenkeyless and 60% layouts",
+          "event.key, event.code and keyCode readout",
+          "Simultaneous key rollover check"
+        ],
+        "isPartOf": { "@id": "https://saheerlab.vercel.app/#website" },
+        "publisher": { "@id": "https://saheerlab.vercel.app/#website" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://saheerlab.vercel.app/#website",
+        "name": "Saheer's Lab",
+        "alternateName": ["Saheers Lab", "Saheer Lab", "saheerlab"],
+        "url": "https://saheerlab.vercel.app/"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Saheer's Lab",
+            "item": "https://saheerlab.vercel.app/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Keyboard Test"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2.5" y="6" width="19" height="12" rx="2.5"></rect>
+          <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M8 14h8"></path>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">Keyscope</span>
+        <span class="brand-sub">Keyboard test</span>
+      </span>
+    </div>
+
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Keyboard layout">
+        <input type="radio" name="layout" id="layout-full" value="full" checked>
+        <label for="layout-full">Full</label>
+        <input type="radio" name="layout" id="layout-tkl" value="tkl">
+        <label for="layout-tkl">TKL</label>
+        <input type="radio" name="layout" id="layout-compact" value="compact">
+        <label for="layout-compact">60%</label>
+      </div>
+
+      <div class="seg" role="radiogroup" aria-label="Key legends">
+        <input type="radio" name="legend" id="legend-win" value="win" checked>
+        <label for="legend-win">Windows</label>
+        <input type="radio" name="legend" id="legend-mac" value="mac">
+        <label for="legend-mac">Mac</label>
+      </div>
+
+      <label class="switch" for="capture" title="Stop keys like Tab and Space from acting on the page while you test">
+        <input type="checkbox" id="capture" checked>
+        Hold shortcuts
+      </label>
+
+      <button type="button" class="btn" id="theme" aria-live="polite">Dark</button>
+      <button type="button" class="btn btn-accent" id="reset">Reset test</button>
+    </div>
+  </header>
+
+  <section class="lede">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../">Saheer&rsquo;s Lab</a></li>
+        <li aria-current="page">Keyboard test</li>
+      </ol>
+    </nav>
+    <h1>Keyboard test</h1>
+    <p class="tagline">Press every key. Watch what answers.</p>
+    <p>
+      Each key lights up the moment your keyboard reports it, and stays green once it has proven
+      itself. Anything still grey has not registered yet — that is the key worth worrying about.
+    </p>
+  </section>
+
+  <main class="stage">
+    <div class="board-shell" id="boardShell">
+      <div class="board" id="board" aria-hidden="true"></div>
+    </div>
+
+    <aside class="panel" aria-label="Key details and progress">
+      <section class="card">
+        <div class="card-head">
+          <h2>Last key</h2>
+          <span class="eyebrow" id="liveState">Waiting</span>
+        </div>
+
+        <div class="readout">
+          <div class="readout-key" id="readoutKey">
+            <p class="idle" id="readoutIdle">Press any key to begin</p>
+            <p class="big" id="readoutBig" hidden></p>
+          </div>
+
+          <dl class="fields">
+            <div class="field"><dt>event.key</dt><dd id="fKey">—</dd></div>
+            <div class="field"><dt>event.code</dt><dd id="fCode">—</dd></div>
+            <div class="field"><dt>event.keyCode</dt><dd id="fKeyCode">—</dd></div>
+            <div class="field"><dt>location</dt><dd id="fLocation">—</dd></div>
+            <div class="field"><dt>held for</dt><dd id="fHeld">—</dd></div>
+          </dl>
+
+          <div class="mods" role="group" aria-label="Modifier keys held">
+            <span class="mod" id="modCtrl">ctrl</span>
+            <span class="mod" id="modShift">shift</span>
+            <span class="mod" id="modAlt">alt</span>
+            <span class="mod" id="modMeta">meta</span>
+            <span class="mod" id="modRepeat">repeat</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Progress</h2>
+          <span class="eyebrow" id="layoutName">Full size</span>
+        </div>
+
+        <div class="progress">
+          <div class="progress-top">
+            <span><span class="count" id="testedCount">0</span> <span class="of">of <span id="totalCount">104</span> keys</span></span>
+            <span class="eyebrow" id="percent">0%</span>
+          </div>
+
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Keys tested">
+            <span id="barFill"></span>
+          </div>
+
+          <div id="doneBanner" hidden>
+            <p class="done-banner">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m4 12.5 5 5L20 6.5"></path>
+              </svg>
+              Every key on this layout registered.
+            </p>
+          </div>
+
+          <dl class="tiles">
+            <div class="tile"><dt>Presses</dt><dd id="statPresses">0</dd></div>
+            <div class="tile" title="How many keys your keyboard reported at the same time"><dt>At once</dt><dd id="statRollover">0</dd></div>
+            <div class="tile"><dt>Untested</dt><dd id="statLeft">104</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Recent</h2>
+          <span class="eyebrow">Newest first</span>
+        </div>
+        <ul class="history" id="history">
+          <li class="empty">Nothing pressed yet</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <p class="sr-only" role="status" aria-live="polite" id="announce"></p>
+
+  <section class="notes">
+    <div class="note touch-note warn">
+      <b>This needs a physical keyboard</b>
+      On a touch screen there are no key events to read. Connect a keyboard, or open this page on a
+      computer.
+    </div>
+    <div class="note">
+      <b>Some keys never reach the browser</b>
+      Fn, media keys and anything your keyboard handles in its own firmware are invisible to any
+      web page. They are not broken — they simply never arrive.
+    </div>
+    <div class="note">
+      <b>A few shortcuts belong to the browser</b>
+      F5, F11, F12 and Ctrl/Cmd with W, T, N or R stay with the browser so you are never trapped on
+      this page. Everything else is held back while <em>Hold shortcuts</em> is on.
+    </div>
+    <div class="note">
+      <b>Keys at once</b>
+      Hold several keys together to see how many your keyboard can report simultaneously. Cheaper
+      boards stop at around six, or drop keys in certain combinations.
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Runs entirely in your browser. Nothing you type is recorded, stored or sent anywhere.</p>
+    <p><a href="../">Back to Saheer&rsquo;s Lab</a></p>
+  </footer>
+
+  <script type="module" src="./assets/app.js"></script>
+</body>
+
+</html>

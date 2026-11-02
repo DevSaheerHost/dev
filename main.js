@@ -6,6 +6,15 @@
 
     const projects = [
       {
+        title: "Keyscope",
+        description: "Keyboard test. Press any key and watch it light up, see exactly what the browser reports, and find the switch that stopped working.",
+        url: "./keyboard-test/",
+        tags: ["Keyboard", "Utility", "Hardware"],
+        status: "live",
+        color: "#6C4CF1",
+        icon: "keyboard"
+      },
+      {
         title: "Explorer File Server",
         description: "Release hub for the Explorer file server. Browse versions, read release notes and download build assets.",
         url: "./explorer-file-server/",
@@ -140,6 +149,7 @@
       cube: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>',
       qr: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="17" y1="17" x2="17" y2="17.01"></line><line x1="14" y1="14" x2="14" y2="14.01"></line><line x1="21" y1="14" x2="21" y2="14.01"></line><line x1="14" y1="21" x2="14" y2="21.01"></line><line x1="21" y1="21" x2="21" y2="21.01"></line>',
       tag: '<path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h8.99l8.61 8.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.2"></circle>',
+      keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 13.5h.01M9.5 13.5h.01M13 13.5h.01M16.5 13.5h.01M8.5 16.5h7"></path>',
       world: '<circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8M3.6 15h16.8"></path><path d="M12 3a14 14 0 0 0 0 18 14 14 0 0 0 0-18z"></path>',
       wallet: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a1 1 0 0 1 1 1v2"></path><rect x="3" y="7.5" width="18" height="12" rx="2"></rect><circle cx="16.5" cy="13.5" r="1.2"></circle>',
       server: '<rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><line x1="7" y1="7.5" x2="7.01" y2="7.5"></line><line x1="7" y1="16.5" x2="7.01" y2="16.5"></line>',

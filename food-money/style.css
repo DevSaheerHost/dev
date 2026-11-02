@@ -23,6 +23,12 @@ header{
   justify-content: space-between;
   padding: 1rem 1rem;
 }
+header h1{
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
 header p{
   color: var(--text-dim);
   margin-top: 0.4rem;
