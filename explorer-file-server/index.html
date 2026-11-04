@@ -113,6 +113,7 @@ a{color:var(--link)}
 .file-name a:hover{text-decoration:underline}
 .file-meta{color:var(--muted);font-size:12px;margin-top:2px}
 .file-meta code{font-size:11px;color:#8b949e}
+.flag.ok{border-color:#28643a;background:#122319;color:#7ee787}
 .flag{display:inline-flex;align-items:center;gap:4px;border:1px solid #6e5b24;background:#2a2413;color:#eacb72;
   border-radius:20px;padding:1px 8px;font-size:11px;margin-left:2px}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -173,7 +174,8 @@ a{color:var(--link)}
       "applicationCategory": "FinanceApplication",
       "operatingSystem": "Android",
       "softwareVersion": "1.0.0",
-      "fileSize": "3.6 MB",
+      "fileSize": "3.93 MB",
+      "downloadUrl": "https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk",
       "description": "Android build of the Food Money daily payment tracker.",
       "url": "https://saheerlab.vercel.app/food-money/",
       "isPartOf": { "@id": "https://saheerlab.vercel.app/#website" },
@@ -259,16 +261,16 @@ a{color:var(--link)}
     <section class="heading">
       <div>
         <h2>Releases</h2>
-        <p>Builds produced by the APK workflow on every push to <span class="mono">main</span>.</p>
+        <p>Signed release builds of the Android app, published from the APK workflow.</p>
       </div>
       <span class="count">1 release</span>
     </section>
 
     <div class="note">
-      <b>About this download.</b> The APK is a GitHub Actions build artifact, so GitHub asks you to sign in before it
-      will serve the file, and it serves it as a <span class="mono">.zip</span> containing the APK. The artifact is
-      kept until <strong>25 January 2027</strong>. The web version at
-      <a href="../food-money/">saheerlab.vercel.app/food-money</a> needs no install at all.
+      <b>Installing on Android.</b> Android blocks apps from outside the Play Store by default, so open the file and
+      allow installs from your browser when it asks. This is a debug build, signed with the standard Android debug
+      key. Prefer no install at all? The web version at
+      <a href="../food-money/">saheerlab.vercel.app/food-money</a> is the same app.
     </div>
 
     <input class="search" data-search="food-money" placeholder="Search releases and files…" aria-label="Search Food Money releases and files">
@@ -277,12 +279,12 @@ a{color:var(--link)}
       <div class="release-head">
         <span class="tag">Latest</span>
         <div>
-          <h3 class="release-title">Food Money — Android build #3</h3>
+          <h3 class="release-title"><a href="https://github.com/DevSaheerHost/dev/releases/tag/food-money-v1.0.0" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Food Money v1.0.0 (Android)</a></h3>
           <p class="meta">
-            <span class="mono">build-3</span> ·
-            <span>27 Oct 2026</span> ·
-            <span>commit <a class="mono" href="https://github.com/DevSaheerHost/dev/commit/0e2ff04a20003ca5f36ba7e5c3a3f3e00f2e9918" target="_blank" rel="noopener">0e2ff04</a></span> ·
-            <span><a href="https://github.com/DevSaheerHost/dev/actions/runs/40547767667" target="_blank" rel="noopener">Build Food Money APK #3</a></span>
+            <span class="mono">food-money-v1.0.0</span> ·
+            <span>4 Nov 2026</span> ·
+            <span>commit <a class="mono" href="https://github.com/DevSaheerHost/dev/commit/c066ba915af35648f915007a1fd0e1bbf029e187" target="_blank" rel="noopener">c066ba9</a></span> ·
+            <span><a href="https://github.com/DevSaheerHost/dev/actions/runs/41774940705" target="_blank" rel="noopener">build log</a></span>
           </p>
         </div>
       </div>
@@ -296,23 +298,23 @@ a{color:var(--link)}
         </ul>
       </div>
 
-      <div class="assets-title">Assets <small>1 file · 3.59 MB</small></div>
+      <div class="assets-title">Assets <small>1 file · 3.93 MB</small></div>
 
       <div class="asset searchable">
         <div class="file-icon" aria-hidden="true">🤖</div>
         <div class="file-info">
           <div class="file-name">
-            <a href="https://github.com/DevSaheerHost/dev/actions/runs/40547767667/artifacts/12754315874" target="_blank" rel="noopener">Food-Money-APK.zip</a>
+            <a href="https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk">food-money-v1.0.0.apk</a>
           </div>
           <div class="file-meta">
-            Android APK, zipped by Actions · 3.59 MB · built 27 Oct 2026
-            <span class="flag" title="GitHub Actions artifacts are only served to signed-in users">GitHub sign-in needed</span>
-            <br><code>sha256:cb86ae5d5438f15ba59f616fdf568d35b229a15f48e3906d4f8c7ce9c69cda75</code>
+            Android package · 3.93 MB · released 4 Nov 2026
+            <span class="flag ok" title="A release asset is a plain public download">No sign-in needed</span>
+            <br><code>sha256:391cb3ac41b6e17a96818960ee291cc741c95dbf424c637ff3c7de61eca6aa07</code>
           </div>
         </div>
         <div class="actions">
-          <button class="btn" data-copy="cb86ae5d5438f15ba59f616fdf568d35b229a15f48e3906d4f8c7ce9c69cda75">Copy SHA-256</button>
-          <a class="btn primary" href="https://github.com/DevSaheerHost/dev/actions/runs/40547767667/artifacts/12754315874" target="_blank" rel="noopener">↓ Download APK</a>
+          <button class="btn" data-copy="391cb3ac41b6e17a96818960ee291cc741c95dbf424c637ff3c7de61eca6aa07">Copy SHA-256</button>
+          <a class="btn primary" href="https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk">↓ Download APK</a>
         </div>
       </div>
 
