@@ -54,3 +54,16 @@ export function accrualId(configId: string, periodKey: string, revision = 0): st
   const base = `acc_${configId}_${periodKey.replace('-', '')}`;
   return revision > 0 ? `${base}_r${revision}` : base;
 }
+
+/**
+ * The deterministic id for a daily allowance actually received in a period.
+ *
+ * Distinct from `accrualId` so the two halves of food money — what was owed and
+ * what was handed over — are separate documents that can be confirmed and
+ * audited independently, while neither can be posted twice.
+ */
+export function allowanceReceiptId(configId: string, periodKey: string): string {
+  assertId('income config', configId);
+  if (!/^\d{4}-\d{2}$/.test(periodKey)) throw new Error('Invalid period key');
+  return `rcv_${configId}_${periodKey.replace('-', '')}`;
+}

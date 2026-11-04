@@ -310,6 +310,25 @@ export function balanceAsOf(
   return paise(openingBalance + sumPaise(effects));
 }
 
+/**
+ * The balance a period opens at: everything recognised before its first day.
+ *
+ * Deliberately filtered on `recognitionDate`, not `transactionDate`, because
+ * that is how `entriesForPeriod` decides membership. Mixing the two would count
+ * a backdated entry twice on a statement — once inside the opening figure and
+ * again as a row — and the running balance would not reconcile.
+ */
+export function balanceBeforePeriod(
+  openingBalance: Paise,
+  transactions: readonly Transaction[],
+  from: CalendarDate,
+): Paise {
+  const effects = liveEntries(transactions)
+    .filter((transaction) => compareDates(transaction.recognitionDate, from) < 0)
+    .map(transactionEffect);
+  return paise(openingBalance + sumPaise(effects));
+}
+
 /** A row in a statement: the entry plus the balance after applying it. */
 export interface RunningRow {
   readonly transaction: Transaction;

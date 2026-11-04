@@ -286,6 +286,98 @@ export function Select<T extends string>({
   );
 }
 
+/**
+ * A row of choices, one selected.
+ *
+ * Used instead of a `<select>` wherever the options are few and the choice
+ * matters: picking "Advance" rather than "Salary" changes what the statement
+ * says, and a chip that is visibly selected is harder to get wrong in a hurry
+ * than a collapsed dropdown.
+ */
+export function ChipGroup<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  hint,
+}: {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: readonly { readonly value: T; readonly label: string }[];
+  hint?: string | undefined;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-sm font-medium text-ink-2">{label}</p>
+      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const selected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(option.value)}
+              className={`min-h-11 rounded-xl border px-3.5 text-sm font-semibold transition-colors ${
+                selected
+                  ? 'border-accent bg-accent-soft text-accent-ink'
+                  : 'border-line-strong text-ink-2 hover:bg-surface-2'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {hint ? <p className="mt-1.5 text-sm text-ink-3">{hint}</p> : null}
+    </div>
+  );
+}
+
+/** An on/off setting with its explanation, sized for a thumb. */
+export function Toggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-line-strong px-3.5 py-3 text-left hover:bg-surface-2"
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-ink">{label}</span>
+        {description ? (
+          <span className="mt-0.5 block text-sm text-ink-3">{description}</span>
+        ) : null}
+      </span>
+      <span
+        aria-hidden
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+          checked ? 'bg-accent' : 'bg-line-strong'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 size-5 rounded-full bg-white transition-all ${
+            checked ? 'left-[1.375rem]' : 'left-0.5'
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /* Money display                                                               */
 /* -------------------------------------------------------------------------- */

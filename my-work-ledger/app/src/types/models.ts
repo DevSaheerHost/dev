@@ -237,6 +237,32 @@ export interface Settlement {
   readonly createdAt: unknown;
 }
 
+/**
+ * One day at one shop — stored only when it differs from the ordinary case.
+ *
+ * A date with no document means "worked, and no daily allowance was handed
+ * over". So a year of normal attendance costs nothing, and the collection only
+ * holds the exceptions: days off, and days the food money actually arrived.
+ *
+ * The document id is the date itself, which makes every write idempotent: two
+ * taps, or two devices, address the same document instead of creating a second
+ * record of the same day.
+ */
+export interface DayRecord {
+  readonly date: CalendarDate;
+  /** True when the day was not worked. A day off does not accrue salary. */
+  readonly off: boolean;
+  /** Ids of the daily allowance configs actually received on this day. */
+  readonly allowancesReceived: readonly string[];
+  readonly note: string;
+  /**
+   * No `createdAt`: the document is an upsert addressed by its own date, so
+   * every write is a merge and an immutable creation stamp would make the
+   * second write to a day illegal. `updatedAt` is all this record needs.
+   */
+  readonly updatedAt: unknown;
+}
+
 export type ReminderType = 'weekly' | 'monthly' | 'oneTime';
 
 export interface Reminder {

@@ -2,7 +2,25 @@ import { describe, expect, it } from 'vitest';
 
 import { asCalendarDate, type PeriodKey } from '@/lib/dates';
 import { paise, sumPaise, type Paise } from '@/lib/money';
-import type { IncomeConfig, IncomeFrequency, IncomeKind, Shop } from '@/types/models';
+import type { DayRecord, IncomeConfig, IncomeFrequency, IncomeKind, Shop } from '@/types/models';
+
+/** Day records: dates not worked, and dates a daily allowance was received. */
+function dayMap(spec: { off?: string[]; got?: Record<string, string[]> } = {}) {
+  const records = new Map<ReturnType<typeof date>, DayRecord>();
+  const blank = (value: string): DayRecord => ({
+    date: date(value),
+    off: false,
+    allowancesReceived: [],
+    note: '',
+    updatedAt: null,
+  });
+  for (const value of spec.off ?? []) records.set(date(value), { ...blank(value), off: true });
+  for (const [value, ids] of Object.entries(spec.got ?? {})) {
+    const existing = records.get(date(value)) ?? blank(value);
+    records.set(date(value), { ...existing, allowancesReceived: ids });
+  }
+  return records as ReadonlyMap<ReturnType<typeof date>, DayRecord>;
+}
 
 import {
   accrualKeyFor,
@@ -57,6 +75,7 @@ function contextFixture(overrides: Partial<ProposalContext> = {}): ProposalConte
     shop: shopFixture(),
     configs: [configFixture()],
     existingAccrualKeys: new Set<string>(),
+    days: new Map(),
     today: date('2025-12-01'),
     ...overrides,
   };
@@ -458,5 +477,179 @@ describe('posted proposals reconcile with the engine', () => {
     const earned = totalProposed(proposeOutstanding(context));
     const paid = rs(18000 * 11); // every month paid except the last
     expect(paise(earned - paid)).toBe(rs(18000));
+  });
+});
+
+/* ========================================================================== */
+/* Attendance                                                                  */
+/* ========================================================================== */
+
+describe('days off reduce what is accrued', () => {
+  it('pro-rates the month on the calendar, not on the days worked', () => {
+    // Two days off in a 30-day November: 28/30 of 18,000, NOT a full month
+    // spread across 28 days.
+    const context = contextFixture({
+      days: dayMap({ off: ['2025-11-09', '2025-11-23'] }),
+    });
+    const [proposal] = proposeForPeriod(context, period('2025-11'));
+    expect(proposal).toMatchObject({
+      amount: 1680000, // 18,000 x 28/30
+      prorationNum: 28,
+      prorationDen: 30,
+      isPartial: true,
+    });
+  });
+
+  it('is unchanged by absences in a different month', () => {
+    const context = contextFixture({ days: dayMap({ off: ['2025-10-09', '2025-12-01'] }) });
+    expect(proposeForPeriod(context, period('2025-11'))[0]?.amount).toBe(rs(18000));
+  });
+
+  it('ignores absences outside a config\u2019s own coverage', () => {
+    const context = contextFixture({
+      configs: [configFixture({ effectiveFrom: date('2025-11-21') })],
+      days: dayMap({ off: ['2025-11-05'] }),
+      shop: shopFixture({ joiningDate: date('2025-11-21'), openingBalanceAsOf: date('2025-11-21') }),
+    });
+    // The 5th is before this config starts, so it cannot reduce its 10 days.
+    expect(proposeForPeriod(context, period('2025-11'))[0]).toMatchObject({
+      prorationNum: 10,
+      amount: rs(6000),
+    });
+  });
+
+  it('proposes nothing for a month that was entirely off', () => {
+    const allOff = Array.from({ length: 30 }, (_, index) =>
+      `2025-11-${String(index + 1).padStart(2, '0')}`,
+    );
+    const context = contextFixture({ days: dayMap({ off: allOff }) });
+    expect(proposeForPeriod(context, period('2025-11'))).toEqual([]);
+  });
+
+  it('reduces a daily rate by the days not worked', () => {
+    const context = contextFixture({
+      configs: [configFixture({ frequency: 'daily', amount: rs(600) })],
+      days: dayMap({ off: ['2025-11-09', '2025-11-23'] }),
+    });
+    expect(proposeForPeriod(context, period('2025-11'))[0]?.amount).toBe(rs(600 * 28));
+  });
+
+  it('does not touch a one-time payment, which is not day-based', () => {
+    const context = contextFixture({
+      configs: [
+        configFixture({
+          frequency: 'oneTime',
+          amount: rs(5000),
+          effectiveFrom: date('2025-11-10'),
+          effectiveTo: date('2025-11-10'),
+        }),
+      ],
+      days: dayMap({ off: ['2025-11-09', '2025-11-23'] }),
+    });
+    expect(proposeForPeriod(context, period('2025-11'))[0]?.amount).toBe(rs(5000));
+  });
+});
+
+/* ========================================================================== */
+/* Food money: owed daily, settled by ticking                                  */
+/* ========================================================================== */
+
+describe('a daily allowance proposes both halves', () => {
+  const food = () =>
+    configFixture({
+      id: 'inc_food',
+      kind: 'allowance',
+      label: 'Food money',
+      amount: rs(100),
+      frequency: 'daily',
+    });
+
+  it('proposes what was owed and what was actually handed over', () => {
+    const context = contextFixture({
+      configs: [food()],
+      days: dayMap({
+        got: {
+          '2025-11-01': ['inc_food'],
+          '2025-11-02': ['inc_food'],
+          '2025-11-03': ['inc_food'],
+        },
+      }),
+    });
+
+    const proposals = proposeForPeriod(context, period('2025-11'));
+    expect(proposals).toHaveLength(2);
+
+    expect(proposals[0]).toMatchObject({
+      settles: 'earned',
+      kind: 'allowance_earned',
+      amount: rs(3000), // 30 days at 100
+      accrualKey: 'inc_food:2025-11',
+    });
+    expect(proposals[1]).toMatchObject({
+      settles: 'received',
+      kind: 'salary_payment_received',
+      amount: rs(300), // only the 3 ticked days
+      accrualKey: 'inc_food:2025-11:received',
+      prorationNum: 3,
+      prorationDen: 30,
+    });
+
+    // Net effect on the balance: 27 days of food money still outstanding.
+    expect(proposals[0]!.amount - proposals[1]!.amount).toBe(rs(2700));
+  });
+
+  it('gives the two halves separate documents', () => {
+    const context = contextFixture({
+      configs: [food()],
+      days: dayMap({ got: { '2025-11-01': ['inc_food'] } }),
+    });
+    const ids = proposeForPeriod(context, period('2025-11')).map((proposal) => proposal.id);
+    expect(ids).toEqual(['acc_inc_food_202511', 'rcv_inc_food_202511']);
+  });
+
+  it('proposes only the earned half when nothing was handed over', () => {
+    const context = contextFixture({ configs: [food()] });
+    const proposals = proposeForPeriod(context, period('2025-11'));
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0]).toMatchObject({ settles: 'earned', amount: rs(3000) });
+  });
+
+  it('settles each half independently once posted', () => {
+    const days = dayMap({ got: { '2025-11-01': ['inc_food'] } });
+
+    const earnedPosted = proposeForPeriod(
+      contextFixture({ configs: [food()], days, existingAccrualKeys: new Set(['inc_food:2025-11']) }),
+      period('2025-11'),
+    );
+    expect(earnedPosted.map((proposal) => proposal.settles)).toEqual(['received']);
+
+    const bothPosted = proposeForPeriod(
+      contextFixture({
+        configs: [food()],
+        days,
+        existingAccrualKeys: new Set(['inc_food:2025-11', 'inc_food:2025-11:received']),
+      }),
+      period('2025-11'),
+    );
+    expect(bothPosted).toEqual([]);
+  });
+
+  it('never counts food money for a day that was not worked', () => {
+    const context = contextFixture({
+      configs: [food()],
+      days: dayMap({ off: ['2025-11-04'], got: { '2025-11-01': ['inc_food'] } }),
+    });
+    const proposals = proposeForPeriod(context, period('2025-11'));
+    expect(proposals[0]?.amount).toBe(rs(2900)); // 29 worked days
+    expect(proposals[1]?.amount).toBe(rs(100));
+  });
+
+  it('leaves a monthly allowance out of the daily settlement path', () => {
+    const context = contextFixture({
+      configs: [configFixture({ kind: 'allowance', frequency: 'monthly', amount: rs(1200) })],
+    });
+    const proposals = proposeForPeriod(context, period('2025-11'));
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0]).toMatchObject({ settles: 'earned', kind: 'allowance_earned' });
   });
 });

@@ -10,12 +10,11 @@ outstanding. At the end of a period you can seal a statement and hand it over.
 Live at **/my-work-ledger/**. Built to be used daily on a phone, offline, and to survive a
 reinstall.
 
-> **Status: Phase 2 of 7 — the financial engine.** Accounts, shops, the money/date core, the
-> balance engine, salary accrual and the entry data layer are done and tested. What is *not*
-> built yet is the screen for any of it: there is no form to add an entry and no transaction
-> list, so the dashboard still shows only opening balances and says so on screen rather than
-> showing plausible numbers that are not real. Phase 3 puts the engine on screen. Settlements,
-> PDF reports, reminders and the Android build come after that. See
+> **Status: Phase 3 of 7 — usable.** Open a shop, see what it owes you right now, and record
+> an advance or an out-of-pocket expense in two taps. Salary builds up day by day, days off
+> reduce it, and food money is owed daily with a tick for the days it actually arrived.
+> Settlements and printed statements (Phase 4), reminders (Phase 5) and the Android build
+> (Phase 6) are still to come — there is no sealing, no PDF and no notification yet. See
 > [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
 
 ---
@@ -34,6 +33,24 @@ ledger loses money.
 construct a `Date`, and a test enforces that.
 
 **Positive means the shop owes you.**
+
+### How a month works
+
+Salary is earned **day by day**, not in a lump at month end. ₹10,000 a month in a 30-day month
+adds about ₹333 a day, so the figure on screen climbs on its own — it is computed from the
+stored facts on every render, never written, so there is no daily job to miss and nothing to
+reconcile if you do not open the app for a week.
+
+A day marked **off** does not accrue. Two days off in November gives 28/30 of the salary, with
+the calendar month as the denominator so a full month still comes to exactly ₹10,000.
+
+**Food money** is a separate daily entitlement: owed for every day worked, with a tick on the
+calendar for the days it actually changed hands. Unticked days stay owed, so the balance shows
+exactly how many days of food money are outstanding.
+
+Once a month ends, the app *offers* the entries — it never writes them itself. One tap turns the
+live figures into real ledger entries, under a deterministic id so the same month can never be
+posted twice.
 
 | Entry | Effect | Note |
 | --- | --- | --- |
@@ -166,7 +183,10 @@ my-work-ledger/
         ├── types/models.ts      exactly what Firestore stores
         ├── data/                Firebase client, validated paths, shops, entries, configs
         ├── features/
-        │   ├── ledger/          engine, accrual, posting — pure, no React, no clock
+        │   ├── ledger/          engine, accrual, posting, attendance, figures —
+        │   │                    pure, no React, no clock
+        │   ├── entries/         the You got / You gave sheet, and the history
+        │   ├── attendance/      the month calendar
         │   ├── auth/
         │   └── shops/
         ├── components/          UI primitives and the app shell
@@ -190,7 +210,7 @@ nothing in the UI awaits. See `data/writes.ts`.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **146 unit tests**, all pure and needing no emulator, network or Java:
+- **228 unit tests**, all pure and needing no emulator, network or Java:
   - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
     month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
     and `lib/clock.ts`.
@@ -203,16 +223,22 @@ Phase 1 was checked by running things, not by assuming:
     cash-bonus pair netting to zero.
   - *defensive reads (12)* — a malformed stored document can never produce `NaN` and poison
     every total on the screen.
-- **23 security rules tests** against the Firestore emulator: cross-account denial, forged
-  `uid`, field whitelists, immutable amounts and dates, income-config validation, a re-posted
-  accrual being refused, sealed-statement immutability, append-only audit logs, and the
-  collection-group query constraint.
-- **An end-to-end browser pass** at 390px: sign up, create two shops with opposite balance
-  directions, reject `100.456`, archive one shop, reload and confirm it persisted, rename,
-  switch theme, sign out. No console errors, no horizontal overflow.
-- **An offline pass**: with the network cut, adding a shop closes the form in ~200ms and the
-  shop appears; archiving works too; on reconnect a *fresh page* shows both changes, proving
-  they reached the server and not just the local cache.
+  - *attendance (44)* — the daily climb, absences reducing the month, food money owed versus
+    received, and spans clipped to the joining and opening-balance dates.
+  - *figures (19)* — the dashboard figure equals the engine's, and the balance does not lurch
+    when the month turns.
+- **30 security rules tests** against the Firestore emulator: cross-account denial, forged
+  `uid`, field whitelists, immutable amounts and dates, profile and income-config validation,
+  attendance records, a re-posted accrual being refused, sealed-statement immutability,
+  append-only audit logs, and the collection-group query constraint.
+- **An end-to-end browser pass** at 390px, against the Auth and Firestore emulators: create a
+  shop with a salary and food money, check the earned-so-far figure against the pro-rata the
+  engine computes, confirm the dashboard shows the same number, tick food money, mark a day off
+  and watch the month drop to zero, record a You got and a You gave, void one, and reload. No
+  console errors, no horizontal overflow, no touch target under 36px.
+- **An offline pass**: with the network cut, an entry form closes in under a second, the entry
+  appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
+  everything synced, proving it reached the server and not just the local cache.
 
 **Not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
 there yet and this environment has no credentials to enable it, so that path has only been

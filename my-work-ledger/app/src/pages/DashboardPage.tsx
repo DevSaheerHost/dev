@@ -1,66 +1,95 @@
 /**
- * The dashboard.
+ * The dashboard: what every shop owes you right now, added up.
  *
- * In Phase 1 there are no transactions yet, so the only real money figure that
- * exists is each shop's recorded opening balance. That is what this screen
- * shows, labelled as exactly that. Nothing here is invented: no sample
- * transactions, no projected salary, no placeholder totals. A finance screen
- * that shows made-up numbers teaches the user to distrust it, and the first
- * time they cannot tell a real figure from a demo one the app has failed.
- *
- * A notice says plainly what arrives in Phase 2, so the screen is honest about
- * being incomplete rather than looking finished and being wrong.
+ * Every figure here comes from `computeShopFigures`, the same function the shop
+ * page uses. That is deliberate: a dashboard that totals things its own way
+ * will eventually disagree with the detail screen, and then neither can be
+ * trusted. One function, one answer.
  */
 
-import { useState } from 'react';
-import { Info, Plus, Store, Wallet } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronRight, Info, Store, TriangleAlert, Wallet } from 'lucide-react';
 
-import { Amount, Badge, Banner, Button, Card, EmptyState, SectionHeading, Spinner } from '@/components/ui';
-import { formatDateShort } from '@/lib/dates';
-import { paise, sumPaise, type Paise } from '@/lib/money';
+import {
+  Amount,
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  SectionHeading,
+  Spinner,
+} from '@/components/ui';
+import { today as todayFn } from '@/lib/clock';
+import { formatPaise } from '@/lib/money';
+import { describeWarning } from '@/features/ledger/engine';
+import { combineFigures, computeShopFigures, type ShopFigures } from '@/features/ledger/figures';
+import { useAllLedgers } from '@/features/ledger/LedgerProvider';
 import { ShopForm } from '@/features/shops/ShopForm';
 import { useShops } from '@/features/shops/ShopsProvider';
-import type { Shop } from '@/types/models';
 
-/** Phrases a balance in words. A bare minus sign is too easy to overlook. */
-function balanceSentence(shop: Shop): string {
-  if (shop.openingBalance > 0) return `${shop.name} owes you`;
-  if (shop.openingBalance < 0) return `You owe ${shop.name}`;
-  return 'Square with you';
-}
+function ShopRow({ figures, onOpen }: { figures: ShopFigures; onOpen: () => void }) {
+  const { shop, balance, position } = figures;
+  const sentence =
+    balance > 0 ? `${shop.name} owes you` : balance < 0 ? `You owe ${shop.name}` : 'Square';
 
-function ShopRow({ shop }: { shop: Shop }) {
   return (
-    <li className="flex items-center justify-between gap-3 border-b border-line px-4 py-3.5 last:border-b-0">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-ink">{shop.name}</p>
-        <p className="mt-0.5 truncate text-xs text-ink-3">
-          {balanceSentence(shop)} &middot; from {formatDateShort(shop.openingBalanceAsOf)}
-        </p>
-      </div>
-      <div className="shrink-0 text-right">
-        <Amount value={shop.openingBalance} tone="balance" size="md" />
-        {shop.settlementMode === 'cashOnly' ? (
-          <p className="mt-0.5 text-[0.7rem] text-ink-3">daily wage</p>
-        ) : null}
-      </div>
+    <li className="border-b border-line last:border-b-0">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-ink">{shop.name}</span>
+          <span className="mt-0.5 block truncate text-xs text-ink-3">
+            {sentence}
+            {position.counts.total > 0
+              ? ` · day ${position.elapsed.worked} of ${position.counts.total}`
+              : ''}
+            {position.counts.off > 0 ? ` · ${position.counts.off} off` : ''}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <Amount value={balance} tone="balance" size="md" />
+          <ChevronRight size={16} className="text-ink-3" />
+        </span>
+      </button>
     </li>
   );
 }
 
-export function DashboardPage() {
-  const { activeShops, loading, error, selectShop } = useShops();
-  // The dashboard owns its own copy of the form rather than sending the user to
-  // the Shops tab to press a second button with the same label.
+export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => void }) {
+  const { activeShops, loading, error } = useShops();
+  const { ledgers, error: ledgerError } = useAllLedgers();
   const [adding, setAdding] = useState(false);
 
+  const today = todayFn();
+
+  const figures = useMemo(
+    () =>
+      activeShops.map((shop) => {
+        const ledger = ledgers.get(shop.id);
+        return computeShopFigures({
+          shop,
+          transactions: ledger?.transactions ?? [],
+          configs: ledger?.configs ?? [],
+          days: ledger?.days ?? [],
+          today,
+        });
+      }),
+    [activeShops, ledgers, today],
+  );
+
+  const combined = useMemo(() => combineFigures(figures), [figures]);
+  const warnings = figures.flatMap((shop) =>
+    shop.warnings.map((warning) => ({ shop: shop.shop.name, warning })),
+  );
+  const pending = figures.reduce((count, shop) => count + shop.proposals.length, 0);
+  const everyLedgerLoaded = activeShops.every((shop) => ledgers.get(shop.id)?.loaded);
+
   const form = adding ? (
-    <ShopForm
-      open
-      shop={null}
-      onClose={() => setAdding(false)}
-      onSaved={(shopId) => selectShop(shopId)}
-    />
+    <ShopForm open shop={null} onClose={() => setAdding(false)} onSaved={onOpenShop} />
   ) : null;
 
   if (loading) return <Spinner label="Loading your ledger" />;
@@ -75,12 +104,11 @@ export function DashboardPage() {
             title="Add a shop to begin"
             action={
               <Button tone="primary" onClick={() => setAdding(true)}>
-                <Plus size={16} />
                 Add your first shop
               </Button>
             }
           >
-            Once a shop exists, this screen shows what it owes you and why.
+            Tell it your monthly salary and it starts counting what you are owed from day one.
           </EmptyState>
         </Card>
         {form}
@@ -88,16 +116,7 @@ export function DashboardPage() {
     );
   }
 
-  // Summed once, here, from stored integers. No component does arithmetic.
-  const owedToYou = sumPaise(
-    activeShops.filter((shop) => shop.openingBalance > 0).map((shop) => shop.openingBalance),
-  );
-  const owedByYou = sumPaise(
-    activeShops
-      .filter((shop) => shop.openingBalance < 0)
-      .map((shop) => paise(Math.abs(shop.openingBalance))),
-  );
-  const net: Paise = paise(owedToYou - owedByYou);
+  if (!everyLedgerLoaded) return <Spinner label="Loading your ledger" />;
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,22 +128,28 @@ export function DashboardPage() {
       </header>
 
       {error ? <Banner tone="debit">{error}</Banner> : null}
+      {ledgerError ? <Banner tone="debit">{ledgerError}</Banner> : null}
 
       <Card className="p-5">
         <div className="flex items-center gap-2">
           <Wallet size={15} className="text-ink-3" />
-          <p className="text-sm font-semibold text-ink-2">Net opening position</p>
+          <p className="text-sm font-semibold text-ink-2">What you are owed right now</p>
         </div>
         <p className="mt-2">
-          <Amount value={net} tone="balance" size="xl" showPaise />
+          <Amount value={combined.net} tone="balance" size="xl" showPaise />
         </p>
         <p className="mt-1 text-sm text-ink-2">
-          {net > 0
-            ? 'owed to you across every active shop'
-            : net < 0
-              ? 'you owe across every active shop'
+          {combined.net > 0
+            ? 'across every active shop'
+            : combined.net < 0
+              ? 'you owe, across every active shop'
               : 'square across every active shop'}
         </p>
+        {combined.unposted !== 0 ? (
+          <p className="mt-1 text-sm text-ink-3">
+            including {formatPaise(combined.unposted)} earned but not yet confirmed
+          </p>
+        ) : null}
 
         <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
           <div>
@@ -132,41 +157,62 @@ export function DashboardPage() {
               Owed to you
             </dt>
             <dd className="mt-1">
-              <Amount value={owedToYou} tone="credit" size="lg" />
+              <Amount value={combined.owedToYou} tone="credit" size="lg" />
             </dd>
           </div>
           <div>
             <dt className="text-xs font-semibold tracking-wide text-ink-3 uppercase">You owe</dt>
             <dd className="mt-1">
-              <Amount value={owedByYou} tone="debit" size="lg" />
+              <Amount value={combined.owedByYou} tone="debit" size="lg" />
             </dd>
           </div>
         </dl>
       </Card>
 
+      {pending > 0 ? (
+        <Banner tone="accent" title={`${pending} entr${pending === 1 ? 'y' : 'ies'} ready to confirm`}>
+          A finished month is waiting to be added to the ledger. Open the shop to check the figures
+          and confirm.
+        </Banner>
+      ) : null}
+
       <section>
-        <SectionHeading
-          title="By shop"
-          action={<Badge>Opening balances</Badge>}
-          description="The figures you recorded as outstanding when each shop was added."
-        />
+        <SectionHeading title="By shop" action={<Badge>tap to open</Badge>} />
         <Card>
           <ul>
-            {activeShops.map((shop) => (
-              <ShopRow key={shop.id} shop={shop} />
+            {figures.map((shop) => (
+              <ShopRow
+                key={shop.shop.id}
+                figures={shop}
+                onOpen={() => onOpenShop(shop.shop.id)}
+              />
             ))}
           </ul>
         </Card>
       </section>
 
-      <Banner tone="accent" title="What this screen does not show yet">
+      {warnings.length > 0 ? (
+        <Banner tone="debit" title="Worth a look">
+          <ul className="flex flex-col gap-1.5">
+            {warnings.map((entry, index) => (
+              <li key={index} className="flex gap-2">
+                <TriangleAlert size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-semibold">{entry.shop}:</span>{' '}
+                  {describeWarning(entry.warning)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Banner>
+      ) : null}
+
+      <Banner tone="neutral">
         <p className="flex gap-2">
           <Info size={15} className="mt-0.5 shrink-0" />
           <span>
-            Salary, allowances, expenses, advances and payments arrive in the next phase, along
-            with the running balance that combines them with the opening figures above. Until
-            then this is the recorded starting position only — it is real, but it is not the
-            whole picture.
+            Salary builds up day by day, so this figure climbs on its own. A month is added to the
+            ledger properly once you confirm it. Settlements and printed statements come next.
           </span>
         </p>
       </Banner>

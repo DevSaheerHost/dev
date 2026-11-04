@@ -51,6 +51,39 @@ export interface EntryError {
   readonly message: string;
 }
 
+/** Exactly what is stored, with no `id` and no timestamps. */
+export type EntryDocument = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
+
+/**
+ * The fields a stored entry may have, in the order the rules list them.
+ * Kept here beside the builder so the two cannot drift apart.
+ */
+export const ENTRY_DOCUMENT_FIELDS: readonly (keyof EntryDocument)[] = [
+  'uid',
+  'shopId',
+  'kind',
+  'amount',
+  'direction',
+  'category',
+  'description',
+  'transactionDate',
+  'recognitionDate',
+  'periodKey',
+  'sortKey',
+  'clientCreatedAtMs',
+  'reimbursable',
+  'fundedFrom',
+  'accrualKey',
+  'settlesExpenseIds',
+  'recoversTransactionId',
+  'pairId',
+  'settlementId',
+  'isPriorPeriodAdjustment',
+  'adjustsSettlementId',
+  'voidedAt',
+  'voidReason',
+];
+
 export function directionFor(kind: TransactionKind): Direction {
   return KIND_DIRECTION[kind];
 }
@@ -177,8 +210,12 @@ export function validateEntry(
 }
 
 /**
- * The document body for a new entry, matching `Transaction` exactly — and
- * therefore matching the field whitelist in the security rules.
+ * The document body for a new entry.
+ *
+ * Note what is NOT in it: `id`. The id is the document's key, so repeating it
+ * inside the document is redundant — and the security rules whitelist fields
+ * exactly, so an extra one is rejected outright. It still arrives as an
+ * argument because the sort key is built from it.
  *
  * `createdAt` and `updatedAt` are left to the caller, which supplies the server
  * timestamp sentinel; everything else is decided here so a write cannot be
@@ -190,7 +227,7 @@ export function buildEntryDocument(args: {
   readonly shop: Pick<Shop, 'id' | 'sealedThroughDate'>;
   readonly input: EntryInput;
   readonly clientCreatedAtMs: number;
-}): Omit<Transaction, 'createdAt' | 'updatedAt'> {
+}): EntryDocument {
   const { id, uid, shop, input, clientCreatedAtMs } = args;
   const { recognitionDate, periodKey, isPriorPeriodAdjustment } = recognitionFor(
     shop,
@@ -198,7 +235,6 @@ export function buildEntryDocument(args: {
   );
 
   return {
-    id,
     uid,
     shopId: shop.id,
     kind: input.kind,

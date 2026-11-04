@@ -187,6 +187,60 @@ test('the owner can read their own ledger', async () => {
   await assertSucceeds(getDocs(collection(alice, 'users', ALICE, 'shops')));
 });
 
+/* -------------------------------------------------------------------- profile */
+
+test('a new account can create its own profile', async () => {
+  // This path was previously only ever exercised with the rules disabled, so a
+  // malformed profile write would have failed silently on every sign-up.
+  const carol = testEnv.authenticatedContext('carol_uid').firestore();
+  await assertSucceeds(
+    setDoc(doc(carol, 'users', 'carol_uid'), {
+      schemaVersion: 1,
+      displayName: 'Carol',
+      currency: 'INR',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('profile fields are validated', async () => {
+  const dave = testEnv.authenticatedContext('dave_uid').firestore();
+  const profile = (overrides) => ({
+    schemaVersion: 1,
+    displayName: 'Dave',
+    currency: 'INR',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  });
+  const cases = [
+    ['empty name', profile({ displayName: '' })],
+    ['unsupported currency', profile({ currency: 'USD' })],
+    ['schemaVersion as a float', profile({ schemaVersion: 1.5 })],
+    ['unknown extra field', { ...profile({}), isAdmin: true }],
+    ['client-chosen createdAt', profile({ createdAt: new Date(0) })],
+  ];
+  for (const [label, payload] of cases) {
+    await mustReject(label, setDoc(doc(dave, 'users', 'dave_uid'), payload));
+  }
+});
+
+test('a profile can be renamed but not re-dated', async () => {
+  const carol = testEnv.authenticatedContext('carol_uid').firestore();
+  await assertSucceeds(
+    updateDoc(doc(carol, 'users', 'carol_uid'), {
+      displayName: 'Carol B',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await mustReject(
+    'changing createdAt',
+    updateDoc(doc(carol, 'users', 'carol_uid'), { createdAt: serverTimestamp() }),
+  );
+  await mustReject('deleting a profile', deleteDoc(doc(carol, 'users', 'carol_uid')));
+});
+
 /* ---------------------------------------------------------------------- shops */
 
 test('a valid shop is accepted and nothing is deletable', async () => {
@@ -414,6 +468,79 @@ test('an income config can be closed off and deactivated', async () => {
 test("one account cannot touch another's income configs", async () => {
   await mustReject('cross-account config read', getDoc(aliceConfig('inc_salary', bob)));
   await mustReject('cross-account config write', setDoc(aliceConfig('inc_evil', bob), configDoc()));
+});
+
+/* ------------------------------------------------------------------ days */
+
+function dayDocBody(overrides = {}) {
+  return {
+    date: '2025-11-04',
+    off: false,
+    allowancesReceived: ['inc_food'],
+    note: '',
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+const aliceDay = (id, db = alice) => doc(db, 'users', ALICE, 'shops', 'shop_one', 'days', id);
+
+test('a day record is accepted and can be written again', async () => {
+  // The id IS the date, so a second tap is an upsert on the same document
+  // rather than a duplicate. Unlike an accrual this must keep working, which
+  // is why a day record carries no immutable createdAt.
+  await assertSucceeds(setDoc(aliceDay('2025-11-04'), dayDocBody()));
+  await assertSucceeds(setDoc(aliceDay('2025-11-04'), dayDocBody({ off: true })));
+  await assertSucceeds(
+    setDoc(aliceDay('2025-11-04'), dayDocBody({ allowancesReceived: [] })),
+  );
+});
+
+test('a day record cannot be deleted', async () => {
+  await mustReject('deleting a day', deleteDoc(aliceDay('2025-11-04')));
+});
+
+test('day records are validated', async () => {
+  const cases = [
+    ['malformed id', ['2025-11-4', dayDocBody({ date: '2025-11-4' })]],
+    ['non-date id', ['november', dayDocBody({ date: 'november' })]],
+    ['date disagreeing with the id', ['2025-11-05', dayDocBody({ date: '2025-11-04' })]],
+    ['off as a string', ['2025-11-06', dayDocBody({ date: '2025-11-06', off: 'yes' })]],
+    [
+      'allowances not a list',
+      ['2025-11-07', dayDocBody({ date: '2025-11-07', allowancesReceived: 'inc_food' })],
+    ],
+    [
+      'too many allowances',
+      [
+        '2025-11-08',
+        dayDocBody({
+          date: '2025-11-08',
+          allowancesReceived: Array.from({ length: 21 }, (_, i) => `inc_${i}`),
+        }),
+      ],
+    ],
+    [
+      'over-long note',
+      ['2025-11-09', dayDocBody({ date: '2025-11-09', note: 'x'.repeat(201) })],
+    ],
+    [
+      'unknown extra field',
+      ['2025-11-10', { ...dayDocBody({ date: '2025-11-10' }), bonusDay: true }],
+    ],
+    [
+      'client-chosen timestamp',
+      ['2025-11-11', dayDocBody({ date: '2025-11-11', updatedAt: new Date(0) })],
+    ],
+  ];
+  for (const [label, [id, payload]] of cases) {
+    await mustReject(label, setDoc(aliceDay(id), payload));
+  }
+});
+
+test("one account cannot touch another's attendance", async () => {
+  await mustReject('cross-account day read', getDoc(aliceDay('2025-11-04', bob)));
+  await mustReject('cross-account day write', setDoc(aliceDay('2025-11-12', bob), dayDocBody({ date: '2025-11-12' })));
 });
 
 /* ---------------------------------------------------------------- settlements */

@@ -5,7 +5,10 @@ import { paise, type Paise } from '@/lib/money';
 import type { Shop } from '@/types/models';
 
 import { computePeriod, transactionEffect } from './engine';
+import { TRANSACTION_KINDS } from '@/types/models';
+
 import {
+  ENTRY_DOCUMENT_FIELDS,
   buildCashBonusPair,
   buildEntryDocument,
   buildSortKey,
@@ -216,8 +219,10 @@ describe('buildEntryDocument', () => {
       input: entry({ kind: 'salary_earned', amount: rs(18000), description: '  padded  ' }),
     });
 
+    // The id is the document key, not a stored field: the rules whitelist the
+    // fields exactly, so an extra one is rejected outright.
+    expect(document).not.toHaveProperty('id');
     expect(document).toMatchObject({
-      id: 'txn_abc',
       uid: 'uid_1',
       shopId: 'shop_1',
       kind: 'salary_earned',
@@ -289,7 +294,12 @@ describe('buildEntryDocument', () => {
         shop,
         input: entry({ kind: 'advance_received', amount: rs(5000) }),
       }),
-    ].map((document) => ({ ...document, createdAt: null, updatedAt: null }));
+    ].map((document, index) => ({
+      ...document,
+      id: `txn_${index}`,
+      createdAt: null,
+      updatedAt: null,
+    }));
 
     expect(computePeriod(paise(0), documents).closingBalance).toBe(rs(13000));
   });
@@ -323,6 +333,7 @@ describe('buildCashBonusPair', () => {
           input,
           clientCreatedAtMs: 1_763_000_000_000 + index,
         }),
+        id: `txn_${index}`,
         createdAt: null,
         updatedAt: null,
       }),
@@ -333,5 +344,57 @@ describe('buildCashBonusPair', () => {
     expect(computePeriod(paise(0), documents).totals.otherIncomeEarned).toBe(rs(500));
     expect(transactionEffect(documents[0]!)).toBe(rs(500));
     expect(transactionEffect(documents[1]!)).toBe(rs(-500));
+  });
+});
+
+/* ========================================================================== */
+/* The stored shape must match what the rules allow                            */
+/* ========================================================================== */
+
+describe('the document body matches the security rules whitelist', () => {
+  // This is the test that would have caught a real bug: the builder used to
+  // include `id` in the body. The rules whitelist fields exactly, so every
+  // write was rejected with an opaque "evaluation error" — and because writes
+  // are deliberately not awaited, the UI reported success while nothing saved.
+  it('writes exactly the whitelisted fields, no more and no fewer', () => {
+    const document = buildEntryDocument({
+      id: 'txn_abc',
+      uid: 'uid_1',
+      shop: shopFixture(),
+      input: entry(),
+      clientCreatedAtMs: 1_763_000_000_000,
+    });
+
+    expect(Object.keys(document).sort()).toEqual([...ENTRY_DOCUMENT_FIELDS].sort());
+  });
+
+  it('never carries an id, which is the document key', () => {
+    for (const kind of TRANSACTION_KINDS) {
+      const document = buildEntryDocument({
+        id: 'txn_abc',
+        uid: 'uid_1',
+        shop: shopFixture(),
+        input: entry({
+          kind,
+          ...(kind === 'expense_paid' ? { reimbursable: true, fundedFrom: 'own' as const } : {}),
+        }),
+        clientCreatedAtMs: 1_763_000_000_000,
+      });
+      expect(Object.keys(document)).not.toContain('id');
+      expect(Object.keys(document).sort()).toEqual([...ENTRY_DOCUMENT_FIELDS].sort());
+    }
+  });
+
+  it('never writes undefined, which Firestore rejects', () => {
+    const document = buildEntryDocument({
+      id: 'txn_abc',
+      uid: 'uid_1',
+      shop: shopFixture(),
+      input: entry(),
+      clientCreatedAtMs: 1_763_000_000_000,
+    });
+    for (const [key, value] of Object.entries(document)) {
+      expect(value, `${key} must be null rather than undefined`).not.toBeUndefined();
+    }
   });
 });

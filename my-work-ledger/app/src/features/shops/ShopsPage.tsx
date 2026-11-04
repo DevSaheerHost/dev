@@ -39,11 +39,13 @@ function BalanceLine({ shop }: { shop: Shop }) {
 function ShopCard({
   shop,
   onEdit,
+  onOpen,
   onToggleArchive,
   busy,
 }: {
   shop: Shop;
   onEdit: () => void;
+  onOpen: (() => void) | null;
   onToggleArchive: () => void;
   busy: boolean;
 }) {
@@ -53,7 +55,17 @@ function ShopCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-ink">{shop.name}</h3>
+            {onOpen ? (
+              <button
+                type="button"
+                onClick={onOpen}
+                className="-ml-1 min-w-0 truncate rounded px-1 text-left text-base font-semibold text-ink hover:text-accent-ink hover:underline"
+              >
+                {shop.name}
+              </button>
+            ) : (
+              <h3 className="truncate text-base font-semibold text-ink">{shop.name}</h3>
+            )}
             {archived ? <Badge>Archived</Badge> : null}
             {shop.settlementMode === 'cashOnly' ? <Badge tone="accent">Daily wage</Badge> : null}
           </div>
@@ -93,7 +105,7 @@ function ShopCard({
   );
 }
 
-export function ShopsPage() {
+export function ShopsPage({ onOpenShop }: { onOpenShop: (shopId: string) => void }) {
   const { uid } = useAuth();
   const { activeShops, archivedShops, loading, error, selectShop } = useShops();
   // `null` means closed; `{ shop: null }` means adding. Closing unmounts the
@@ -170,6 +182,7 @@ export function ShopsPage() {
                 shop={shop}
                 busy={busyId === shop.id}
                 onEdit={() => openForm(shop)}
+                onOpen={() => onOpenShop(shop.id)}
                 onToggleArchive={() => toggleArchive(shop)}
               />
             ))}
@@ -190,6 +203,7 @@ export function ShopsPage() {
                 shop={shop}
                 busy={busyId === shop.id}
                 onEdit={() => openForm(shop)}
+                onOpen={null}
                 onToggleArchive={() => toggleArchive(shop)}
               />
             ))}
@@ -207,7 +221,10 @@ export function ShopsPage() {
           open
           shop={editing.shop}
           onClose={() => setEditing(null)}
-          onSaved={(shopId) => selectShop(shopId)}
+          onSaved={(shopId) => {
+            selectShop(shopId);
+            onOpenShop(shopId);
+          }}
         />
       ) : null}
     </div>

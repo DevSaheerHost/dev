@@ -327,6 +327,52 @@ service cloud.firestore {
         }
 
         // ---------------------------------------------------------------------
+        // days/{YYYY-MM-DD} — attendance and daily-allowance receipts
+        //
+        // The document id IS the date, which makes every write idempotent: two
+        // taps, or two devices, address the same document instead of recording
+        // the same day twice. Only exceptions are stored, so a year of ordinary
+        // attendance costs nothing.
+        //
+        // Create and update share one rule because the write is an upsert. The
+        // record deliberately carries no `createdAt`: an immutable creation
+        // stamp would make the second write to a day illegal, which is the trap
+        // a re-posted accrual already walked into once.
+        // ---------------------------------------------------------------------
+
+        match /days/{dayId} {
+          function validDay() {
+            return incoming().keys().hasOnly(
+                     ['date', 'off', 'allowancesReceived', 'note', 'updatedAt'])
+                   && incoming().keys().hasAll(
+                        ['date', 'off', 'allowancesReceived', 'updatedAt'])
+                   // The stored date must agree with the id addressing it, so a
+                   // record cannot claim to be a day other than its own.
+                   && incoming().date == dayId
+                   && incoming().off is bool
+                   && incoming().allowancesReceived is list
+                   // Bounded rather than element-checked: the rules language has
+                   // no way to validate each entry, and these values are only
+                   // ever used as map keys, never as path segments, so a bad one
+                   // cannot address anything it should not.
+                   && incoming().allowancesReceived.size() <= 20
+                   && (incoming().note == null ? true : isText(incoming().note, 200))
+                   && isServerTime(incoming().updatedAt);
+          }
+
+          allow get, list: if isOwner(uid);
+
+          allow create, update: if isOwner(uid)
+                                && isCalendarDate(dayId)
+                                && validDay();
+
+          // A day can be set back to "worked, nothing received" by writing that
+          // state, which keeps the history of the correction. Removing the
+          // document would erase it.
+          allow delete: if false;
+        }
+
+        // ---------------------------------------------------------------------
         // settlements/{settlementId} — immutable statements
         // ---------------------------------------------------------------------
 
