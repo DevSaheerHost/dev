@@ -1,0 +1,5 @@
+d00b3e84f7dea9fba6bfa62603b5f798037c053fe9db00c843220e3ff9927e4a  explorer-file-server-v1.0.zip
+a031dd26a1548dbc22bcffb265369a31f96ec942cd158f30d65d90bfae606fbe  explorer-file-server-v1.5.zip
+
+# Food Money Android release food-money-v1.0.0
+391cb3ac41b6e17a96818960ee291cc741c95dbf424c637ff3c7de61eca6aa07  food-money-v1.0.0.apk

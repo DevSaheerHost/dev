@@ -16,7 +16,7 @@
       },
       {
         title: "Explorer File Server",
-        description: "Release hub for the Explorer file server. Browse versions, read release notes and download build assets.",
+        description: "Release hub in the style of a code host. Browse versions of the Explorer file server, grab the Food Money Android APK, and check every file against its SHA-256.",
         url: "./explorer-file-server/",
         tags: ["Downloads", "Releases"],
         status: "live",

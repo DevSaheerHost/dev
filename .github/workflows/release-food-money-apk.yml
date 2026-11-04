@@ -1,0 +1,174 @@
+name: Release Food Money APK
+
+# Publishes the APK as a GitHub Release asset rather than a build artifact.
+#
+# Why: Actions artifacts are only served to signed-in GitHub users, arrive as a
+# zip around the APK, and are deleted after 90 days. A release asset is a plain
+# public URL that does not expire, which is what the download page links to.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: false
+        default: food-money-v1.0.0
+  push:
+    branches:
+      - claude/freelance-pricing-calculator-rfj154
+    paths:
+      - .github/workflows/release-food-money-apk.yml
+      - food-money/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-food-money-apk
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      TAG: ${{ github.event.inputs.tag || 'food-money-v1.0.0' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Prepare web app
+        run: |
+          mkdir -p apk-build/www
+          cp -R food-money/. apk-build/www/
+
+      - name: Configure Capacitor
+        working-directory: apk-build
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/android
+          npm install --save-dev @capacitor/cli
+          npx cap init "Food Money" com.saheerlab.foodmoney --web-dir=www
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure status and navigation bar colors
+        working-directory: apk-build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          styles = Path("android/app/src/main/res/values/styles.xml")
+          content = styles.read_text()
+
+          def update_style(content, name):
+              pattern = r'<style name="' + re.escape(name) + r'"([^>]*)>(.*?)</style>'
+              match = re.search(pattern, content, re.DOTALL)
+
+              if not match:
+                  raise SystemExit(f"Style not found: {name}")
+
+              attrs, body = match.group(1), match.group(2)
+
+              items = {
+                  "android:statusBarColor": "#F4F4F4",
+                  "android:windowLightStatusBar": "true",
+                  "android:navigationBarColor": "#F4F4F4",
+                  "android:windowLightNavigationBar": "true"
+              }
+
+              for key, value in items.items():
+                  item = re.compile(
+                      r'<item name="' + re.escape(key) + r'">.*?</item>',
+                      re.DOTALL
+                  )
+                  replacement = f'<item name="{key}">{value}</item>'
+
+                  if item.search(body):
+                      body = item.sub(replacement, body)
+                  else:
+                      body += f"\n        {replacement}"
+
+              return content[:match.start()] + (
+                  f'<style name="{name}"{attrs}>{body}\n    </style>'
+              ) + content[match.end():]
+
+          content = update_style(content, "AppTheme.NoActionBar")
+
+          if re.search(r'<style name="AppTheme.NoActionBarLaunch"[^>]*>', content):
+              content = update_style(content, "AppTheme.NoActionBarLaunch")
+
+          styles.write_text(content)
+          print("Status and navigation bar theme colors configured.")
+          PY
+
+      - name: Build APK
+        working-directory: apk-build/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Name the APK after its release
+        id: apk
+        run: |
+          set -euo pipefail
+          src=apk-build/android/app/build/outputs/apk/debug/app-debug.apk
+          dest="${TAG}.apk"
+          cp "$src" "$dest"
+          echo "path=$dest" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c%s "$dest")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$dest" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.apk.outputs.path }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          notes=$(cat <<EOF
+          Android build of [Food Money](https://saheerlab.vercel.app/food-money/), the daily payment tracker.
+
+          - Monthly calendar with per-day paid and pending amounts
+          - Running totals for expected, paid and outstanding money
+          - Packaged from the web app, so it matches what the site shows
+
+          **Install:** Android blocks apps from outside the Play Store by default. Open the file and allow
+          installs from your browser when prompted.
+
+          This is a debug build, signed with the standard Android debug key.
+
+          \`\`\`
+          sha256  ${SHA256}
+          \`\`\`
+          EOF
+          )
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists; replacing the asset."
+            gh release upload "$TAG" "$APK" --clobber
+            gh release edit "$TAG" --notes "$notes"
+          else
+            gh release create "$TAG" "$APK" \
+              --title "Food Money ${TAG#food-money-} (Android)" \
+              --notes "$notes" \
+              --latest
+          fi
+
+          echo "### Released" >> "$GITHUB_STEP_SUMMARY"
+          gh release view "$TAG" --json url,assets \
+            --jq '"\(.url)\n\(.assets[] | "\(.name)  \(.size) bytes  \(.url)")"' >> "$GITHUB_STEP_SUMMARY"

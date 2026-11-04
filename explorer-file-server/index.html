@@ -2,145 +2,542 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Explorer File Server — Downloads &amp; Releases &middot; Saheer&rsquo;s Lab</title>
+
+<meta name="description" content="Download Explorer File Server builds and the Food Money Android APK from Saheer's Lab. Browse every release, read the version notes and check the SHA-256 of each file.">
+<meta name="author" content="Saheer Babu">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://saheerlab.vercel.app/explorer-file-server/">
+<meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Explorer File Server — downloads and releases">
+<meta property="og:description" content="Release downloads from Saheer's Lab: Explorer File Server builds and the Food Money Android APK.">
+<meta property="og:url" content="https://saheerlab.vercel.app/explorer-file-server/">
+<meta property="og:site_name" content="Saheer's Lab">
+<meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Explorer File Server — downloads and releases">
+<meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
+
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+
 <style>
-:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;--muted:#9198a1;--text:#e6edf3;--green:#3fb950;--blue:#2f81f7}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
-.wrap{max-width:1000px;margin:0 auto;padding:36px 22px 70px}.top{display:flex;align-items:center;gap:14px;margin-bottom:28px}.logo{width:44px;height:44px;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;background:var(--panel);font-size:22px}.eyebrow{color:var(--muted);font-size:13px}.top h1{font-size:25px;margin:0;font-weight:650;letter-spacing:-.5px}
-.tabs{display:flex;gap:25px;border-bottom:1px solid var(--line);margin-bottom:30px;overflow:auto}.tab{padding:12px 2px;color:var(--muted);white-space:nowrap}.tab.active{color:var(--text);border-bottom:2px solid #f78166;font-weight:600}
-.heading{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:22px}.heading h2{font-size:22px;margin:0 0 4px}.heading p{margin:0;color:var(--muted)}.count{border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--muted);font-size:12px}
-.release{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:0 0 20px;overflow:hidden}.release-head{display:flex;align-items:flex-start;gap:13px;padding:20px;border-bottom:1px solid var(--line)}.tag{font-size:12px;font-weight:650;color:#7ee787;background:#173923;border:1px solid #28643a;border-radius:20px;padding:3px 9px;white-space:nowrap}.release-title{font-size:19px;font-weight:650;margin:0}.meta{font-size:13px;color:var(--muted);margin-top:4px}.notes{padding:18px 20px;border-bottom:1px solid var(--line)}.notes p{margin:0 0 8px}.notes ul{margin:6px 0 0;padding-left:22px;color:#c9d1d9}.assets-title{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 8px;font-weight:650}.assets-title small{font-weight:400;color:var(--muted)}.asset{display:flex;gap:13px;align-items:center;padding:13px 20px;border-top:1px solid #252b33}.file-icon{width:38px;height:38px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;background:#0d1117;font-size:18px;flex-shrink:0}.file-info{min-width:0;flex:1}.file-name{font-weight:600;overflow-wrap:anywhere}.file-name a{color:#a5d6ff;text-decoration:none}.file-name a:hover{text-decoration:underline}.file-meta{color:var(--muted);font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#212830;color:var(--text);padding:7px 11px;border-radius:7px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}.btn:hover{border-color:#8b949e;background:#30363d}.btn.primary{background:#238636;border-color:#2ea043;color:#fff}.btn.primary:hover{background:#2ea043}.previous{border:1px solid var(--line);border-radius:10px;overflow:hidden}.previous summary{cursor:pointer;padding:16px 18px;background:var(--panel);font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}.previous summary:after{content:"＋";color:var(--muted)}.previous[open] summary:after{content:"−"}.previous .asset{background:var(--panel)}.search{width:100%;padding:11px 13px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;margin-bottom:20px}.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:28px}.notice{border:1px solid #6e5b24;background:#2a2413;color:#eacb72;border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:20px}
-@media(max-width:600px){.wrap{padding:24px 13px}.heading{align-items:center}.release-head{flex-wrap:wrap}.asset{align-items:flex-start;flex-wrap:wrap;padding:13px}.file-info{min-width:calc(100% - 55px)}.actions{padding-left:51px}.top h1{font-size:21px}.tabs{gap:18px}.notes,.release-head{padding:16px}.assets-title{padding:13px 16px 8px}}
+:root{
+  color-scheme:dark;
+  --bg:#0d1117;--panel:#161b22;--panel-2:#1c2128;--line:#30363d;--line-soft:#252b33;
+  --muted:#9198a1;--text:#e6edf3;--link:#4493f8;--green:#3fb950;--accent:#f78166;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0}
+a{color:var(--link)}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:6px}
+.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+/* --- repo bar ---------------------------------------------------------- */
+.repobar{border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:30}
+.repobar-inner{max-width:1012px;margin:0 auto;padding:14px 22px 0;display:flex;flex-direction:column;gap:12px}
+.slug{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:17px;min-width:0}
+.avatar{width:22px;height:22px;border-radius:50%;background:#30363d;display:grid;place-items:center;font-size:12px;flex-shrink:0}
+.slug a.owner{color:var(--link);text-decoration:none}
+.slug a.owner:hover{text-decoration:underline}
+.slug .sep{color:var(--muted)}
+.slug strong{font-weight:650;letter-spacing:-.2px;overflow-wrap:anywhere}
+.pill{border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:1px 8px;font-size:11.5px;line-height:19px}
+
+/* --- repo switcher ----------------------------------------------------- */
+.switcher{position:relative;margin-left:auto}
+.switch-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);
+  border-radius:7px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.switch-btn:hover{border-color:#8b949e}
+.switch-menu{position:absolute;right:0;top:calc(100% + 6px);width:min(300px,calc(100vw - 44px));background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 34px rgba(1,4,9,.6);overflow:hidden;z-index:40}
+.switch-menu[hidden]{display:none}
+.switch-menu .head{padding:9px 13px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}
+.switch-menu button{display:flex;width:100%;gap:9px;align-items:flex-start;padding:11px 13px;background:none;border:0;
+  border-bottom:1px solid var(--line-soft);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.switch-menu button:last-child{border-bottom:0}
+.switch-menu button:hover{background:var(--panel-2)}
+.switch-menu .nm{font-weight:600;font-size:13.5px}
+.switch-menu .ds{color:var(--muted);font-size:12px;line-height:1.4}
+.switch-menu .on{color:var(--green)}
+
+/* --- tabs -------------------------------------------------------------- */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:9px 12px;color:var(--text);text-decoration:none;white-space:nowrap;
+  border-bottom:2px solid transparent;font-size:13.5px;border-radius:6px 6px 0 0}
+.tab:hover{background:var(--panel-2)}
+.tab[aria-current="page"]{border-bottom-color:var(--accent);font-weight:600}
+.tab .n{border:1px solid var(--line);background:var(--bg);border-radius:20px;padding:0 6px;font-size:11px;color:var(--muted)}
+
+/* --- page -------------------------------------------------------------- */
+.wrap{max-width:1012px;margin:0 auto;padding:26px 22px 70px}
+.about{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.about p{color:var(--muted);max-width:62ch}
+.topics{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.topic{background:#121d2f;color:#4493f8;border:1px solid #1f3a5f;border-radius:20px;padding:2px 11px;font-size:12px}
+.heading{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin:0 0 18px}
+.heading h2{font-size:20px;letter-spacing:-.2px}
+.heading p{margin-top:3px;color:var(--muted);font-size:13.5px}
+.count{border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--muted);font-size:12px;white-space:nowrap}
+.search{width:100%;padding:10px 13px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);
+  font:inherit;font-size:13.5px;margin-bottom:20px}
+.search:focus{outline:none;border-color:var(--link);box-shadow:0 0 0 3px rgba(68,147,248,.25)}
+
+/* --- release ----------------------------------------------------------- */
+.release{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:0 0 18px;overflow:hidden}
+.release-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tag{font-size:11.5px;font-weight:650;color:#7ee787;background:#173923;border:1px solid #28643a;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.tag.grey{color:var(--muted);background:var(--panel-2);border-color:var(--line)}
+.release-title{font-size:18px;font-weight:650;letter-spacing:-.2px}
+.meta{font-size:12.5px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.meta a{color:var(--muted)}
+.notes{padding:16px 20px;border-bottom:1px solid var(--line)}
+.notes strong{font-size:13.5px}
+.notes ul{margin:7px 0 0;padding-left:20px;color:#c9d1d9;font-size:14px}
+.notes li{margin-bottom:4px}
+.assets-title{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 20px 9px;font-weight:650;font-size:13.5px}
+.assets-title small{font-weight:400;color:var(--muted)}
+.asset{display:flex;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid var(--line-soft)}
+.file-icon{width:36px;height:36px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;background:var(--bg);font-size:17px;flex-shrink:0}
+.file-info{min-width:0;flex:1}
+.file-name{font-weight:600;overflow-wrap:anywhere;font-size:14px}
+.file-name a{color:#a5d6ff;text-decoration:none}
+.file-name a:hover{text-decoration:underline}
+.file-meta{color:var(--muted);font-size:12px;margin-top:2px}
+.file-meta code{font-size:11px;color:#8b949e}
+.flag.ok{border-color:#28643a;background:#122319;color:#7ee787}
+.flag{display:inline-flex;align-items:center;gap:4px;border:1px solid #6e5b24;background:#2a2413;color:#eacb72;
+  border-radius:20px;padding:1px 8px;font-size:11px;margin-left:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);padding:6px 11px;border-radius:7px;
+  font:inherit;font-size:12.5px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#8b949e;background:#30363d}
+.btn.primary{background:#238636;border-color:#2ea043;color:#fff}
+.btn.primary:hover{background:#2ea043}
+.previous{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px}
+.previous summary{cursor:pointer;padding:15px 18px;background:var(--panel);font-weight:600;list-style:none;display:flex;
+  justify-content:space-between;gap:12px;align-items:center;font-size:14px}
+.previous summary::-webkit-details-marker{display:none}
+.previous summary:after{content:"＋";color:var(--muted)}
+.previous[open] summary:after{content:"−"}
+.previous .asset{background:var(--panel)}
+.note{border:1px solid #1f3a5f;background:#0c1d33;color:#a9c7f0;border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:18px}
+.note b{color:#cfe2fb}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:30px;line-height:1.7}
+.foot a{color:var(--muted)}
+.empty{display:none}
+
+@media(max-width:620px){
+  .repobar-inner,.wrap{padding-left:14px;padding-right:14px}
+  .slug{font-size:15px}
+  .switcher{margin-left:0;width:100%}
+  .switch-btn{width:100%;justify-content:space-between}
+  .asset{align-items:flex-start;flex-wrap:wrap}
+  .file-info{min-width:calc(100% - 50px)}
+  .actions{padding-left:48px}
+  .notes,.release-head{padding:15px}
+  .assets-title,.asset{padding-left:15px;padding-right:15px}
+}
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-  <!-- Search and social metadata -->
-  <meta name="description" content="Download Explorer File Server builds from Saheer's Lab. Browse every release, read the version notes and get the latest zip.">
-  <meta name="author" content="Saheer Babu">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://saheerlab.vercel.app/explorer-file-server/">
-  <meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
-
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Explorer File Server — downloads and releases">
-  <meta property="og:description" content="Download Explorer File Server builds from Saheer's Lab. Browse every release, read the version notes and get the latest zip.">
-  <meta property="og:url" content="https://saheerlab.vercel.app/explorer-file-server/">
-  <meta property="og:site_name" content="Saheer's Lab">
-  <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Explorer File Server — downloads and releases">
-  <meta name="twitter:image" content="https://saheerlab.vercel.app/og-image.png">
-
-  <link rel="icon" type="image/x-icon" href="../favicon.ico">
-  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
-
-  <script type="application/ld+json">
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "SoftwareApplication",
+      "@id": "https://saheerlab.vercel.app/explorer-file-server/#app",
       "name": "Explorer File Server",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Windows",
       "softwareVersion": "1.5.0",
       "description": "File server with This PC-style storage locations and browsable release downloads.",
-      "@id": "https://saheerlab.vercel.app/explorer-file-server/#app",
       "url": "https://saheerlab.vercel.app/explorer-file-server/",
-      "isPartOf": {
-        "@id": "https://saheerlab.vercel.app/#website"
-      },
-      "publisher": {
-        "@id": "https://saheerlab.vercel.app/#website"
-      }
+      "downloadUrl": "https://saheerlab.vercel.app/explorer-file-server/files/explorer-file-server-v1.5.zip",
+      "isPartOf": { "@id": "https://saheerlab.vercel.app/#website" },
+      "publisher": { "@id": "https://saheerlab.vercel.app/#website" }
+    },
+    {
+      "@type": "MobileApplication",
+      "@id": "https://saheerlab.vercel.app/explorer-file-server/#food-money-apk",
+      "name": "Food Money",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Android",
+      "softwareVersion": "1.0.0",
+      "fileSize": "3.93 MB",
+      "downloadUrl": "https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk",
+      "description": "Android build of the Food Money daily payment tracker.",
+      "url": "https://saheerlab.vercel.app/food-money/",
+      "isPartOf": { "@id": "https://saheerlab.vercel.app/#website" },
+      "publisher": { "@id": "https://saheerlab.vercel.app/#website" }
     },
     {
       "@type": "WebSite",
       "@id": "https://saheerlab.vercel.app/#website",
       "name": "Saheer's Lab",
-      "alternateName": [
-        "Saheers Lab",
-        "Saheer Lab",
-        "saheerlab"
-      ],
+      "alternateName": ["Saheers Lab", "Saheer Lab", "saheerlab"],
       "url": "https://saheerlab.vercel.app/"
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Saheer's Lab",
-          "item": "https://saheerlab.vercel.app/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Explorer File Server"
-        }
+        { "@type": "ListItem", "position": 1, "name": "Saheer's Lab", "item": "https://saheerlab.vercel.app/" },
+        { "@type": "ListItem", "position": 2, "name": "Releases" }
       ]
     }
   ]
 }
-  </script>
+</script>
 </head>
+
 <body>
+
+<header class="repobar">
+  <div class="repobar-inner">
+    <div class="slug">
+      <span class="avatar" aria-hidden="true">📦</span>
+      <a class="owner" href="../">DevSaheerHost</a>
+      <span class="sep">/</span>
+      <strong id="repoName">explorer-file-server</strong>
+      <span class="pill">Public</span>
+
+      <div class="switcher">
+        <button type="button" class="switch-btn" id="switchBtn" aria-haspopup="menu" aria-expanded="false">
+          <span>Switch repository</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.4 6.5h7.2L8 10.6 4.4 6.5Z"></path></svg>
+        </button>
+        <div class="switch-menu" id="switchMenu" role="menu" hidden>
+          <p class="head">Repositories in this lab</p>
+          <button type="button" role="menuitem" data-repo="explorer-file-server">
+            <span aria-hidden="true">📦</span>
+            <span>
+              <span class="nm">explorer-file-server <span class="on" id="dotExplorer">●</span></span>
+              <span class="ds">Windows file server with This PC-style storage locations.</span>
+            </span>
+          </button>
+          <button type="button" role="menuitem" data-repo="food-money">
+            <span aria-hidden="true">💸</span>
+            <span>
+              <span class="nm">food-money <span class="on" id="dotFood" hidden>●</span></span>
+              <span class="ds">Android build of the daily payment tracker.</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Repository">
+      <a class="tab" id="tabCode" href="../">Code</a>
+      <a class="tab" href="https://github.com/DevSaheerHost/dev/issues" target="_blank" rel="noopener">Issues</a>
+      <a class="tab" href="https://github.com/DevSaheerHost/dev/pulls" target="_blank" rel="noopener">Pull requests</a>
+      <a class="tab" id="tabActions" href="https://github.com/DevSaheerHost/dev/actions" target="_blank" rel="noopener">Actions</a>
+      <a class="tab" href="#" aria-current="page">Releases <span class="n" id="tabCount">2</span></a>
+    </nav>
+  </div>
+</header>
+
 <main class="wrap">
-  <header class="top">
-    <div class="logo">📦</div>
-    <div><div class="eyebrow">SAHEER / Explorer file server</div><h1>Explorer File Server</h1></div>
-  </header>
-  <nav class="tabs"><div class="tab">Code</div><div class="tab">Issues</div><div class="tab">Pull requests</div><div class="tab active">Releases</div></nav>
-  <section class="heading"><div><h2>Releases</h2><p>Download builds, browse release assets, and read version notes.</p></div><span class="count">2 releases</span></section>
-  <div class="notice">Demo content: replace the sample filenames and <code>files/...</code> links with your actual downloadable files.</div>
-  <input id="search" class="search" placeholder="Search releases and files…" aria-label="Search releases and files">
-  <section class="release searchable">
-    <div class="release-head"><span class="tag">Latest</span><div><h3 class="release-title">Explorer File Server v1.5.0</h3><div class="meta">v1.5.0 · Released Oct 26, 2026 · Stable</div></div></div>
-    <div class="notes"><p><strong>What's new</strong></p><ul><li>Added This PC-style storage locations.</li><li>Browse and download release files from one place.</li><li>Improved file listing and mobile layout.</li></ul></div>
-    <div class="assets-title">Assets <small>3 files · 18.4 MB</small></div>
-    <div class="asset searchable">
-      <div class="file-icon">📦</div><div class="file-info"><div class="file-name"><a href="./files/explorer-file-server-v1.5.zip" download>explorer-file-server-v1.5.zip</a></div><div class="file-meta">ZIP archive · 18.2 MB</div></div>
-      <div class="actions"><a class="btn" href="./files/explorer-file-server-v1.5.zip" target="_blank" rel="noopener">Read / Preview</a><a class="btn primary" href="./files/explorer-file-server-v1.5.zip" download>↓ Download</a></div>
+
+  <!-- ===================================================== food-money === -->
+  <div id="repo-food-money" hidden>
+    <section class="about">
+      <div>
+        <p>Android build of <a href="../food-money/">Food Money</a>, the daily payment tracker: mark what you paid on a
+          monthly calendar and see what is still expected.</p>
+        <div class="topics"><span class="topic">android</span><span class="topic">apk</span><span class="topic">tracker</span><span class="topic">github-actions</span></div>
+      </div>
+    </section>
+
+    <section class="heading">
+      <div>
+        <h2>Releases</h2>
+        <p>Signed release builds of the Android app, published from the APK workflow.</p>
+      </div>
+      <span class="count">1 release</span>
+    </section>
+
+    <div class="note">
+      <b>Installing on Android.</b> Android blocks apps from outside the Play Store by default, so open the file and
+      allow installs from your browser when it asks. This is a debug build, signed with the standard Android debug
+      key. Prefer no install at all? The web version at
+      <a href="../food-money/">saheerlab.vercel.app/food-money</a> is the same app.
     </div>
-    <div class="asset searchable">
-      <div class="file-icon">📄</div><div class="file-info"><div class="file-name"><a href="./files/README-v1.5.txt" target="_blank" rel="noopener">README-v1.5.txt</a></div><div class="file-meta">Text document · 12 KB</div></div>
-      <div class="actions"><a class="btn" href="./files/README-v1.5.txt" target="_blank" rel="noopener">Read</a><a class="btn primary" href="./files/README-v1.5.txt" download>↓ Download</a></div>
-    </div>
-    <div class="asset searchable">
-      <div class="file-icon">🧾</div><div class="file-info"><div class="file-name"><a href="./files/checksums.txt" target="_blank" rel="noopener">checksums.txt</a></div><div class="file-meta">SHA-256 checksums · 1 KB</div></div>
-      <div class="actions"><a class="btn" href="./files/checksums.txt" target="_blank" rel="noopener">Read</a><button class="btn" onclick="copyLink('./files/checksums.txt')">Copy link</button></div>
-    </div>
-  </section>
-  <details class="previous searchable">
-    <summary><span>Explorer File Server v1.0.0 <span class="meta"> · Aug 12, 2026</span></span><span class="tag">Previous</span></summary>
-    <div class="asset searchable"><div class="file-icon">📦</div><div class="file-info"><div class="file-name"><a href="./files/explorer-file-server-v1.0.zip" download>explorer-file-server-v1.0.zip</a></div><div class="file-meta">ZIP archive · 15.6 MB</div></div><div class="actions"><a class="btn" href="./files/explorer-file-server-v1.0.zip" target="_blank" rel="noopener">Read / Preview</a><a class="btn primary" href="./files/explorer-file-server-v1.0.zip" download>↓ Download</a></div></div>
-    <div class="asset searchable"><div class="file-icon">📄</div><div class="file-info"><div class="file-name"><a href="./files/CHANGELOG-v1.0.txt" target="_blank" rel="noopener">CHANGELOG-v1.0.txt</a></div><div class="file-meta">Text document · 4 KB</div></div><div class="actions"><a class="btn" href="./files/CHANGELOG-v1.0.txt" target="_blank" rel="noopener">Read</a><a class="btn primary" href="./files/CHANGELOG-v1.0.txt" download>↓ Download</a></div></div>
-  </details>
-  <p class="foot">Explorer File Server · Release archive</p>
+
+    <input class="search" data-search="food-money" placeholder="Search releases and files…" aria-label="Search Food Money releases and files">
+
+    <section class="release searchable">
+      <div class="release-head">
+        <span class="tag">Latest</span>
+        <div>
+          <h3 class="release-title"><a href="https://github.com/DevSaheerHost/dev/releases/tag/food-money-v1.0.0" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Food Money v1.0.0 (Android)</a></h3>
+          <p class="meta">
+            <span class="mono">food-money-v1.0.0</span> ·
+            <span>4 Nov 2026</span> ·
+            <span>commit <a class="mono" href="https://github.com/DevSaheerHost/dev/commit/c066ba915af35648f915007a1fd0e1bbf029e187" target="_blank" rel="noopener">c066ba9</a></span> ·
+            <span><a href="https://github.com/DevSaheerHost/dev/actions/runs/41774940705" target="_blank" rel="noopener">build log</a></span>
+          </p>
+        </div>
+      </div>
+
+      <div class="notes">
+        <strong>What is in this build</strong>
+        <ul>
+          <li>Monthly calendar with per-day paid and pending amounts.</li>
+          <li>Running totals for expected, paid and outstanding money.</li>
+          <li>Packaged from the web app, so it matches what the site shows.</li>
+        </ul>
+      </div>
+
+      <div class="assets-title">Assets <small>1 file · 3.93 MB</small></div>
+
+      <div class="asset searchable">
+        <div class="file-icon" aria-hidden="true">🤖</div>
+        <div class="file-info">
+          <div class="file-name">
+            <a href="https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk">food-money-v1.0.0.apk</a>
+          </div>
+          <div class="file-meta">
+            Android package · 3.93 MB · released 4 Nov 2026
+            <span class="flag ok" title="A release asset is a plain public download">No sign-in needed</span>
+            <br><code>sha256:391cb3ac41b6e17a96818960ee291cc741c95dbf424c637ff3c7de61eca6aa07</code>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-copy="391cb3ac41b6e17a96818960ee291cc741c95dbf424c637ff3c7de61eca6aa07">Copy SHA-256</button>
+          <a class="btn primary" href="https://github.com/DevSaheerHost/dev/releases/download/food-money-v1.0.0/food-money-v1.0.0.apk">↓ Download APK</a>
+        </div>
+      </div>
+
+      <div class="asset searchable">
+        <div class="file-icon" aria-hidden="true">🌐</div>
+        <div class="file-info">
+          <div class="file-name"><a href="../food-money/">Open the web version</a></div>
+          <div class="file-meta">No install, no sign-in, works on any browser</div>
+        </div>
+        <div class="actions"><a class="btn" href="../food-money/">Open</a></div>
+      </div>
+    </section>
+
+    <p class="empty" data-empty="food-money">Nothing matches that search.</p>
+  </div>
+
+  <!-- ============================================ explorer-file-server === -->
+  <div id="repo-explorer-file-server">
+    <section class="about">
+      <div>
+        <p>Windows file server with This PC-style storage locations, a browsable file listing and release downloads in
+          one place.</p>
+        <div class="topics"><span class="topic">windows</span><span class="topic">file-server</span><span class="topic">releases</span></div>
+      </div>
+    </section>
+
+    <section class="heading">
+      <div>
+        <h2>Releases</h2>
+        <p>Download builds, browse release assets and read version notes.</p>
+      </div>
+      <span class="count">2 releases</span>
+    </section>
+
+    <input class="search" data-search="explorer-file-server" placeholder="Search releases and files…" aria-label="Search Explorer File Server releases and files">
+
+    <section class="release searchable">
+      <div class="release-head">
+        <span class="tag">Latest</span>
+        <div>
+          <h3 class="release-title">Explorer File Server v1.5.0</h3>
+          <p class="meta"><span class="mono">v1.5.0</span> · <span>26 Oct 2026</span> · <span>Stable</span></p>
+        </div>
+      </div>
+
+      <div class="notes">
+        <strong>What&rsquo;s new</strong>
+        <ul>
+          <li>Added This PC-style storage locations.</li>
+          <li>Browse and download release files from one place.</li>
+          <li>Improved file listing and mobile layout.</li>
+        </ul>
+      </div>
+
+      <div class="assets-title">Assets <small>2 files · 30.7 KB</small></div>
+
+      <div class="asset searchable">
+        <div class="file-icon" aria-hidden="true">📦</div>
+        <div class="file-info">
+          <div class="file-name"><a href="./files/explorer-file-server-v1.5.zip" download>explorer-file-server-v1.5.zip</a></div>
+          <div class="file-meta">ZIP archive · 30.4 KB<br><code>sha256:a031dd26a1548dbc22bcffb265369a31f96ec942cd158f30d65d90bfae606fbe</code></div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-copy="a031dd26a1548dbc22bcffb265369a31f96ec942cd158f30d65d90bfae606fbe">Copy SHA-256</button>
+          <a class="btn primary" href="./files/explorer-file-server-v1.5.zip" download>↓ Download</a>
+        </div>
+      </div>
+
+      <div class="asset searchable">
+        <div class="file-icon" aria-hidden="true">🧾</div>
+        <div class="file-info">
+          <div class="file-name"><a href="./files/checksums.txt" target="_blank" rel="noopener">checksums.txt</a></div>
+          <div class="file-meta">SHA-256 of every file on this page · 331 bytes</div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="./files/checksums.txt" target="_blank" rel="noopener">Read</a>
+          <a class="btn" href="./files/checksums.txt" download>↓ Download</a>
+        </div>
+      </div>
+    </section>
+
+    <details class="previous searchable">
+      <summary><span>Explorer File Server v1.0.0 <span class="meta" style="display:inline">· 12 Aug 2026</span></span><span class="tag grey">Previous</span></summary>
+      <div class="asset searchable">
+        <div class="file-icon" aria-hidden="true">📦</div>
+        <div class="file-info">
+          <div class="file-name"><a href="./files/explorer-file-server-v1.0.zip" download>explorer-file-server-v1.0.zip</a></div>
+          <div class="file-meta">ZIP archive · 27.5 KB<br><code>sha256:d00b3e84f7dea9fba6bfa62603b5f798037c053fe9db00c843220e3ff9927e4a</code></div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-copy="d00b3e84f7dea9fba6bfa62603b5f798037c053fe9db00c843220e3ff9927e4a">Copy SHA-256</button>
+          <a class="btn primary" href="./files/explorer-file-server-v1.0.zip" download>↓ Download</a>
+        </div>
+      </div>
+    </details>
+
+    <p class="empty" data-empty="explorer-file-server">Nothing matches that search.</p>
+  </div>
+
+  <p class="foot">
+    Release archive · <a href="../">Saheer&rsquo;s Lab</a> · source on
+    <a href="https://github.com/DevSaheerHost/dev" target="_blank" rel="noopener">github.com/DevSaheerHost/dev</a>
+  </p>
 </main>
+
 <script>
-const search = document.getElementById('search');
-search.addEventListener('input', () => {
-  const q = search.value.trim().toLowerCase();
-  document.querySelectorAll('.release, .previous').forEach(group => {
-    const items = [...group.querySelectorAll('.searchable')];
-    let any = group.textContent.toLowerCase().includes(q);
-    items.forEach(item => {
-      const match = item.textContent.toLowerCase().includes(q);
-      item.style.display = (!q || match) ? '' : 'none';
-      if (match) any = true;
+(function () {
+  'use strict';
+
+  /* Each repository is one section; switching is show one, hide the other. */
+  var REPOS = {
+    'explorer-file-server': { icon: '📦', releases: 2, code: '../explorer-file-server/' },
+    'food-money': { icon: '💸', releases: 1, code: '../food-money/' }
+  };
+
+  var menu = document.getElementById('switchMenu');
+  var button = document.getElementById('switchBtn');
+
+  function show(name) {
+    if (!REPOS[name]) name = 'explorer-file-server';
+
+    Object.keys(REPOS).forEach(function (key) {
+      document.getElementById('repo-' + key).hidden = key !== name;
     });
-    group.style.display = (!q || any) ? '' : 'none';
-    if (group.tagName === 'DETAILS' && q && any) group.open = true;
+
+    var repo = REPOS[name];
+    document.getElementById('repoName').textContent = name;
+    document.querySelector('.avatar').textContent = repo.icon;
+    document.getElementById('tabCount').textContent = String(repo.releases);
+    document.getElementById('tabCode').setAttribute('href', repo.code);
+    document.getElementById('dotExplorer').hidden = name !== 'explorer-file-server';
+    document.getElementById('dotFood').hidden = name !== 'food-money';
+
+    document.title = name === 'food-money'
+      ? 'Food Money APK — Downloads · Saheer’s Lab'
+      : 'Explorer File Server — Downloads & Releases · Saheer’s Lab';
+
+    closeMenu();
+  }
+
+  function openMenu() {
+    menu.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMenu() {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  }
+
+  button.addEventListener('click', function () {
+    if (menu.hidden) openMenu(); else closeMenu();
   });
-});
-async function copyLink(path) {
-  const url = new URL(path, location.href).href;
-  try { await navigator.clipboard.writeText(url); alert('Link copied'); }
-  catch { prompt('Copy this link:', url); }
-}
+
+  document.addEventListener('click', function (event) {
+    if (!menu.hidden && !menu.contains(event.target) && event.target !== button && !button.contains(event.target)) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeMenu();
+  });
+
+  menu.querySelectorAll('[data-repo]').forEach(function (item) {
+    item.addEventListener('click', function () {
+      var name = item.getAttribute('data-repo');
+      /* A hash keeps the chosen repository shareable and survives a reload. */
+      if (location.hash !== '#/' + name) location.hash = '#/' + name;
+      else show(name);
+    });
+  });
+
+  window.addEventListener('hashchange', function () {
+    show(location.hash.replace(/^#\/?/, ''));
+  });
+
+  /* Search filters the assets inside the repository you are looking at. */
+  document.querySelectorAll('[data-search]').forEach(function (input) {
+    input.addEventListener('input', function () {
+      var scope = document.getElementById('repo-' + input.getAttribute('data-search'));
+      var query = input.value.trim().toLowerCase();
+      var anyGroup = false;
+
+      scope.querySelectorAll('.release, .previous').forEach(function (group) {
+        var groupMatch = !query || group.textContent.toLowerCase().indexOf(query) !== -1;
+        var anyItem = false;
+
+        group.querySelectorAll('.asset').forEach(function (asset) {
+          var match = !query || asset.textContent.toLowerCase().indexOf(query) !== -1;
+          asset.style.display = match ? '' : 'none';
+          if (match) anyItem = true;
+        });
+
+        var visible = !query || groupMatch || anyItem;
+        group.style.display = visible ? '' : 'none';
+        if (visible) anyGroup = true;
+        if (group.tagName === 'DETAILS' && query && anyItem) group.open = true;
+      });
+
+      scope.querySelector('[data-empty]').style.display = anyGroup ? 'none' : 'block';
+    });
+  });
+
+  /* Copy a checksum without leaving the page. */
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var value = btn.getAttribute('data-copy');
+      var label = btn.textContent;
+      var done = function (text) {
+        btn.textContent = text;
+        window.setTimeout(function () { btn.textContent = label; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(function () { done('Copied'); }, function () { window.prompt('Copy this checksum:', value); });
+      } else {
+        window.prompt('Copy this checksum:', value);
+      }
+    });
+  });
+
+  show(location.hash.replace(/^#\/?/, ''));
+})();
 </script>
 </body>
 </html>
