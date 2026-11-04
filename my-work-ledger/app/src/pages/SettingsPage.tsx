@@ -26,13 +26,13 @@ export function SettingsPage() {
   const { uid, email, displayName, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState(displayName);
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  const [status, setStatus] = useState<'idle' | 'saved' | 'failed'>('idle');
 
-  async function saveName() {
+  function saveName() {
     if (!uid || name.trim() === '' || name === displayName) return;
-    setStatus('saving');
     try {
-      await updateDisplayName(uid, name);
+      // Saved to the device straight away; it syncs when there is a connection.
+      updateDisplayName(uid, name);
       setStatus('saved');
     } catch {
       setStatus('failed');
@@ -61,10 +61,10 @@ export function SettingsPage() {
           />
           <div className="mt-3 flex items-center gap-3">
             <Button
-              onClick={() => void saveName()}
-              disabled={status === 'saving' || name.trim() === '' || name === displayName}
+              onClick={saveName}
+              disabled={name.trim() === '' || name === displayName}
             >
-              {status === 'saving' ? 'Saving…' : 'Save'}
+              Save
             </Button>
             {status === 'saved' ? (
               <span className="flex items-center gap-1.5 text-sm text-credit">

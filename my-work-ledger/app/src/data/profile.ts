@@ -12,6 +12,7 @@ import { SCHEMA_VERSION, type UserProfile } from '@/types/models';
 
 import { getDb, requireDb } from './client';
 import { userDoc } from './paths';
+import { detach, type PendingWrite } from './writes';
 
 export const MAX_NAME_LENGTH = 60;
 
@@ -36,12 +37,16 @@ export async function ensureProfile(uid: string, displayName: string): Promise<v
   });
 }
 
-export async function updateDisplayName(uid: string, displayName: string): Promise<void> {
+/** Not awaited by callers: see the note in `writes.ts` about offline writes. */
+export function updateDisplayName(uid: string, displayName: string): PendingWrite {
   const db = requireDb();
-  await updateDoc(userDoc(db, uid), {
-    displayName: normaliseDisplayName(displayName),
-    updatedAt: serverTimestamp(),
-  });
+  const synced = detach(
+    updateDoc(userDoc(db, uid), {
+      displayName: normaliseDisplayName(displayName),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  return { synced };
 }
 
 export function watchProfile(

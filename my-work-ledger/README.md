@@ -10,11 +10,13 @@ outstanding. At the end of a period you can seal a statement and hand it over.
 Live at **/my-work-ledger/**. Built to be used daily on a phone, offline, and to survive a
 reinstall.
 
-> **Status: Phase 1 of 7 — foundation.** Accounts, shops and the money/date core are done and
-> tested. Transactions, the balance engine, settlements, PDF reports, reminders and the Android
-> build are not built yet. The dashboard says so on screen rather than showing plausible
-> numbers that are not real. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full
-> plan.
+> **Status: Phase 2 of 7 — the financial engine.** Accounts, shops, the money/date core, the
+> balance engine, salary accrual and the entry data layer are done and tested. What is *not*
+> built yet is the screen for any of it: there is no form to add an entry and no transaction
+> list, so the dashboard still shows only opening balances and says so on screen rather than
+> showing plausible numbers that are not real. Phase 3 puts the engine on screen. Settlements,
+> PDF reports, reminders and the Android build come after that. See
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
 
 ---
 
@@ -162,16 +164,25 @@ my-work-ledger/
     └── src/
         ├── lib/                 money, dates, clock, ids — no React, no Firestore
         ├── types/models.ts      exactly what Firestore stores
-        ├── data/                Firebase client, validated paths, shops, profile, audit
-        ├── features/            auth, shops
+        ├── data/                Firebase client, validated paths, shops, entries, configs
+        ├── features/
+        │   ├── ledger/          engine, accrual, posting — pure, no React, no clock
+        │   ├── auth/
+        │   └── shops/
         ├── components/          UI primitives and the app shell
         ├── pages/               dashboard, settings
         └── hooks/               theme, online status
 ```
 
-**The boundary that matters:** `lib/` and the future `engine/` know nothing about React,
-Firestore or the current time. Components render values that arrive already computed. There is
-no arithmetic in JSX.
+**The boundary that matters:** `lib/` and `features/ledger/` know nothing about React,
+Firestore or the current time — "today" is always an argument. That is what makes a balance
+reproducible in a test, on a phone and in a PDF. Components render values that arrive already
+computed; there is no arithmetic in JSX.
+
+**One behaviour worth knowing about:** a Firestore write promise resolves when the *server*
+acknowledges it, so offline it stays pending indefinitely. Every mutation in `data/` therefore
+returns immediately with a client-minted id and hands back a separate `synced` promise that
+nothing in the UI awaits. See `data/writes.ts`.
 
 ---
 
@@ -179,15 +190,29 @@ no arithmetic in JSX.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **40 unit tests** across `money.ts` and `dates.ts`, including exact-sum pro-rata splits, the
-  `8.17` float trap, leap years, month clamping, and a guard test that fails if `new Date(`
-  appears outside `lib/dates.ts` and `lib/clock.ts`.
-- **17 security rules tests** against the Firestore emulator: cross-account denial, forged
-  `uid`, field whitelists, immutable amounts and dates, sealed-statement immutability,
-  append-only audit logs, and the collection-group query constraint.
+- **146 unit tests**, all pure and needing no emulator, network or Java:
+  - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
+    month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
+    and `lib/clock.ts`.
+  - *engine (36)* — the sign of all nine kinds, every scenario in the money rules above,
+    period membership by recognition date, running balances, and the integrity warnings.
+  - *accrual (34)* — nothing proposed before it is earned, a month never proposed twice,
+    calendar-day pro-rata in short and leap months, a mid-month raise tiling the month
+    exactly, and never accruing behind the opening-balance date.
+  - *posting (24)* — recognition dates around a seal, sort-key ordering, validation, and the
+    cash-bonus pair netting to zero.
+  - *defensive reads (12)* — a malformed stored document can never produce `NaN` and poison
+    every total on the screen.
+- **23 security rules tests** against the Firestore emulator: cross-account denial, forged
+  `uid`, field whitelists, immutable amounts and dates, income-config validation, a re-posted
+  accrual being refused, sealed-statement immutability, append-only audit logs, and the
+  collection-group query constraint.
 - **An end-to-end browser pass** at 390px: sign up, create two shops with opposite balance
   directions, reject `100.456`, archive one shop, reload and confirm it persisted, rename,
   switch theme, sign out. No console errors, no horizontal overflow.
+- **An offline pass**: with the network cut, adding a shop closes the form in ~200ms and the
+  shop appears; archiving works too; on reconnect a *fresh page* shows both changes, proving
+  they reached the server and not just the local cache.
 
 **Not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
 there yet and this environment has no credentials to enable it, so that path has only been

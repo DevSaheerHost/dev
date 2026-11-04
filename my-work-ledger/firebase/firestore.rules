@@ -71,9 +71,12 @@ service cloud.firestore {
       return value is string && value.size() <= maxLength;
     }
 
-    function isNullOr(value, ok) {
-      return value == null || ok;
-    }
+    // NOTE: there is deliberately no null-or-check helper function here.
+    // Rules functions evaluate their arguments eagerly, so a null value would
+    // still be fed to the check -- and `null in ['own', 'shopFloat']` is an
+    // evaluation error, not `false`, which denies a perfectly valid write.
+    // Every optional field below therefore uses an inline ternary, which does
+    // short-circuit. This cost one real bug before it was understood.
 
     // serverTimestamp() resolves at commit time, so it equals request.time even
     // for a write that was queued offline hours earlier.
@@ -191,9 +194,10 @@ service cloud.firestore {
                    && isPositiveMoney(incoming().amount)
                    && incoming().frequency in ['monthly', 'weekly', 'daily', 'oneTime']
                    && isCalendarDate(incoming().effectiveFrom)
-                   && isNullOr(incoming().effectiveTo,
-                               isCalendarDate(incoming().effectiveTo)
-                               && incoming().effectiveTo >= incoming().effectiveFrom)
+                   && (incoming().effectiveTo == null
+                         ? true
+                         : isCalendarDate(incoming().effectiveTo)
+                           && incoming().effectiveTo >= incoming().effectiveFrom)
                    && incoming().active is bool;
           }
 
@@ -270,18 +274,25 @@ service cloud.firestore {
                    && incoming().clientCreatedAtMs is int
                    && incoming().clientCreatedAtMs > 0
 
-                   && isNullOr(incoming().reimbursable, incoming().reimbursable is bool)
-                   && isNullOr(incoming().fundedFrom, incoming().fundedFrom in ['own', 'shopFloat'])
-                   && isNullOr(incoming().accrualKey, isText(incoming().accrualKey, 128))
-                   && isNullOr(incoming().settlesExpenseIds,
-                               incoming().settlesExpenseIds is list
-                               && incoming().settlesExpenseIds.size() <= 50)
-                   && isNullOr(incoming().recoversTransactionId, isDocId(incoming().recoversTransactionId))
-                   && isNullOr(incoming().pairId, isDocId(incoming().pairId))
-                   && isNullOr(incoming().settlementId, isDocId(incoming().settlementId))
+                   && (incoming().reimbursable == null ? true : incoming().reimbursable is bool)
+                   && (incoming().fundedFrom == null
+                         ? true
+                         : incoming().fundedFrom in ['own', 'shopFloat'])
+                   && (incoming().accrualKey == null ? true : isText(incoming().accrualKey, 128))
+                   && (incoming().settlesExpenseIds == null
+                         ? true
+                         : incoming().settlesExpenseIds is list
+                           && incoming().settlesExpenseIds.size() <= 50)
+                   && (incoming().recoversTransactionId == null
+                         ? true
+                         : isDocId(incoming().recoversTransactionId))
+                   && (incoming().pairId == null ? true : isDocId(incoming().pairId))
+                   && (incoming().settlementId == null ? true : isDocId(incoming().settlementId))
                    && incoming().isPriorPeriodAdjustment is bool
-                   && isNullOr(incoming().adjustsSettlementId, isDocId(incoming().adjustsSettlementId))
-                   && isNullOr(incoming().voidReason, isText(incoming().voidReason, 300));
+                   && (incoming().adjustsSettlementId == null
+                         ? true
+                         : isDocId(incoming().adjustsSettlementId))
+                   && (incoming().voidReason == null ? true : isText(incoming().voidReason, 300));
           }
 
           allow get, list: if isOwner(uid);
@@ -307,7 +318,9 @@ service cloud.firestore {
                         // frozen except for the stamping itself.
                         && (resource.data.settlementId == null
                             || changed().hasOnly(['settlementId', 'updatedAt']))
-                        && isNullOr(incoming().voidedAt, isServerTime(incoming().voidedAt))
+                        && (incoming().voidedAt == null
+                              ? true
+                              : isServerTime(incoming().voidedAt))
                         && isServerTime(incoming().updatedAt);
 
           allow delete: if false;
@@ -375,12 +388,14 @@ service cloud.firestore {
                  && isText(incoming().title, 80)
                  && incoming().title.size() > 0
                  && isText(incoming().body, 300)
-                 && isNullOr(incoming().weekday,
-                             incoming().weekday is int
-                             && incoming().weekday >= 0 && incoming().weekday <= 6)
-                 && isNullOr(incoming().dayOfMonth,
-                             incoming().dayOfMonth is int
-                             && incoming().dayOfMonth >= 1 && incoming().dayOfMonth <= 31)
+                 && (incoming().weekday == null
+                       ? true
+                       : incoming().weekday is int
+                         && incoming().weekday >= 0 && incoming().weekday <= 6)
+                 && (incoming().dayOfMonth == null
+                       ? true
+                       : incoming().dayOfMonth is int
+                         && incoming().dayOfMonth >= 1 && incoming().dayOfMonth <= 31)
                  && incoming().time is string
                  && incoming().time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
                  && incoming().enabled is bool;

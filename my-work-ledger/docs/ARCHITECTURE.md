@@ -326,6 +326,15 @@ No phase starts while the previous one has a failing test.
 | --- | --- | --- |
 | **1 Foundation** | folder + Vite/TS/Tailwind scaffold matching `transferbox`, design tokens, app shell with bottom nav (mobile) / sidebar (desktop), Firebase init, email+password auth, profile, shop CRUD + archive + switcher, rules v1 | sign up, create two shops, archive one, reload — state persists; rules deny cross-uid reads in the emulator |
 | **2 Financial engine** | `money.ts`, `dates.ts`, `engine.ts`, `accrual.ts`, all nine transaction kinds, income configs, transaction CRUD with soft delete | ~40 unit tests green, including every scenario in §9 of the brief: advances not counted as earnings, expense + reimbursement nets to zero, pro-rata splits summing exactly, duplicate accrual impossible |
+
+**Phase 2 interpretation, flagged for confirmation:** an accrual is proposed only once its
+covered span has fully elapsed — November's salary appears on 1 December, not on the salary pay
+day partway through November, because on the 15th only half of it has been earned. Proposing a
+whole month early would need a mid-month top-up later, which is how duplicates start. The
+shop's `salaryPayDay` therefore drives the *reminder* (Phase 5) rather than the accrual. If the
+intended meaning is "paid on the 5th for the previous month", that is already what this
+produces; if it is "paid on the 5th for the current month in advance", say so and the rule
+changes in one place.
 | **3 Dashboard & history** | dashboard cards with real totals, shop detail, transaction list with search/filter/sort, month selector, backdated entry flow | the dashboard figure equals the engine's figure for a fixture dataset; a backdated entry moves the right month |
 | **4 Settlement & reports** | custom-range settlement, sealing, carry-forward, reconciliation, jsPDF per-shop and combined reports | seal a period, add a backdated entry, confirm the snapshot is unchanged and the next period carries the adjustment; PDF totals match the engine |
 | **5 Reminders** | weekly/monthly/custom reminders, permission handling, history, completion | reminders fire in the browser; month-end clamping unit-tested |

@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { strict as assert } from 'node:assert';
 
 import {
   assertFails,
@@ -308,6 +309,111 @@ test('an entry claimed by a settlement freezes except for the stamp itself', asy
       updatedAt: serverTimestamp(),
     }),
   );
+});
+
+/* -------------------------------------------------------------- accruals */
+
+function accrualDoc(overrides = {}) {
+  return txnDoc({
+    kind: 'salary_earned',
+    direction: 'credit',
+    amount: 1800000,
+    category: 'accrual',
+    description: 'Monthly salary',
+    transactionDate: '2025-11-30',
+    recognitionDate: '2025-11-30',
+    periodKey: '2025-11',
+    sortKey: '2025-11-30#001763000000000#acc',
+    reimbursable: null,
+    fundedFrom: null,
+    accrualKey: 'inc_salary:2025-11',
+    ...overrides,
+  });
+}
+
+test('an accrual writes under its deterministic id', async () => {
+  const id = 'acc_inc_salary_202511';
+  await assertSucceeds(setDoc(aliceTxn(id), accrualDoc()));
+});
+
+test('re-posting the same month cannot create a second salary', async () => {
+  // Two devices confirming November, or a double tap, both address the SAME
+  // document because the id is derived from the config and the period. The
+  // second write is then refused outright: it would have to change `createdAt`,
+  // and a posted entry's timestamps are immutable.
+  //
+  // So a duplicate is impossible in two independent ways — the id collides, and
+  // the collision is rejected rather than overwriting what is already there.
+  // That is stronger than a silent no-op, which would hide a genuine conflict.
+  const id = 'acc_inc_salary_202512';
+  await assertSucceeds(setDoc(aliceTxn(id), accrualDoc({ periodKey: '2025-12', transactionDate: '2025-12-31', recognitionDate: '2025-12-31', accrualKey: 'inc_salary:2025-12' })));
+  await mustReject(
+    're-posting an accrual',
+    setDoc(aliceTxn(id), accrualDoc({ periodKey: '2025-12', transactionDate: '2025-12-31', recognitionDate: '2025-12-31', accrualKey: 'inc_salary:2025-12', amount: 9900000 })),
+  );
+
+  // And the original is untouched by the attempt.
+  const stored = await getDoc(aliceTxn(id));
+  assert.equal(stored.data().amount, 1800000);
+});
+
+/* ----------------------------------------------------------- income configs */
+
+function configDoc(overrides = {}) {
+  return {
+    kind: 'salary',
+    label: 'Monthly salary',
+    amount: 1800000,
+    frequency: 'monthly',
+    effectiveFrom: '2025-01-01',
+    effectiveTo: null,
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+const aliceConfig = (id, db = alice) =>
+  doc(db, 'users', ALICE, 'shops', 'shop_one', 'incomeConfigs', id);
+
+test('a valid income config is accepted and is not deletable', async () => {
+  await assertSucceeds(setDoc(aliceConfig('inc_salary'), configDoc()));
+  await mustReject('deleting an income config', deleteDoc(aliceConfig('inc_salary')));
+});
+
+test('income config fields are validated', async () => {
+  const cases = [
+    ['unknown kind', configDoc({ kind: 'mystery' })],
+    ['unknown frequency', configDoc({ frequency: 'fortnightly' })],
+    ['empty label', configDoc({ label: '' })],
+    ['negative amount', configDoc({ amount: -100 })],
+    ['float amount', configDoc({ amount: 1800000.5 })],
+    ['malformed effective date', configDoc({ effectiveFrom: '2025/01/01' })],
+    ['end before start', configDoc({ effectiveFrom: '2025-06-01', effectiveTo: '2025-05-01' })],
+    ['unknown extra field', { ...configDoc(), payGrade: 'A' }],
+  ];
+  for (const [label, payload] of cases) {
+    await mustReject(label, setDoc(aliceConfig('inc_reject'), payload));
+  }
+});
+
+test('an income config can be closed off and deactivated', async () => {
+  // This is how a mid-month raise works: the old rate ends, a new one begins.
+  await assertSucceeds(
+    updateDoc(aliceConfig('inc_salary'), {
+      effectiveTo: '2025-11-10',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertSucceeds(
+    updateDoc(aliceConfig('inc_salary'), { active: false, updatedAt: serverTimestamp() }),
+  );
+});
+
+test("one account cannot touch another's income configs", async () => {
+  await mustReject('cross-account config read', getDoc(aliceConfig('inc_salary', bob)));
+  await mustReject('cross-account config write', setDoc(aliceConfig('inc_evil', bob), configDoc()));
 });
 
 /* ---------------------------------------------------------------- settlements */
