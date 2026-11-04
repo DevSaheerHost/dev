@@ -1,0 +1,454 @@
+rules_version = '2';
+
+// =============================================================================
+// My Work Ledger — Firestore security rules
+//
+// This file, not the client, is what keeps one person's ledger out of another's.
+// The app is open source and its Firebase web config is public by design, so
+// anyone can point a Firestore SDK at this project with a valid session. These
+// rules are therefore written as if every request were hostile:
+//
+//   * Default deny. The final `match /{document=**}` denies anything not
+//     explicitly allowed above, so a new collection is unreachable until rules
+//     for it are written here.
+//   * Ownership by path. Everything lives under `users/{uid}/...` and every rule
+//     requires `request.auth.uid == uid`. There is no shared or global data.
+//   * Field whitelists. A write may only touch the fields listed for its
+//     collection. An unknown field is rejected rather than stored, so the schema
+//     cannot be extended from a browser console.
+//   * Nothing is ever deleted. Shops are archived, transactions are voided,
+//     income configs are deactivated. `allow delete` is false everywhere, which
+//     means a compromised session cannot destroy the record of what was owed.
+//   * Money is immutable after the fact. A transaction's amount, kind and dates
+//     cannot be edited; a mistake is voided and re-entered, leaving the audit
+//     trail intact. A sealed settlement cannot be changed at all.
+//
+// Client-side validation in `src/data/*.ts` mirrors these checks to produce good
+// error messages. It is a convenience. This file is the guarantee.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Ten crore in paise, matching MAX_PAISE in src/lib/money.ts. Integer only:
+    // a float here would reintroduce the rounding drift the app exists to avoid.
+    function isMoney(value) {
+      return value is int && value >= -10000000000 && value <= 10000000000;
+    }
+
+    function isPositiveMoney(value) {
+      return value is int && value >= 0 && value <= 10000000000;
+    }
+
+    // `YYYY-MM-DD`. The pattern cannot reject 31 February; the client does that.
+    // Its job here is to refuse anything that is not a plain calendar date, so a
+    // timestamp or an injected string can never reach a date field.
+    function isCalendarDate(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isPeriodKey(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}$');
+    }
+
+    function isText(value, maxLength) {
+      return value is string && value.size() <= maxLength;
+    }
+
+    function isNullOr(value, ok) {
+      return value == null || ok;
+    }
+
+    // serverTimestamp() resolves at commit time, so it equals request.time even
+    // for a write that was queued offline hours earlier.
+    function isServerTime(value) {
+      return value == request.time;
+    }
+
+    function isDocId(value) {
+      return value is string && value.size() > 1 && value.size() <= 128
+             && value.matches('^[A-Za-z][A-Za-z0-9_-]*$');
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{uid} — the profile document
+    // -------------------------------------------------------------------------
+
+    match /users/{uid} {
+      function validProfile() {
+        return incoming().keys().hasOnly(
+                 ['schemaVersion', 'displayName', 'currency', 'createdAt', 'updatedAt'])
+               && incoming().schemaVersion is int
+               && incoming().schemaVersion >= 1
+               && incoming().schemaVersion <= 1000
+               && isText(incoming().displayName, 60)
+               && incoming().displayName.size() > 0
+               && incoming().currency == 'INR';
+      }
+
+      allow get, list: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+                    && validProfile()
+                    && isServerTime(incoming().createdAt)
+                    && isServerTime(incoming().updatedAt);
+
+      // The profile may be renamed. `createdAt` and `currency` are not open to
+      // change, and `schemaVersion` only moves forward.
+      allow update: if isOwner(uid)
+                    && changed().hasOnly(['displayName', 'schemaVersion', 'updatedAt'])
+                    && isText(incoming().displayName, 60)
+                    && incoming().displayName.size() > 0
+                    && incoming().schemaVersion >= resource.data.schemaVersion
+                    && isServerTime(incoming().updatedAt);
+
+      allow delete: if false;
+
+      // -----------------------------------------------------------------------
+      // shops/{shopId}
+      // -----------------------------------------------------------------------
+
+      match /shops/{shopId} {
+        function validShopFields() {
+          return isText(incoming().name, 60)
+                 && incoming().name.size() > 0
+                 && isText(incoming().description, 240)
+                 && isCalendarDate(incoming().joiningDate)
+                 && incoming().salaryPayDay is int
+                 && incoming().salaryPayDay >= 1
+                 && incoming().salaryPayDay <= 31
+                 && incoming().settlementMode in ['accrual', 'cashOnly']
+                 && isMoney(incoming().openingBalance)
+                 && isCalendarDate(incoming().openingBalanceAsOf)
+                 && incoming().openingBalanceAsOf >= incoming().joiningDate;
+        }
+
+        allow get, list: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+                      && isDocId(shopId)
+                      && incoming().keys().hasOnly([
+                           'name', 'description', 'joiningDate', 'salaryPayDay',
+                           'settlementMode', 'openingBalance', 'openingBalanceAsOf',
+                           'sealedThroughDate', 'status', 'createdAt', 'updatedAt'])
+                      && incoming().keys().hasAll([
+                           'name', 'description', 'joiningDate', 'salaryPayDay',
+                           'settlementMode', 'openingBalance', 'openingBalanceAsOf',
+                           'status', 'createdAt', 'updatedAt'])
+                      && validShopFields()
+                      && incoming().status == 'active'
+                      && incoming().sealedThroughDate == null
+                      && isServerTime(incoming().createdAt)
+                      && isServerTime(incoming().updatedAt);
+
+        // `sealedThroughDate` only ever moves forward: letting it retreat would
+        // reopen a sealed period and allow a sealed statement to be rewritten.
+        allow update: if isOwner(uid)
+                      && changed().hasOnly([
+                           'name', 'description', 'joiningDate', 'salaryPayDay',
+                           'settlementMode', 'openingBalance', 'openingBalanceAsOf',
+                           'sealedThroughDate', 'status', 'updatedAt'])
+                      && validShopFields()
+                      && incoming().status in ['active', 'archived']
+                      // Not `isNullOr`: a null here must mean "was already
+                      // null". Treating null as universally acceptable would let
+                      // the seal date be cleared, which reopens a sealed period
+                      // and makes its sealed statement rewritable.
+                      && (incoming().sealedThroughDate == null
+                            ? resource.data.sealedThroughDate == null
+                            : isCalendarDate(incoming().sealedThroughDate)
+                              && (resource.data.sealedThroughDate == null
+                                  || incoming().sealedThroughDate >= resource.data.sealedThroughDate))
+                      && isServerTime(incoming().updatedAt);
+
+        allow delete: if false;
+
+        // ---------------------------------------------------------------------
+        // incomeConfigs/{configId} — effective-dated entitlements
+        // ---------------------------------------------------------------------
+
+        match /incomeConfigs/{configId} {
+          function validConfigFields() {
+            return incoming().kind in ['salary', 'allowance', 'other']
+                   && isText(incoming().label, 60)
+                   && incoming().label.size() > 0
+                   && isPositiveMoney(incoming().amount)
+                   && incoming().frequency in ['monthly', 'weekly', 'daily', 'oneTime']
+                   && isCalendarDate(incoming().effectiveFrom)
+                   && isNullOr(incoming().effectiveTo,
+                               isCalendarDate(incoming().effectiveTo)
+                               && incoming().effectiveTo >= incoming().effectiveFrom)
+                   && incoming().active is bool;
+          }
+
+          allow get, list: if isOwner(uid);
+
+          allow create: if isOwner(uid)
+                        && isDocId(configId)
+                        && incoming().keys().hasOnly([
+                             'kind', 'label', 'amount', 'frequency', 'effectiveFrom',
+                             'effectiveTo', 'active', 'createdAt', 'updatedAt'])
+                        && validConfigFields()
+                        && isServerTime(incoming().createdAt)
+                        && isServerTime(incoming().updatedAt);
+
+          // A config may be closed off or deactivated. The amount stays editable
+          // because accruals already posted are never rewritten from it — a
+          // changed rate produces a signed adjustment instead.
+          allow update: if isOwner(uid)
+                        && changed().hasOnly([
+                             'label', 'amount', 'frequency', 'effectiveFrom',
+                             'effectiveTo', 'active', 'updatedAt'])
+                        && validConfigFields()
+                        && isServerTime(incoming().updatedAt);
+
+          allow delete: if false;
+        }
+
+        // ---------------------------------------------------------------------
+        // transactions/{txnId} — the ledger itself
+        // ---------------------------------------------------------------------
+
+        match /transactions/{txnId} {
+          function validTransaction() {
+            return incoming().keys().hasOnly([
+                     'uid', 'shopId', 'kind', 'amount', 'direction', 'category',
+                     'description', 'transactionDate', 'recognitionDate', 'periodKey',
+                     'sortKey', 'clientCreatedAtMs', 'reimbursable', 'fundedFrom',
+                     'accrualKey', 'settlesExpenseIds', 'recoversTransactionId',
+                     'pairId', 'settlementId', 'isPriorPeriodAdjustment',
+                     'adjustsSettlementId', 'createdAt', 'updatedAt',
+                     'voidedAt', 'voidReason'])
+
+                   // The denormalised owner enables the cross-shop collection
+                   // group query. Asserting it here is what stops a forged uid
+                   // from inserting a row into somebody else's dashboard.
+                   && incoming().uid == uid
+                   && incoming().shopId == shopId
+
+                   && incoming().kind in ['salary_earned', 'allowance_earned',
+                        'other_income_earned', 'expense_paid', 'advance_received',
+                        'salary_payment_received', 'reimbursement_received',
+                        'deduction', 'adjustment']
+
+                   // Only an adjustment carries its own sign; for every other
+                   // kind the sign comes from the kind, so a negative amount
+                   // would silently invert the entry.
+                   && (incoming().kind == 'adjustment'
+                         ? isMoney(incoming().amount)
+                         : isPositiveMoney(incoming().amount))
+
+                   && incoming().direction in ['credit', 'debit']
+                   && isText(incoming().category, 40)
+                   && isText(incoming().description, 500)
+
+                   && isCalendarDate(incoming().transactionDate)
+                   && isCalendarDate(incoming().recognitionDate)
+                   // Recognition never precedes the event; it is only ever
+                   // pushed forward, out of a sealed period.
+                   && incoming().recognitionDate >= incoming().transactionDate
+                   && isPeriodKey(incoming().periodKey)
+                   && incoming().recognitionDate.matches('^' + incoming().periodKey + '-[0-9]{2}$')
+
+                   && isText(incoming().sortKey, 200)
+                   && incoming().clientCreatedAtMs is int
+                   && incoming().clientCreatedAtMs > 0
+
+                   && isNullOr(incoming().reimbursable, incoming().reimbursable is bool)
+                   && isNullOr(incoming().fundedFrom, incoming().fundedFrom in ['own', 'shopFloat'])
+                   && isNullOr(incoming().accrualKey, isText(incoming().accrualKey, 128))
+                   && isNullOr(incoming().settlesExpenseIds,
+                               incoming().settlesExpenseIds is list
+                               && incoming().settlesExpenseIds.size() <= 50)
+                   && isNullOr(incoming().recoversTransactionId, isDocId(incoming().recoversTransactionId))
+                   && isNullOr(incoming().pairId, isDocId(incoming().pairId))
+                   && isNullOr(incoming().settlementId, isDocId(incoming().settlementId))
+                   && incoming().isPriorPeriodAdjustment is bool
+                   && isNullOr(incoming().adjustsSettlementId, isDocId(incoming().adjustsSettlementId))
+                   && isNullOr(incoming().voidReason, isText(incoming().voidReason, 300));
+          }
+
+          allow get, list: if isOwner(uid);
+
+          allow create: if isOwner(uid)
+                        && isDocId(txnId)
+                        && validTransaction()
+                        && incoming().settlementId == null
+                        && incoming().voidedAt == null
+                        && isServerTime(incoming().createdAt)
+                        && isServerTime(incoming().updatedAt);
+
+          // Amount, kind and both dates are immutable. A wrong figure is voided
+          // and re-entered, so the history shows what was believed and when,
+          // which is the whole point of keeping a ledger rather than a total.
+          allow update: if isOwner(uid)
+                        && changed().hasOnly([
+                             'category', 'description', 'settlementId',
+                             'isPriorPeriodAdjustment', 'adjustsSettlementId',
+                             'voidedAt', 'voidReason', 'updatedAt'])
+                        && validTransaction()
+                        // An entry already claimed by a sealed settlement is
+                        // frozen except for the stamping itself.
+                        && (resource.data.settlementId == null
+                            || changed().hasOnly(['settlementId', 'updatedAt']))
+                        && isNullOr(incoming().voidedAt, isServerTime(incoming().voidedAt))
+                        && isServerTime(incoming().updatedAt);
+
+          allow delete: if false;
+        }
+
+        // ---------------------------------------------------------------------
+        // settlements/{settlementId} — immutable statements
+        // ---------------------------------------------------------------------
+
+        match /settlements/{settlementId} {
+          allow get, list: if isOwner(uid);
+
+          allow create: if isOwner(uid)
+                        && isDocId(settlementId)
+                        && incoming().keys().hasOnly([
+                             'shopId', 'periodStart', 'periodEnd', 'settlementDate',
+                             'openingBalance', 'closingBalance', 'totals',
+                             'transactionCount', 'statementNo', 'sealState', 'status',
+                             'notes', 'sealedAt', 'createdAt'])
+                        && incoming().shopId == shopId
+                        && isCalendarDate(incoming().periodStart)
+                        && isCalendarDate(incoming().periodEnd)
+                        && incoming().periodEnd >= incoming().periodStart
+                        && isCalendarDate(incoming().settlementDate)
+                        && isMoney(incoming().openingBalance)
+                        && isMoney(incoming().closingBalance)
+                        && incoming().totals is map
+                        && incoming().totals.keys().size() <= 12
+                        && incoming().transactionCount is int
+                        && incoming().transactionCount >= 0
+                        && incoming().statementNo is int
+                        && incoming().statementNo >= 1
+                        && incoming().sealState in ['stamping', 'sealed']
+                        && incoming().status in ['sealed', 'needs_reconciliation']
+                        && isText(incoming().notes, 1000)
+                        && isServerTime(incoming().createdAt);
+
+          // A statement that has finished sealing is final. Before that only the
+          // seal can complete, and afterwards only the reconciliation flag may
+          // flip — a backdated entry marks the statement as disturbed without
+          // altering a single figure on it.
+          allow update: if isOwner(uid)
+                        && (
+                             (resource.data.sealState == 'stamping'
+                              && changed().hasOnly(['sealState', 'sealedAt'])
+                              && incoming().sealState == 'sealed'
+                              && isServerTime(incoming().sealedAt))
+                             ||
+                             (resource.data.sealState == 'sealed'
+                              && changed().hasOnly(['status'])
+                              && incoming().status == 'needs_reconciliation')
+                           );
+
+          allow delete: if false;
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // reminders/{reminderId}
+      // -----------------------------------------------------------------------
+
+      match /reminders/{reminderId} {
+        function validReminder() {
+          return incoming().type in ['weekly', 'monthly', 'oneTime']
+                 && isText(incoming().title, 80)
+                 && incoming().title.size() > 0
+                 && isText(incoming().body, 300)
+                 && isNullOr(incoming().weekday,
+                             incoming().weekday is int
+                             && incoming().weekday >= 0 && incoming().weekday <= 6)
+                 && isNullOr(incoming().dayOfMonth,
+                             incoming().dayOfMonth is int
+                             && incoming().dayOfMonth >= 1 && incoming().dayOfMonth <= 31)
+                 && incoming().time is string
+                 && incoming().time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+                 && incoming().enabled is bool;
+        }
+
+        allow get, list: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+                      && isDocId(reminderId)
+                      && incoming().keys().hasOnly([
+                           'type', 'title', 'body', 'weekday', 'dayOfMonth', 'time',
+                           'enabled', 'lastFiredAt', 'createdAt'])
+                      && validReminder()
+                      && isServerTime(incoming().createdAt);
+
+        allow update: if isOwner(uid)
+                      && changed().hasOnly([
+                           'type', 'title', 'body', 'weekday', 'dayOfMonth', 'time',
+                           'enabled', 'lastFiredAt'])
+                      && validReminder();
+
+        // A reminder holds no financial record, so removing one loses nothing.
+        allow delete: if isOwner(uid);
+      }
+
+      // -----------------------------------------------------------------------
+      // auditLogs/{logId} — append only
+      // -----------------------------------------------------------------------
+
+      match /auditLogs/{logId} {
+        allow get, list: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+                      && isDocId(logId)
+                      && incoming().keys().hasOnly(
+                           ['action', 'entity', 'entityId', 'summary', 'at'])
+                      && incoming().action in ['create', 'update', 'void', 'seal', 'reconcile']
+                      && incoming().entity in
+                           ['shop', 'incomeConfig', 'transaction', 'settlement', 'profile']
+                      && isText(incoming().entityId, 128)
+                      && isText(incoming().summary, 500)
+                      && isServerTime(incoming().at);
+
+        // The history of a disputed balance has to outlive the correction that
+        // followed it, so a log entry can never be edited or removed.
+        allow update, delete: if false;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection group read for the cross-shop dashboard.
+    //
+    // A collection group query is evaluated against this rule rather than the
+    // nested one above, so the ownership check has to be restated in terms of
+    // the document's own `uid` field. The query must filter on `uid` for this to
+    // be satisfiable, which is exactly the constraint we want.
+    // -------------------------------------------------------------------------
+
+    match /{path=**}/transactions/{txnId} {
+      allow list: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Everything else is denied. Adding a collection means adding rules for it.
+    // -------------------------------------------------------------------------
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

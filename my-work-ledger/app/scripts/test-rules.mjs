@@ -1,0 +1,377 @@
+/**
+ * Security rules tests.
+ *
+ * These run against the Firestore emulator rather than the real project, so
+ * they exercise the rules exactly as deployed without touching live data.
+ *
+ *   # terminal 1, from my-work-ledger/
+ *   npx firebase emulators:start --only firestore --project demo-ledger
+ *
+ *   # terminal 2, from my-work-ledger/app/
+ *   npm run test:rules
+ *
+ * They are kept out of `npm test` on purpose: the unit tests must stay runnable
+ * with no emulator, no Java and no network, and a suite that is sometimes
+ * skipped teaches people to ignore failures.
+ *
+ * The cases below are the ones that matter if the rules are wrong: can one
+ * account reach another's ledger, can a field be forged, can a sealed statement
+ * be rewritten, can anything be deleted.
+ */
+
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import test from 'node:test';
+
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+} from '@firebase/rules-unit-testing';
+import {
+  collection,
+  collectionGroup,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const rules = readFileSync(resolve(here, '..', '..', 'firebase', 'firestore.rules'), 'utf8');
+
+const ALICE = 'alice_uid';
+const BOB = 'bob_uid';
+
+const testEnv = await initializeTestEnvironment({
+  projectId: 'demo-ledger',
+  firestore: { rules, host: '127.0.0.1', port: 8080 },
+});
+
+const alice = testEnv.authenticatedContext(ALICE).firestore();
+const bob = testEnv.authenticatedContext(BOB).firestore();
+const anon = testEnv.unauthenticatedContext().firestore();
+
+/** A valid shop payload. Each test overrides one field to prove it is checked. */
+function shopDoc(overrides = {}) {
+  return {
+    name: 'Blue Mart',
+    description: 'Evening shift',
+    joiningDate: '2025-01-01',
+    salaryPayDay: 5,
+    settlementMode: 'accrual',
+    openingBalance: 450000,
+    openingBalanceAsOf: '2025-01-01',
+    sealedThroughDate: null,
+    status: 'active',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+function txnDoc(overrides = {}) {
+  return {
+    uid: ALICE,
+    shopId: 'shop_one',
+    kind: 'expense_paid',
+    amount: 25000,
+    direction: 'credit',
+    category: 'stock',
+    description: 'Bought packing tape',
+    transactionDate: '2025-11-04',
+    recognitionDate: '2025-11-04',
+    periodKey: '2025-11',
+    sortKey: '2025-11-04#1762200000000#txn_a',
+    clientCreatedAtMs: 1762200000000,
+    reimbursable: true,
+    fundedFrom: 'own',
+    accrualKey: null,
+    settlesExpenseIds: null,
+    recoversTransactionId: null,
+    pairId: null,
+    settlementId: null,
+    isPriorPeriodAdjustment: false,
+    adjustsSettlementId: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    voidedAt: null,
+    voidReason: null,
+    ...overrides,
+  };
+}
+
+const aliceShop = (db = alice) => doc(db, 'users', ALICE, 'shops', 'shop_one');
+const aliceTxn = (id, db = alice) =>
+  doc(db, 'users', ALICE, 'shops', 'shop_one', 'transactions', id);
+
+/** Asserts the write is refused, naming the case when it is wrongly allowed. */
+async function mustReject(label, operation) {
+  try {
+    await assertFails(operation);
+  } catch (error) {
+    throw new Error(`${label} should have been rejected but was allowed: ${error.message}`);
+  }
+}
+
+test.before(async () => {
+  await testEnv.clearFirestore();
+  // Seeded with rules disabled, so the fixtures themselves are not under test.
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'users', ALICE), {
+      schemaVersion: 1,
+      displayName: 'Alice',
+      currency: 'INR',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await setDoc(doc(db, 'users', ALICE, 'shops', 'shop_seeded'), {
+      ...shopDoc({ name: 'Seeded Shop' }),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await setDoc(doc(db, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_sealed'), {
+      shopId: 'shop_one',
+      periodStart: '2025-10-01',
+      periodEnd: '2025-10-31',
+      settlementDate: '2025-11-01',
+      openingBalance: 0,
+      closingBalance: 120000,
+      totals: {},
+      transactionCount: 3,
+      statementNo: 1,
+      sealState: 'sealed',
+      status: 'sealed',
+      notes: '',
+      sealedAt: new Date(),
+      createdAt: new Date(),
+    });
+  });
+});
+
+test.after(async () => {
+  await testEnv.cleanup();
+});
+
+/* ------------------------------------------------------------------ isolation */
+
+test('an unauthenticated client can read nothing', async () => {
+  await assertFails(getDoc(doc(anon, 'users', ALICE)));
+  await assertFails(getDocs(collection(anon, 'users', ALICE, 'shops')));
+});
+
+test("one account cannot read another account's profile or shops", async () => {
+  await assertFails(getDoc(doc(bob, 'users', ALICE)));
+  await assertFails(getDocs(collection(bob, 'users', ALICE, 'shops')));
+  await assertFails(getDoc(doc(bob, 'users', ALICE, 'shops', 'shop_seeded')));
+});
+
+test("one account cannot write into another account's ledger", async () => {
+  await assertFails(setDoc(aliceShop(bob), shopDoc()));
+  await assertFails(
+    updateDoc(doc(bob, 'users', ALICE, 'shops', 'shop_seeded'), { name: 'Hijacked' }),
+  );
+  await assertFails(setDoc(aliceTxn('txn_bob', bob), txnDoc()));
+});
+
+test('the owner can read their own ledger', async () => {
+  await assertSucceeds(getDoc(doc(alice, 'users', ALICE)));
+  await assertSucceeds(getDocs(collection(alice, 'users', ALICE, 'shops')));
+});
+
+/* ---------------------------------------------------------------------- shops */
+
+test('a valid shop is accepted and nothing is deletable', async () => {
+  await assertSucceeds(setDoc(aliceShop(), shopDoc()));
+  await assertFails(deleteDoc(aliceShop()));
+});
+
+test('shop fields are validated, not merely stored', async () => {
+  const cases = [
+    ['empty name', shopDoc({ name: '' })],
+    ['over-long name', shopDoc({ name: 'x'.repeat(61) })],
+    ['float amount', shopDoc({ openingBalance: 1200.5 })],
+    ['amount beyond the cap', shopDoc({ openingBalance: 99999999999999 })],
+    ['amount as a string', shopDoc({ openingBalance: '450000' })],
+    ['pay day 0', shopDoc({ salaryPayDay: 0 })],
+    ['pay day 32', shopDoc({ salaryPayDay: 32 })],
+    ['timestamp in a date field', shopDoc({ joiningDate: new Date() })],
+    ['malformed date', shopDoc({ joiningDate: '01-01-2025' })],
+    ['unknown settlement mode', shopDoc({ settlementMode: 'whatever' })],
+    ['balance starting before joining', shopDoc({ openingBalanceAsOf: '2024-12-31' })],
+    ['created as archived', shopDoc({ status: 'archived' })],
+    ['unknown extra field', { ...shopDoc(), isAdmin: true }],
+    ['client-chosen createdAt', shopDoc({ createdAt: new Date(0) })],
+  ];
+  for (const [label, payload] of cases) {
+    await mustReject(label, setDoc(doc(alice, 'users', ALICE, 'shops', 'shop_reject'), payload));
+  }
+});
+
+test('a shop can be archived but its seal date cannot be rolled back', async () => {
+  await assertSucceeds(
+    updateDoc(aliceShop(), { status: 'archived', updatedAt: serverTimestamp() }),
+  );
+  await assertSucceeds(
+    updateDoc(aliceShop(), { sealedThroughDate: '2025-10-31', updatedAt: serverTimestamp() }),
+  );
+  // Retreating would reopen a sealed period, so it must be refused.
+  await mustReject(
+    'rolling the seal date back',
+    updateDoc(aliceShop(), { sealedThroughDate: '2025-09-30', updatedAt: serverTimestamp() }),
+  );
+  await mustReject(
+    'clearing the seal date',
+    updateDoc(aliceShop(), { sealedThroughDate: null, updatedAt: serverTimestamp() }),
+  );
+});
+
+/* --------------------------------------------------------------- transactions */
+
+test('a valid transaction is accepted', async () => {
+  await assertSucceeds(setDoc(aliceTxn('txn_ok'), txnDoc()));
+});
+
+test('a forged owner field is rejected', async () => {
+  // The denormalised uid is what the cross-shop query trusts, so it has to
+  // match both the path and the caller.
+  await mustReject("another account's uid", setDoc(aliceTxn('txn_forged'), txnDoc({ uid: BOB })));
+  await mustReject(
+    'a shopId disagreeing with the path',
+    setDoc(aliceTxn('txn_forged2'), txnDoc({ shopId: 'some_other_shop' })),
+  );
+});
+
+test('transaction fields are validated', async () => {
+  const cases = [
+    ['unknown kind', txnDoc({ kind: 'mystery_income' })],
+    ['negative amount on a non-adjustment', txnDoc({ amount: -25000 })],
+    ['float amount', txnDoc({ amount: 250.5 })],
+    ['malformed date', txnDoc({ transactionDate: '2025/11/04' })],
+    ['recognition before the event', txnDoc({ recognitionDate: '2025-11-03' })],
+    ['period key disagreeing with recognition', txnDoc({ periodKey: '2025-10' })],
+    ['unknown funding source', txnDoc({ fundedFrom: 'someone_else' })],
+    ['settlement id set at creation', txnDoc({ settlementId: 'set_sealed' })],
+    ['pre-voided', txnDoc({ voidedAt: serverTimestamp() })],
+    ['unknown extra field', { ...txnDoc(), secretFlag: 1 }],
+  ];
+  for (const [label, payload] of cases) {
+    await mustReject(label, setDoc(aliceTxn('txn_reject'), payload));
+  }
+});
+
+test('a signed adjustment may be negative', async () => {
+  await assertSucceeds(
+    setDoc(aliceTxn('txn_adj'), txnDoc({ kind: 'adjustment', amount: -50000, direction: 'debit' })),
+  );
+});
+
+test('money and dates are immutable once written; a mistake is voided instead', async () => {
+  await mustReject(
+    'editing an amount',
+    updateDoc(aliceTxn('txn_ok'), { amount: 1, updatedAt: serverTimestamp() }),
+  );
+  await mustReject(
+    'editing a kind',
+    updateDoc(aliceTxn('txn_ok'), { kind: 'salary_earned', updatedAt: serverTimestamp() }),
+  );
+  await mustReject(
+    'editing a date',
+    updateDoc(aliceTxn('txn_ok'), { transactionDate: '2025-11-05', updatedAt: serverTimestamp() }),
+  );
+  await assertSucceeds(
+    updateDoc(aliceTxn('txn_ok'), {
+      voidedAt: serverTimestamp(),
+      voidReason: 'Entered twice',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await mustReject('deleting an entry', deleteDoc(aliceTxn('txn_ok')));
+});
+
+test('an entry claimed by a settlement freezes except for the stamp itself', async () => {
+  await assertSucceeds(setDoc(aliceTxn('txn_claim'), txnDoc()));
+  await assertSucceeds(
+    updateDoc(aliceTxn('txn_claim'), { settlementId: 'set_sealed', updatedAt: serverTimestamp() }),
+  );
+  await mustReject(
+    'editing a settled entry',
+    updateDoc(aliceTxn('txn_claim'), {
+      description: 'Rewriting history',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+/* ---------------------------------------------------------------- settlements */
+
+test('a sealed settlement cannot be rewritten', async () => {
+  const sealed = doc(alice, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_sealed');
+  await mustReject('editing a closing balance', updateDoc(sealed, { closingBalance: 0 }));
+  await mustReject('editing notes', updateDoc(sealed, { notes: 'adjusted after the fact' }));
+  await mustReject('editing a period', updateDoc(sealed, { periodEnd: '2025-11-30' }));
+  await mustReject('deleting a statement', deleteDoc(sealed));
+  // The one permitted change: a backdated entry marks the statement as needing
+  // attention without altering a single figure on it.
+  await assertSucceeds(updateDoc(sealed, { status: 'needs_reconciliation' }));
+});
+
+/* ----------------------------------------------------------------- audit logs */
+
+test('audit entries are append-only', async () => {
+  const log = doc(alice, 'users', ALICE, 'auditLogs', 'log_one');
+  await assertSucceeds(
+    setDoc(log, {
+      action: 'create',
+      entity: 'shop',
+      entityId: 'shop_one',
+      summary: 'Created shop Blue Mart',
+      at: serverTimestamp(),
+    }),
+  );
+  await mustReject('editing a log entry', updateDoc(log, { summary: 'Something else entirely' }));
+  await mustReject('deleting a log entry', deleteDoc(log));
+  await mustReject(
+    'an unknown audit action',
+    setDoc(doc(alice, 'users', ALICE, 'auditLogs', 'log_bad'), {
+      action: 'tamper',
+      entity: 'shop',
+      entityId: 'shop_one',
+      summary: '',
+      at: serverTimestamp(),
+    }),
+  );
+});
+
+/* ------------------------------------------------------ collection group query */
+
+test('a cross-shop query must filter on the caller uid', async () => {
+  await assertSucceeds(
+    getDocs(query(collectionGroup(alice, 'transactions'), where('uid', '==', ALICE))),
+  );
+  await mustReject(
+    'an unfiltered cross-shop query',
+    getDocs(query(collectionGroup(alice, 'transactions'))),
+  );
+  await mustReject(
+    "a cross-shop query for another account's uid",
+    getDocs(query(collectionGroup(bob, 'transactions'), where('uid', '==', ALICE))),
+  );
+});
+
+/* ----------------------------------------------------------- unknown surfaces */
+
+test('a collection with no rules is unreachable', async () => {
+  await mustReject(
+    'writing to an undeclared subcollection',
+    setDoc(doc(alice, 'users', ALICE, 'secrets', 'x'), { a: 1 }),
+  );
+  await mustReject('reading an undeclared root collection', getDoc(doc(alice, 'anythingElse', 'x')));
+});
