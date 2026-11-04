@@ -147,11 +147,15 @@ export function ShopForm({
     setBusy(true);
     setFormError(null);
     try {
+      // Not awaited: the write lands in the on-device cache immediately and the
+      // listeners fire at once, so the shop is saved. Awaiting the server would
+      // leave this button on "Saving..." indefinitely with no signal, which for
+      // this app is an ordinary Tuesday rather than an edge case.
       if (shop) {
-        await updateShop(uid, shop.id, input);
+        updateShop(uid, shop.id, input);
         onSaved?.(shop.id);
       } else {
-        const id = await createShop(uid, input);
+        const { id } = createShop(uid, input);
         onSaved?.(id);
       }
       onClose();
@@ -159,7 +163,7 @@ export function ShopForm({
       setFormError(
         error instanceof Error && error.message === 'cloud-not-configured'
           ? 'This build has no Firebase configuration, so nothing can be saved.'
-          : 'Could not save the shop. Check your connection and try again.',
+          : 'Could not save the shop. Check the details and try again.',
       );
     } finally {
       setBusy(false);

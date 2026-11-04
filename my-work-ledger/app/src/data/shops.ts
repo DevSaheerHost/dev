@@ -20,6 +20,7 @@ import type { SettlementMode, Shop, ShopStatus } from '@/types/models';
 import { recordAudit } from './audit';
 import { getDb, requireDb } from './client';
 import { shopDoc, shopsCollection } from './paths';
+import { detach, type PendingWrite, type PendingWriteWithId } from './writes';
 
 export const MAX_SHOP_NAME = 60;
 export const MAX_SHOP_DESCRIPTION = 240;
@@ -89,21 +90,29 @@ function toWriteShape(input: ShopInput) {
   };
 }
 
-/** Creates a shop and returns its id. The id is minted here, before the write. */
-export async function createShop(uid: string, input: ShopInput): Promise<string> {
+/**
+ * Creates a shop and returns its id immediately.
+ *
+ * Deliberately not awaiting the server: a Firestore write promise resolves on
+ * server acknowledgement, so offline it stays pending indefinitely and a form
+ * that awaits it sits on "Saving..." forever. The write reaches the local cache
+ * at once and every listener fires, so the shop is genuinely saved. See
+ * `writes.ts`.
+ */
+export function createShop(uid: string, input: ShopInput): PendingWriteWithId {
   const errors = validateShopInput(input);
   if (errors.length > 0) throw new Error(errors[0]?.message ?? 'Invalid shop');
 
   const db = requireDb();
   const id = randomId('shop');
 
-  await setDoc(shopDoc(db, uid, id), {
+  const synced = detach(setDoc(shopDoc(db, uid, id), {
     ...toWriteShape(input),
     sealedThroughDate: null,
     status: 'active' satisfies ShopStatus,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  }));
 
   void recordAudit(uid, {
     action: 'create',
@@ -112,18 +121,18 @@ export async function createShop(uid: string, input: ShopInput): Promise<string>
     summary: `Created shop ${input.name.trim()}`,
   });
 
-  return id;
+  return { id, synced };
 }
 
-export async function updateShop(uid: string, shopId: string, input: ShopInput): Promise<void> {
+export function updateShop(uid: string, shopId: string, input: ShopInput): PendingWrite {
   const errors = validateShopInput(input);
   if (errors.length > 0) throw new Error(errors[0]?.message ?? 'Invalid shop');
 
   const db = requireDb();
-  await updateDoc(shopDoc(db, uid, shopId), {
+  const synced = detach(updateDoc(shopDoc(db, uid, shopId), {
     ...toWriteShape(input),
     updatedAt: serverTimestamp(),
-  });
+  }));
 
   void recordAudit(uid, {
     action: 'update',
@@ -131,25 +140,26 @@ export async function updateShop(uid: string, shopId: string, input: ShopInput):
     entityId: shopId,
     summary: `Updated shop ${input.name.trim()}`,
   });
+
+  return { synced };
 }
 
 /**
  * Archiving, never deleting. A shop's transactions are the evidence behind past
  * settlements; removing the shop would orphan them and quietly change history.
  */
-export async function setShopStatus(
-  uid: string,
-  shopId: string,
-  status: ShopStatus,
-): Promise<void> {
+export function setShopStatus(uid: string, shopId: string, status: ShopStatus): PendingWrite {
   const db = requireDb();
-  await updateDoc(shopDoc(db, uid, shopId), { status, updatedAt: serverTimestamp() });
+  const synced = detach(
+    updateDoc(shopDoc(db, uid, shopId), { status, updatedAt: serverTimestamp() }),
+  );
   void recordAudit(uid, {
     action: 'update',
     entity: 'shop',
     entityId: shopId,
     summary: status === 'archived' ? 'Archived shop' : 'Restored shop',
   });
+  return { synced };
 }
 
 const FALLBACK_DATE = '2000-01-01' as CalendarDate;

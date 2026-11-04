@@ -107,14 +107,16 @@ export function ShopsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function toggleArchive(shop: Shop) {
+  function toggleArchive(shop: Shop) {
     if (!uid) return;
     setBusyId(shop.id);
     setActionError(null);
     try {
-      await setShopStatus(uid, shop.id, shop.status === 'archived' ? 'active' : 'archived');
+      // Not awaited — the snapshot listener reflects it immediately, online or
+      // off. See the note in `data/writes.ts`.
+      setShopStatus(uid, shop.id, shop.status === 'archived' ? 'active' : 'archived');
     } catch {
-      setActionError('Could not change that shop. Check your connection and try again.');
+      setActionError('Could not change that shop. Please try again.');
     } finally {
       setBusyId(null);
     }
@@ -168,7 +170,7 @@ export function ShopsPage() {
                 shop={shop}
                 busy={busyId === shop.id}
                 onEdit={() => openForm(shop)}
-                onToggleArchive={() => void toggleArchive(shop)}
+                onToggleArchive={() => toggleArchive(shop)}
               />
             ))}
           </ul>
@@ -188,7 +190,7 @@ export function ShopsPage() {
                 shop={shop}
                 busy={busyId === shop.id}
                 onEdit={() => openForm(shop)}
-                onToggleArchive={() => void toggleArchive(shop)}
+                onToggleArchive={() => toggleArchive(shop)}
               />
             ))}
           </ul>
