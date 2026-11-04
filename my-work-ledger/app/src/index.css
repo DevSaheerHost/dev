@@ -1,0 +1,195 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   Design tokens.
+
+   Colour is declared once as custom properties and swapped per theme, so no
+   component needs a `dark:` variant and all three theme states (explicit
+   light, explicit dark, follow the system) resolve from the same set.
+
+   The palette is deliberately quiet. This is a money screen read several times
+   a day, and the only things that should draw the eye are the numbers: credit
+   green when a shop owes you, debit amber when you owe a shop. The indigo
+   accent is reserved for actions, never for amounts.
+
+   Type is the platform UI stack: an app that must open offline should not wait
+   on a font request, and system text renders natively on every target device.
+   =========================================================================== */
+
+:root {
+  --wl-bg: #f4f5f8;
+  --wl-bg-soft: #e9ebf1;
+  --wl-surface: #ffffff;
+  --wl-surface-2: #f7f8fb;
+  --wl-ink: #0f1319;
+  --wl-ink-2: #454f5e;
+  --wl-ink-3: #6a7483;
+  --wl-line: #e1e4eb;
+  --wl-line-strong: #c8cedb;
+  --wl-accent: #4338ca;
+  --wl-accent-ink: #3730a3;
+  --wl-accent-soft: #e9e8fb;
+  --wl-accent-contrast: #ffffff;
+
+  /* Semantic money colours. Credit = the shop owes you. Debit = you owe it. */
+  --wl-credit: #15803d;
+  --wl-credit-soft: #e2f3e8;
+  --wl-credit-strong: #116b33;
+  --wl-debit: #b45309;
+  --wl-debit-soft: #fbeedc;
+  --wl-debit-strong: #94430a;
+  --wl-danger: #b3261e;
+  --wl-danger-soft: #fae7e5;
+
+  --wl-shadow: 0 1px 2px rgb(15 19 25 / 0.05), 0 10px 26px rgb(15 19 25 / 0.06);
+  --wl-shadow-lg: 0 24px 60px rgb(15 19 25 / 0.18);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --wl-bg: #0a0d13;
+    --wl-bg-soft: #0f131a;
+    --wl-surface: #141922;
+    --wl-surface-2: #1a202a;
+    --wl-ink: #e9edf4;
+    --wl-ink-2: #abb5c4;
+    --wl-ink-3: #7d8798;
+    --wl-line: #232b37;
+    --wl-line-strong: #333d4c;
+    --wl-accent: #9aa4ff;
+    --wl-accent-ink: #b6bcff;
+    --wl-accent-soft: #1b1f3c;
+    --wl-accent-contrast: #0a0d13;
+    --wl-credit: #54c882;
+    --wl-credit-soft: #11261b;
+    --wl-credit-strong: #76d79c;
+    --wl-debit: #e8ab5c;
+    --wl-debit-soft: #2a2015;
+    --wl-debit-strong: #f3c184;
+    --wl-danger: #f08a80;
+    --wl-danger-soft: #2d1a18;
+    --wl-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 26px rgb(0 0 0 / 0.32);
+    --wl-shadow-lg: 0 24px 60px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --wl-bg: #0a0d13;
+  --wl-bg-soft: #0f131a;
+  --wl-surface: #141922;
+  --wl-surface-2: #1a202a;
+  --wl-ink: #e9edf4;
+  --wl-ink-2: #abb5c4;
+  --wl-ink-3: #7d8798;
+  --wl-line: #232b37;
+  --wl-line-strong: #333d4c;
+  --wl-accent: #9aa4ff;
+  --wl-accent-ink: #b6bcff;
+  --wl-accent-soft: #1b1f3c;
+  --wl-accent-contrast: #0a0d13;
+  --wl-credit: #54c882;
+  --wl-credit-soft: #11261b;
+  --wl-credit-strong: #76d79c;
+  --wl-debit: #e8ab5c;
+  --wl-debit-soft: #2a2015;
+  --wl-debit-strong: #f3c184;
+  --wl-danger: #f08a80;
+  --wl-danger-soft: #2d1a18;
+  --wl-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 26px rgb(0 0 0 / 0.32);
+  --wl-shadow-lg: 0 24px 60px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--wl-bg);
+  --color-bg-soft: var(--wl-bg-soft);
+  --color-surface: var(--wl-surface);
+  --color-surface-2: var(--wl-surface-2);
+  --color-ink: var(--wl-ink);
+  --color-ink-2: var(--wl-ink-2);
+  --color-ink-3: var(--wl-ink-3);
+  --color-line: var(--wl-line);
+  --color-line-strong: var(--wl-line-strong);
+  --color-accent: var(--wl-accent);
+  --color-accent-ink: var(--wl-accent-ink);
+  --color-accent-soft: var(--wl-accent-soft);
+  --color-accent-contrast: var(--wl-accent-contrast);
+  --color-credit: var(--wl-credit);
+  --color-credit-soft: var(--wl-credit-soft);
+  --color-credit-strong: var(--wl-credit-strong);
+  --color-debit: var(--wl-debit);
+  --color-debit-soft: var(--wl-debit-soft);
+  --color-debit-strong: var(--wl-debit-strong);
+  --color-danger: var(--wl-danger);
+  --color-danger-soft: var(--wl-danger-soft);
+
+  --shadow-card: var(--wl-shadow);
+  --shadow-float: var(--wl-shadow-lg);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--wl-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--wl-bg);
+  color: var(--wl-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* The bottom navigation sits above the home indicator on iOS. */
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior-y: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wl-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Amounts are tabular so a column of figures lines up digit for digit. */
+.wl-amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.01em;
+}
+
+/* An input that holds money: right-aligned, tabular, with room for the symbol. */
+.wl-money-input {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Hide the spinner on numeric inputs; the keypad is the control on mobile. */
+.wl-money-input::-webkit-outer-spin-button,
+.wl-money-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
