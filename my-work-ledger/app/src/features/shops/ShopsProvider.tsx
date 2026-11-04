@@ -93,13 +93,25 @@ export function ShopsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Anything from another account is ignored; `loading` then simply means
+  // "this account's first snapshot has not arrived yet".
+  const current = snapshot && snapshot.uid === uid ? snapshot : null;
+
+  // These three are memoised apart from the selection on purpose. Their
+  // identity is what `LedgerProvider` keys its Firestore subscriptions on, so
+  // folding them into the same memo as `requestedId` would tear down and
+  // rebuild every listener each time the user switched shops.
+  const shops = useMemo(() => current?.shops ?? [], [current]);
+  const activeShops = useMemo(
+    () => shops.filter((shop) => shop.status === 'active'),
+    [shops],
+  );
+  const archivedShops = useMemo(
+    () => shops.filter((shop) => shop.status === 'archived'),
+    [shops],
+  );
+
   const value = useMemo<ShopsState>(() => {
-    // Anything from another account is ignored; `loading` then simply means
-    // "this account's first snapshot has not arrived yet".
-    const current = snapshot && snapshot.uid === uid ? snapshot : null;
-    const shops = current?.shops ?? [];
-    const activeShops = shops.filter((shop) => shop.status === 'active');
-    const archivedShops = shops.filter((shop) => shop.status === 'archived');
     const requested = requestedId ? shops.find((shop) => shop.id === requestedId) : undefined;
     // Fall back to the first active shop so a stale or archived selection never
     // leaves the user on an empty screen.
@@ -114,7 +126,7 @@ export function ShopsProvider({ children }: { children: ReactNode }) {
       selectedShop,
       selectShop,
     };
-  }, [snapshot, uid, requestedId, selectShop]);
+  }, [shops, activeShops, archivedShops, current, uid, requestedId, selectShop]);
 
   return <ShopsContext.Provider value={value}>{children}</ShopsContext.Provider>;
 }

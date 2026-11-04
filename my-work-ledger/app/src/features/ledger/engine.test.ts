@@ -6,6 +6,7 @@ import type { Transaction, TransactionKind } from '@/types/models';
 
 import {
   balanceAsOf,
+  balanceBeforePeriod,
   compareEntries,
   computeMonth,
   computePeriod,
@@ -481,5 +482,58 @@ describe('degenerate input', () => {
     ]);
     expect(result.closingBalance).toBe(rs(450));
     expect(result.entryCount).toBe(0);
+  });
+});
+
+describe('balanceBeforePeriod', () => {
+  it('carries the earlier months into the one on screen', () => {
+    const entries = [
+      txn({ kind: 'salary_earned', amount: rs(10000), transactionDate: date('2025-09-30') }),
+      txn({ kind: 'advance_received', amount: rs(2000), transactionDate: date('2025-10-05') }),
+      txn({ kind: 'salary_earned', amount: rs(10000), transactionDate: date('2025-11-30') }),
+    ];
+    expect(balanceBeforePeriod(rs(0), entries, date('2025-11-01'))).toBe(rs(8000));
+    expect(balanceBeforePeriod(rs(500), entries, date('2025-11-01'))).toBe(rs(8500));
+    expect(balanceBeforePeriod(rs(0), entries, date('2025-09-01'))).toBe(rs(0));
+  });
+
+  it('counts a backdated entry once, in the period it is recognised in', () => {
+    // Filtered on recognition, matching entriesForPeriod. Using the true date
+    // here would put the entry inside the opening figure AND in the rows, and
+    // the running balance would not reconcile.
+    const backdated = txn({
+      kind: 'advance_received',
+      amount: rs(1000),
+      transactionDate: date('2025-10-20'),
+      recognitionDate: date('2025-11-01'),
+      isPriorPeriodAdjustment: true,
+    });
+    expect(balanceBeforePeriod(rs(0), [backdated], date('2025-11-01'))).toBe(rs(0));
+    expect(entriesForPeriod([backdated], date('2025-11-01'), date('2025-11-30'))).toHaveLength(1);
+  });
+
+  it('ignores voided entries', () => {
+    const entries = [
+      txn({
+        kind: 'salary_earned',
+        amount: rs(10000),
+        transactionDate: date('2025-09-30'),
+        voidedAt: 'gone',
+      }),
+    ];
+    expect(balanceBeforePeriod(rs(0), entries, date('2025-11-01'))).toBe(rs(0));
+  });
+
+  it('reconciles: opening plus the period equals the closing balance', () => {
+    const entries = [
+      txn({ kind: 'salary_earned', amount: rs(10000), transactionDate: date('2025-10-31') }),
+      txn({ kind: 'advance_received', amount: rs(3000), transactionDate: date('2025-11-05') }),
+      ownExpense(rs(450), { transactionDate: date('2025-11-07') }),
+    ];
+    const opening = balanceBeforePeriod(rs(0), entries, date('2025-11-01'));
+    const november = computeMonth(opening, entries, period('2025-11'));
+    const rows = runningBalance(opening, entriesForPeriod(entries, date('2025-11-01'), date('2025-11-30')));
+    expect(rows.at(-1)?.balanceAfter).toBe(november.closingBalance);
+    expect(november.closingBalance).toBe(rs(7450));
   });
 });

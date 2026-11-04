@@ -15,6 +15,7 @@ import { today } from '@/lib/clock';
 import { formatPaiseForInput, parseRupeesToPaise, paise, type Paise } from '@/lib/money';
 import { isCalendarDate, type CalendarDate } from '@/lib/dates';
 import { createShop, updateShop, validateShopInput, type ShopInput } from '@/data/shops';
+import { createIncomeConfig } from '@/data/incomeConfigs';
 import type { SettlementMode, Shop } from '@/types/models';
 
 import { useAuth } from '../auth/AuthProvider';
@@ -30,6 +31,9 @@ interface Draft {
   openingAmount: string;
   openingDirection: Direction;
   openingBalanceAsOf: string;
+  /** Asked here, on a new shop only, because nothing accrues without it. */
+  monthlySalary: string;
+  dailyFood: string;
 }
 
 function draftFromShop(shop: Shop | null): Draft {
@@ -44,6 +48,8 @@ function draftFromShop(shop: Shop | null): Draft {
       openingAmount: '',
       openingDirection: 'owedToMe',
       openingBalanceAsOf: now,
+      monthlySalary: '',
+      dailyFood: '',
     };
   }
   return {
@@ -55,6 +61,11 @@ function draftFromShop(shop: Shop | null): Draft {
     openingAmount: shop.openingBalance === 0 ? '' : formatPaiseForInput(paise(Math.abs(shop.openingBalance))),
     openingDirection: shop.openingBalance < 0 ? 'owedByMe' : 'owedToMe',
     openingBalanceAsOf: shop.openingBalanceAsOf,
+    // Income is only asked on creation. Editing an existing rate has to be
+    // effective-dated so last month's figures do not change retroactively,
+    // which is a different screen rather than a field on this one.
+    monthlySalary: '',
+    dailyFood: '',
   };
 }
 
@@ -90,6 +101,8 @@ export function ShopForm({
   const [draft, setDraft] = useState<Draft>(() => draftFromShop(shop));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ShopInput, string>>>({});
   const [amountError, setAmountError] = useState<string | undefined>(undefined);
+  const [salaryError, setSalaryError] = useState<string | undefined>(undefined);
+  const [foodError, setFoodError] = useState<string | undefined>(undefined);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -135,6 +148,28 @@ export function ShopForm({
     const input = buildInput();
     if (!input) return;
 
+    let incomeInvalid = false;
+    for (const [value, setError] of [
+      [draft.monthlySalary, setSalaryError],
+      [draft.dailyFood, setFoodError],
+    ] as const) {
+      if (value.trim() === '') {
+        setError(undefined);
+        continue;
+      }
+      const parsed = parseRupeesToPaise(value);
+      if (!parsed.ok) {
+        setError(parsed.error);
+        incomeInvalid = true;
+      } else if (parsed.value < 0) {
+        setError('Enter a positive amount');
+        incomeInvalid = true;
+      } else {
+        setError(undefined);
+      }
+    }
+    if (incomeInvalid) return;
+
     const problems = validateShopInput(input);
     if (problems.length > 0) {
       const next: Partial<Record<keyof ShopInput, string>> = {};
@@ -156,6 +191,36 @@ export function ShopForm({
         onSaved?.(shop.id);
       } else {
         const { id } = createShop(uid, input);
+
+        // Income is created alongside the shop rather than on a separate
+        // screen. Without at least one config nothing accrues, and a shop that
+        // silently earns nothing is the most confusing state this app can be
+        // in. Both configs start on the joining date, so the first month is
+        // pro-rated correctly from day one.
+        const salary = parseRupeesToPaise(draft.monthlySalary);
+        if (salary.ok && salary.value > 0) {
+          createIncomeConfig(uid, id, {
+            kind: 'salary',
+            label: 'Monthly salary',
+            amount: salary.value,
+            frequency: 'monthly',
+            effectiveFrom: input.joiningDate,
+            effectiveTo: null,
+          });
+        }
+
+        const food = parseRupeesToPaise(draft.dailyFood);
+        if (food.ok && food.value > 0) {
+          createIncomeConfig(uid, id, {
+            kind: 'allowance',
+            label: 'Food money',
+            amount: food.value,
+            frequency: 'daily',
+            effectiveFrom: input.joiningDate,
+            effectiveTo: null,
+          });
+        }
+
         onSaved?.(id);
       }
       onClose();
@@ -264,6 +329,32 @@ export function ShopForm({
             />
           </div>
         </div>
+
+        {shop ? null : (
+          <div className="rounded-xl border border-line bg-surface-2 p-4">
+            <p className="mb-1 text-sm font-semibold text-ink">What this shop pays you</p>
+            <p className="mb-3 text-sm text-ink-2">
+              The salary builds up day by day from the date you joined, so you can see what you
+              are owed at any point in the month.
+            </p>
+            <div className="flex flex-col gap-4">
+              <MoneyInput
+                label="Monthly salary"
+                value={draft.monthlySalary}
+                onChange={(value) => set('monthlySalary', value)}
+                error={salaryError}
+                hint="Leave blank if this shop pays you by the day instead."
+              />
+              <MoneyInput
+                label="Food money per day (optional)"
+                value={draft.dailyFood}
+                onChange={(value) => set('dailyFood', value)}
+                error={foodError}
+                hint="Owed for every day you work. Tick off the days you were actually given it."
+              />
+            </div>
+          </div>
+        )}
 
         {formError ? <Banner tone="danger">{formError}</Banner> : null}
       </form>

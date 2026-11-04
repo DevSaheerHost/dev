@@ -28,7 +28,6 @@ import {
   addMonths,
   compareDates,
   daysInMonth,
-  inclusiveDays,
   maxDate,
   minDate,
   periodEnd,
@@ -37,9 +36,18 @@ import {
   type CalendarDate,
   type PeriodKey,
 } from '@/lib/dates';
-import { accrualId } from '@/lib/ids';
-import { paise, proRataShare, type Paise } from '@/lib/money';
+import { accrualId, allowanceReceiptId } from '@/lib/ids';
+import { paise, type Paise } from '@/lib/money';
 import type { IncomeConfig, IncomeKind, Shop, TransactionKind } from '@/types/models';
+
+import {
+  amountForWorkedDays,
+  countDays,
+  isDailySettled,
+  receivedKeyFor,
+  settledDays,
+  type DayMap,
+} from './attendance';
 
 /** Guards against an absurd `joiningDate` producing an unbounded scan. */
 export const MAX_PERIODS_SCANNED = 60;
@@ -63,6 +71,13 @@ export interface AccrualProposal {
   readonly isPartial: boolean;
   /** The config's full-period amount, for showing what the pro-rata came from. */
   readonly fullAmount: Paise;
+  /**
+   * `earned` is what the shop owes for the period. `received` is the other half
+   * of a daily allowance: the days the money actually changed hands. Keeping
+   * them separate means the ledger shows both sides rather than a net figure
+   * that hides how many days are still outstanding.
+   */
+  readonly settles: 'earned' | 'received';
 }
 
 const KIND_FOR_INCOME: Readonly<Record<IncomeKind, TransactionKind>> = {
@@ -105,42 +120,32 @@ export function coverageInPeriod(
   return { from: earliest, to: latest };
 }
 
-/** The amount earned over a covered span, by frequency. */
-function amountForSpan(
+/**
+ * How a covered span is divided, for showing the user what they are confirming.
+ *
+ * The amount itself comes from `amountForWorkedDays` in `attendance.ts`, which
+ * is the single place that turns worked days into money — the live "earned so
+ * far" figure and the month-end proposal must never disagree, and they cannot
+ * if they go through the same function.
+ */
+function prorationForSpan(
   config: IncomeConfig,
-  days: number,
+  workedDays: number,
   daysInFullPeriod: number,
-): { amount: Paise; num: number; den: number; isPartial: boolean } {
+): { num: number; den: number; isPartial: boolean } {
   switch (config.frequency) {
-    case 'monthly': {
-      const isPartial = days < daysInFullPeriod;
+    case 'monthly':
       return {
-        // One rounding step on the magnitude, so a half month of ₹18,000 is
-        // ₹9,000 and not ₹8,999.99 accumulated from daily slices.
-        amount: isPartial
-          ? proRataShare(config.amount, days, daysInFullPeriod)
-          : config.amount,
-        num: days,
+        num: workedDays,
         den: daysInFullPeriod,
-        isPartial,
+        isPartial: workedDays < daysInFullPeriod,
       };
-    }
     case 'weekly':
-      return {
-        amount: paise(Math.round((config.amount * days) / 7)),
-        num: days,
-        den: 7,
-        isPartial: days % 7 !== 0,
-      };
+      return { num: workedDays, den: 7, isPartial: workedDays % 7 !== 0 };
     case 'daily':
-      return {
-        amount: paise(config.amount * days),
-        num: days,
-        den: 1,
-        isPartial: false,
-      };
+      return { num: workedDays, den: 1, isPartial: false };
     case 'oneTime':
-      return { amount: config.amount, num: 1, den: 1, isPartial: false };
+      return { num: 1, den: 1, isPartial: false };
   }
 }
 
@@ -149,6 +154,12 @@ export interface ProposalContext {
   readonly configs: readonly IncomeConfig[];
   /** Accrual keys already posted, so a confirmed month is never offered twice. */
   readonly existingAccrualKeys: ReadonlySet<string>;
+  /**
+   * Attendance and daily-allowance receipts. A day marked off does not accrue,
+   * so the month comes to less than the full amount; a day ticked means the
+   * food money for it actually changed hands.
+   */
+  readonly days: DayMap;
   /** Today, injected — this module never reads the clock. */
   readonly today: CalendarDate;
 }
@@ -158,7 +169,7 @@ export interface ProposalContext {
  * shop settles in cash only, or when everything has already been posted.
  */
 export function proposeForPeriod(context: ProposalContext, period: PeriodKey): AccrualProposal[] {
-  const { shop, configs, existingAccrualKeys, today } = context;
+  const { shop, configs, existingAccrualKeys, days, today } = context;
 
   // A daily-wage shop accrues nothing: an unpaid day is not a receivable, so
   // only actual payments are ever recorded.
@@ -180,29 +191,67 @@ export function proposeForPeriod(context: ProposalContext, period: PeriodKey): A
     // credit three weeks that have not been worked.
     if (compareDates(today, coverage.to) <= 0) continue;
 
-    const key = accrualKeyFor(config.id, period);
-    if (existingAccrualKeys.has(key)) continue;
+    // Days off do not accrue, so the month comes to less than the full amount.
+    // `oneTime` is a lump sum, not day-based, so attendance does not touch it.
+    const worked =
+      config.frequency === 'oneTime'
+        ? 1
+        : countDays({ from: coverage.from, to: coverage.to }, days).worked;
 
-    const days = inclusiveDays(coverage.from, coverage.to);
-    const { amount, num, den, isPartial } = amountForSpan(config, days, fullDays);
-    if (amount === 0) continue;
+    const earnedKey = accrualKeyFor(config.id, period);
+    if (!existingAccrualKeys.has(earnedKey)) {
+      const amount = amountForWorkedDays(config, worked, period);
+      if (amount !== 0) {
+        const { num, den, isPartial } = prorationForSpan(config, worked, fullDays);
+        proposals.push({
+          id: accrualId(config.id, period),
+          configId: config.id,
+          accrualKey: earnedKey,
+          kind: KIND_FOR_INCOME[config.kind],
+          label: config.label,
+          amount,
+          period,
+          transactionDate: coverage.to,
+          coverageFrom: coverage.from,
+          coverageTo: coverage.to,
+          prorationNum: num,
+          prorationDen: den,
+          isPartial,
+          fullAmount: config.amount,
+          settles: 'earned',
+        });
+      }
+    }
 
-    proposals.push({
-      id: accrualId(config.id, period),
-      configId: config.id,
-      accrualKey: key,
-      kind: KIND_FOR_INCOME[config.kind],
-      label: config.label,
-      amount,
-      period,
-      transactionDate: coverage.to,
-      coverageFrom: coverage.from,
-      coverageTo: coverage.to,
-      prorationNum: num,
-      prorationDen: den,
-      isPartial,
-      fullAmount: config.amount,
-    });
+    // The other half of a daily allowance: the days the food money was
+    // actually handed over. Posted as a payment received, so the month's
+    // ledger shows both what was owed and what arrived rather than a net
+    // figure that hides how many days are still outstanding.
+    if (isDailySettled(config)) {
+      const receivedKey = receivedKeyFor(config.id, period);
+      if (existingAccrualKeys.has(receivedKey)) continue;
+
+      const settled = settledDays({ from: coverage.from, to: coverage.to }, days, config.id);
+      if (settled === 0) continue;
+
+      proposals.push({
+        id: allowanceReceiptId(config.id, period),
+        configId: config.id,
+        accrualKey: receivedKey,
+        kind: 'salary_payment_received',
+        label: `${config.label} received`,
+        amount: amountForWorkedDays(config, settled, period),
+        period,
+        transactionDate: coverage.to,
+        coverageFrom: coverage.from,
+        coverageTo: coverage.to,
+        prorationNum: settled,
+        prorationDen: worked,
+        isPartial: settled < worked,
+        fullAmount: config.amount,
+        settles: 'received',
+      });
+    }
   }
 
   return proposals;

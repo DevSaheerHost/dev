@@ -19,6 +19,7 @@ export const COLLECTIONS = {
   shops: 'shops',
   incomeConfigs: 'incomeConfigs',
   transactions: 'transactions',
+  days: 'days',
   settlements: 'settlements',
   reminders: 'reminders',
   auditLogs: 'auditLogs',
@@ -74,6 +75,25 @@ export function transactionDoc(
   txnId: string,
 ): DocumentReference {
   return doc(transactionsCollection(db, uid, shopId), assertId('transaction', txnId));
+}
+
+export function daysCollection(db: Firestore, uid: string, shopId: string): CollectionReference {
+  return collection(shopDoc(db, uid, shopId), COLLECTIONS.days);
+}
+
+/**
+ * A day document, addressed by the date it describes. The date is validated
+ * before it becomes a path segment, so a malformed value cannot address a
+ * document other than the one intended.
+ */
+export function dayDoc(
+  db: Firestore,
+  uid: string,
+  shopId: string,
+  date: string,
+): DocumentReference {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid day id');
+  return doc(daysCollection(db, uid, shopId), date);
 }
 
 export function settlementsCollection(
