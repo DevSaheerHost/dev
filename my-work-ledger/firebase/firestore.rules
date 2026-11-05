@@ -436,7 +436,11 @@ service cloud.firestore {
 
       match /reminders/{reminderId} {
         function validReminder() {
-          return incoming().type in ['weekly', 'monthly', 'oneTime']
+          return incoming().type in ['daily', 'weekly', 'monthly', 'oneTime']
+                 && incoming().kind in
+                      ['custom', 'salaryDueSoon', 'monthEnded', 'dailyTick', 'settleReady']
+                 && (incoming().shopId == null ? true : isDocId(incoming().shopId))
+                 && (incoming().onDate == null ? true : isCalendarDate(incoming().onDate))
                  && isText(incoming().title, 80)
                  && incoming().title.size() > 0
                  && isText(incoming().body, 300)
@@ -455,18 +459,29 @@ service cloud.firestore {
 
         allow get, list: if isOwner(uid);
 
+        // Create and update share a shape because an automatic reminder is an
+        // upsert under a fixed id: switching it on from a second device has to
+        // write the same document again rather than be refused. There is no
+        // `createdAt` for that reason.
+        //
+        // `hasAll` sits before the field checks on purpose: a write missing a
+        // field the validator then inspects produces an opaque "evaluation
+        // error" rather than a plain denial, which has already cost real
+        // debugging time once in this project.
         allow create: if isOwner(uid)
                       && isDocId(reminderId)
                       && incoming().keys().hasOnly([
-                           'type', 'title', 'body', 'weekday', 'dayOfMonth', 'time',
-                           'enabled', 'lastFiredAt', 'createdAt'])
-                      && validReminder()
-                      && isServerTime(incoming().createdAt);
+                           'kind', 'shopId', 'type', 'title', 'body', 'weekday',
+                           'dayOfMonth', 'onDate', 'time', 'enabled', 'lastFiredAt'])
+                      && incoming().keys().hasAll([
+                           'kind', 'shopId', 'type', 'title', 'body', 'weekday',
+                           'dayOfMonth', 'onDate', 'time', 'enabled'])
+                      && validReminder();
 
         allow update: if isOwner(uid)
                       && changed().hasOnly([
-                           'type', 'title', 'body', 'weekday', 'dayOfMonth', 'time',
-                           'enabled', 'lastFiredAt'])
+                           'kind', 'shopId', 'type', 'title', 'body', 'weekday',
+                           'dayOfMonth', 'onDate', 'time', 'enabled', 'lastFiredAt'])
                       && validReminder();
 
         // A reminder holds no financial record, so removing one loses nothing.
