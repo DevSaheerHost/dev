@@ -29,6 +29,7 @@ function shopFixture(overrides: Partial<Shop> = {}): Shop {
     id: 'shop_1',
     name: 'Blue Mart',
     description: '',
+    phone: null,
     joiningDate: date('2025-01-01'),
     salaryPayDay: 18,
     settlementMode: 'accrual',

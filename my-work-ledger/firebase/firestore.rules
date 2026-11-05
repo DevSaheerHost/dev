@@ -132,6 +132,21 @@ service cloud.firestore {
           return isText(incoming().name, 60)
                  && incoming().name.size() > 0
                  && isText(incoming().description, 240)
+                 // Optional, and `+` plus 6-15 digits when present. Pinned down
+                 // here because the client puts this value into a `tel:` or
+                 // `sms:` link; an arbitrary string there is a URL injection.
+                 //
+                 // Two nested ternaries, not a helper and not `isNullOr`: the
+                 // key may be absent altogether on a shop created before this
+                 // field existed, and reading a missing key is an evaluation
+                 // error rather than null — which would deny every update to
+                 // an older shop. See the note by isText.
+                 && ('phone' in incoming()
+                       ? (incoming().phone == null
+                            ? true
+                            : incoming().phone is string
+                              && incoming().phone.matches('^[+]?[0-9]{6,15}$'))
+                       : true)
                  && isCalendarDate(incoming().joiningDate)
                  && incoming().salaryPayDay is int
                  && incoming().salaryPayDay >= 1
@@ -147,7 +162,7 @@ service cloud.firestore {
         allow create: if isOwner(uid)
                       && isDocId(shopId)
                       && incoming().keys().hasOnly([
-                           'name', 'description', 'joiningDate', 'salaryPayDay',
+                           'name', 'description', 'phone', 'joiningDate', 'salaryPayDay',
                            'settlementMode', 'openingBalance', 'openingBalanceAsOf',
                            'sealedThroughDate', 'status', 'createdAt', 'updatedAt'])
                       && incoming().keys().hasAll([
@@ -164,7 +179,7 @@ service cloud.firestore {
         // reopen a sealed period and allow a sealed statement to be rewritten.
         allow update: if isOwner(uid)
                       && changed().hasOnly([
-                           'name', 'description', 'joiningDate', 'salaryPayDay',
+                           'name', 'description', 'phone', 'joiningDate', 'salaryPayDay',
                            'settlementMode', 'openingBalance', 'openingBalanceAsOf',
                            'sealedThroughDate', 'status', 'updatedAt'])
                       && validShopFields()

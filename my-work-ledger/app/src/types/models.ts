@@ -37,6 +37,12 @@ export interface Shop {
   readonly id: string;
   readonly name: string;
   readonly description: string;
+  /**
+   * The owner's number, `+` and digits only, or null. Optional throughout: it
+   * exists so a balance can be sent as a message or the shop called, and the
+   * app never requires it.
+   */
+  readonly phone: string | null;
   readonly joiningDate: CalendarDate;
   /** Day of month salary is due; clamped into short months when used. */
   readonly salaryPayDay: number;

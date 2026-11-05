@@ -15,6 +15,7 @@ function shopFixture(overrides: Partial<Shop> = {}): Shop {
     id: 'shop_1',
     name: 'Blue Mart',
     description: '',
+    phone: null,
     joiningDate: date('2025-01-01'),
     salaryPayDay: 5,
     settlementMode: 'accrual',
@@ -327,6 +328,40 @@ describe('computeShopFigures', () => {
       today: date('2025-11-10'),
     });
     expect(figures.warnings[0]?.code).toBe('reimbursement_exceeds_expenses');
+  });
+
+  it('reports the day of the most recent entry, for the shop list', () => {
+    const figures = computeShopFigures({
+      ...base,
+      transactions: [
+        txn({ kind: 'expense_paid', amount: rs(100), transactionDate: date('2025-11-02') }),
+        txn({ kind: 'expense_paid', amount: rs(100), transactionDate: date('2025-11-09') }),
+        txn({ kind: 'expense_paid', amount: rs(100), transactionDate: date('2025-11-05') }),
+      ],
+      today: date('2025-11-10'),
+    });
+    expect(figures.lastActivity).toBe('2025-11-09');
+  });
+
+  it('has no last activity for a shop with no entries', () => {
+    expect(computeShopFigures({ ...base, today: date('2025-11-10') }).lastActivity).toBeNull();
+  });
+
+  it('ignores a voided entry when saying when the shop was last touched', () => {
+    const figures = computeShopFigures({
+      ...base,
+      transactions: [
+        txn({ kind: 'expense_paid', amount: rs(100), transactionDate: date('2025-11-02') }),
+        txn({
+          kind: 'expense_paid',
+          amount: rs(100),
+          transactionDate: date('2025-11-09'),
+          voidedAt: 'voided',
+        }),
+      ],
+      today: date('2025-11-10'),
+    });
+    expect(figures.lastActivity).toBe('2025-11-02');
   });
 
   it('accrues nothing at a daily-wage shop', () => {

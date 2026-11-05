@@ -124,6 +124,34 @@ export function todayFrom(now: Date): CalendarDate {
   return makeDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
+/**
+ * The calendar date a millisecond timestamp falls on, in the device's timezone.
+ *
+ * Entries carry `clientCreatedAtMs`, the moment the entry was written on this
+ * device. Turning it back into a date is only ever used to decide whether the
+ * clock time is worth showing beside an entry — never to compute a balance,
+ * which always uses the stored `transactionDate`.
+ */
+export function dateOfMs(ms: number): CalendarDate | null {
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  return todayFrom(new Date(ms));
+}
+
+/**
+ * "6:41 pm" for a millisecond timestamp, or null if it is not a usable time.
+ *
+ * Lowercase am/pm to match `formatTime` in the reminder schedule, so the whole
+ * app says the time the same way.
+ */
+export function formatClockTime(ms: number): string | null {
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  const at = new Date(ms);
+  const hour = at.getHours();
+  const minute = String(at.getMinutes()).padStart(2, '0');
+  const display = hour % 12 === 0 ? 12 : hour % 12;
+  return `${display}:${minute} ${hour < 12 ? 'am' : 'pm'}`;
+}
+
 /** Days since 1970-01-01 for a calendar date, computed without a `Date`. */
 export function toDayNumber(date: CalendarDate): number {
   const { year, month, day } = splitDate(date);
@@ -255,4 +283,23 @@ export function formatDateRelative(date: CalendarDate, today: CalendarDate): str
   if (difference === 1) return 'Yesterday';
   if (difference === -1) return 'Tomorrow';
   return formatDateShort(date);
+}
+
+/**
+ * How long ago, in words: "today", "3 days ago", "2 months ago".
+ *
+ * Used beside a date rather than instead of it. "3 days ago" alone is a hint,
+ * not a record — the exact date always sits next to it, because a ledger that
+ * only says "a while back" cannot be checked against anything.
+ */
+export function formatDaysAgo(date: CalendarDate, today: CalendarDate): string {
+  const days = toDayNumber(today) - toDayNumber(date);
+  if (days < 0) return days === -1 ? 'tomorrow' : `in ${-days} days`;
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? 'a month ago' : `${months} months ago`;
+  const years = Math.floor(days / 365);
+  return years <= 1 ? 'a year ago' : `${years} years ago`;
 }

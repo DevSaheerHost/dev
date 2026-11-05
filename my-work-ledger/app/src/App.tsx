@@ -82,7 +82,13 @@ function Screens({
   }
 
   if (openedShop) {
-    return <ShopPage shop={openedShop} onBack={() => navigate('shops')} />;
+    return (
+      <ShopPage
+        shop={openedShop}
+        onBack={() => navigate('shops')}
+        onOpenReminders={() => navigate('reminders')}
+      />
+    );
   }
 
   return (

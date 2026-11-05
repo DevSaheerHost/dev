@@ -8,13 +8,20 @@
  */
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 
 import { Banner, Button, MoneyInput, Modal, Select, TextInput } from '@/components/ui';
 import { today } from '@/lib/clock';
+import { normalisePhone } from '@/lib/contact';
 import { formatPaiseForInput, parseRupeesToPaise, paise, type Paise } from '@/lib/money';
 import { isCalendarDate, type CalendarDate } from '@/lib/dates';
-import { createShop, updateShop, validateShopInput, type ShopInput } from '@/data/shops';
+import {
+  createShop,
+  setShopStatus,
+  updateShop,
+  validateShopInput,
+  type ShopInput,
+} from '@/data/shops';
 import { createIncomeConfig } from '@/data/incomeConfigs';
 import type { SettlementMode, Shop } from '@/types/models';
 
@@ -25,6 +32,7 @@ type Direction = 'owedToMe' | 'owedByMe';
 interface Draft {
   name: string;
   description: string;
+  phone: string;
   joiningDate: string;
   salaryPayDay: string;
   settlementMode: SettlementMode;
@@ -42,6 +50,7 @@ function draftFromShop(shop: Shop | null): Draft {
     return {
       name: '',
       description: '',
+      phone: '',
       joiningDate: now,
       salaryPayDay: '1',
       settlementMode: 'accrual',
@@ -55,6 +64,7 @@ function draftFromShop(shop: Shop | null): Draft {
   return {
     name: shop.name,
     description: shop.description,
+    phone: shop.phone ?? '',
     joiningDate: shop.joiningDate,
     salaryPayDay: String(shop.salaryPayDay),
     settlementMode: shop.settlementMode,
@@ -109,7 +119,22 @@ export function ShopForm({
   const [salaryError, setSalaryError] = useState<string | undefined>(undefined);
   const [foodError, setFoodError] = useState<string | undefined>(undefined);
   const [formError, setFormError] = useState<string | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const archived = shop?.status === 'archived';
+
+  function toggleArchive() {
+    if (!uid || !shop || busy) return;
+    setArchiveError(null);
+    try {
+      // Not awaited: the snapshot listener reflects it at once, online or off.
+      setShopStatus(uid, shop.id, archived ? 'active' : 'archived');
+      onClose();
+    } catch {
+      setArchiveError('Could not change that. Please try again.');
+    }
+  }
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((previous) => {
@@ -142,6 +167,7 @@ export function ShopForm({
     return {
       name: draft.name,
       description: draft.description,
+      phone: normalisePhone(draft.phone),
       joiningDate: (isCalendarDate(draft.joiningDate) ? draft.joiningDate : '') as CalendarDate,
       salaryPayDay: Number(draft.salaryPayDay),
       settlementMode: draft.settlementMode,
@@ -283,6 +309,19 @@ export function ShopForm({
         />
 
         <TextInput
+          label="Owner's phone (optional)"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={draft.phone}
+          onChange={(value) => set('phone', value)}
+          maxLength={20}
+          error={fieldErrors.phone}
+          placeholder="+91 98765 43210"
+          hint="Used to call the shop, or to send the balance as a message. Nothing is sent without you tapping send."
+        />
+
+        <TextInput
           label="Date you started here"
           type="date"
           value={draft.joiningDate}
@@ -372,6 +411,48 @@ export function ShopForm({
 
         {formError ? <Banner tone="danger">{formError}</Banner> : null}
       </form>
+
+      {/*
+        Archiving lives here rather than on the list: it belongs with the shop's
+        own settings, and a list row is the wrong place for an action that
+        removes something from every total. Outside the form element, so Enter
+        in a text field can never reach it.
+      */}
+      {shop ? (
+        <div className="mt-6 border-t border-line pt-4">
+          <p className="text-sm font-semibold text-ink">
+            {archived ? 'This shop is archived' : 'Left this shop?'}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-2">
+            {archived
+              ? 'It is hidden from your totals. Nothing was deleted — restore it to carry on.'
+              : 'Archiving hides it from your dashboard and totals. Its entries, statements and history all stay.'}
+          </p>
+          {archiveError ? (
+            <p className="mt-2 text-sm text-danger" role="alert">
+              {archiveError}
+            </p>
+          ) : null}
+          <Button
+            tone={archived ? 'neutral' : 'danger'}
+            onClick={toggleArchive}
+            disabled={busy}
+            className="mt-3"
+          >
+            {archived ? (
+              <>
+                <ArchiveRestore size={15} />
+                Restore this shop
+              </>
+            ) : (
+              <>
+                <Archive size={15} />
+                Archive this shop
+              </>
+            )}
+          </Button>
+        </div>
+      ) : null}
     </Modal>
   );
 }

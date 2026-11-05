@@ -27,6 +27,7 @@ function shopFixture(overrides: Partial<Shop> = {}): Shop {
     id: 'shop_1',
     name: 'Blue Mart',
     description: '',
+    phone: null,
     joiningDate: date('2025-01-01'),
     salaryPayDay: 5,
     settlementMode: 'accrual',
@@ -329,6 +330,51 @@ describe('livePosition', () => {
     expect(onDay10.earnedToDate).toBe(rs(10000 / 3)); // 10/30
     expect(onDay30.earnedToDate).toBe(rs(10000)); // the whole month, exactly
     expect(onDay1.earnedToDate).toBeLessThan(onDay10.earnedToDate);
+  });
+
+  it('says what one more worked day is worth', () => {
+    // The figure the shop page shows as "+x for each day you work". Taken as a
+    // difference of two pro-rated amounts, so it is what will actually be
+    // added rather than a rounded average.
+    const onDay10 = livePosition({ ...base, today: date('2025-11-10') });
+    expect(onDay10.nextDayValue).toBe(
+      livePosition({ ...base, today: date('2025-11-11') }).earnedToDate - onDay10.earnedToDate,
+    );
+    expect(onDay10.lines[0]?.nextDayValue).toBe(onDay10.nextDayValue);
+  });
+
+  it('adds up the daily steps to exactly the month, with no drift', () => {
+    // 10,000 over 30 days does not divide evenly, so the steps must not all be
+    // the same — summing a rounded average would leave the month short.
+    const on = (day: number) =>
+      livePosition({ ...base, today: date(`2025-11-${String(day).padStart(2, '0')}`) });
+
+    let total: number = on(1).earnedToDate;
+    for (let day = 1; day <= 29; day += 1) total += on(day).nextDayValue;
+
+    expect(total).toBe(rs(10000));
+  });
+
+  it('has nothing more to add once the month is over', () => {
+    expect(livePosition({ ...base, today: date('2025-11-30') }).nextDayValue).toBe(0);
+  });
+
+  it('has nothing more to add when every day left is already marked off', () => {
+    const position = livePosition({
+      ...base,
+      days: dayMap({ off: ['2025-11-29', '2025-11-30'] }),
+      today: date('2025-11-28'),
+    });
+    expect(position.nextDayValue).toBe(0);
+  });
+
+  it('adds nothing per day at a daily-wage shop, where nothing accrues', () => {
+    const position = livePosition({
+      ...base,
+      shop: shopFixture({ settlementMode: 'cashOnly' }),
+      today: date('2025-11-10'),
+    });
+    expect(position.nextDayValue).toBe(0);
   });
 
   it('reports the days worked, off and remaining', () => {

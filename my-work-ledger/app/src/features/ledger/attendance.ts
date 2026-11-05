@@ -155,6 +155,17 @@ export interface LivePosition {
   readonly daysRemaining: number;
   /** Earned so far this month across every active config. */
   readonly earnedToDate: Paise;
+  /**
+   * What one more worked day adds, across every active config.
+   *
+   * This is the figure the balance climbs by tomorrow. It is a difference of
+   * two pro-rated amounts rather than `amount / days`, so it is exactly what
+   * will be added — rounding included — and the daily steps always sum to the
+   * month's total instead of drifting a paisa at a time.
+   *
+   * Zero once the month has no days left to work.
+   */
+  readonly nextDayValue: Paise;
   /** What the whole month will come to if the rest is worked. */
   readonly projectedMonth: Paise;
   /** Per-config breakdown, which is what the shop page lists. */
@@ -171,6 +182,8 @@ export interface LiveLine {
   readonly settledToDate: Paise;
   /** `earnedToDate - settledToDate`. What is still owed on this line. */
   readonly outstanding: Paise;
+  /** What one more worked day adds to this line. Zero if the month is done. */
+  readonly nextDayValue: Paise;
   readonly settledDayCount: number;
   /** True for a per-day entitlement that the day calendar can tick off. */
   readonly isDailySettled: boolean;
@@ -240,6 +253,7 @@ export function livePosition(args: {
   const lines: LiveLine[] = [];
   let earnedToDate = 0;
   let projectedMonth = 0;
+  let nextDayValue = 0;
 
   // A daily-wage shop accrues nothing: an unpaid day is not a receivable there,
   // so only actual payments are ever recorded.
@@ -261,8 +275,18 @@ export function livePosition(args: {
         ? amountForWorkedDays(config, settledCount, period)
         : ZERO;
 
+      // What tomorrow is worth: the same pro-rata applied to one more worked
+      // day, minus what is already earned. Taken as a difference so the steps
+      // add up to the month exactly, and only while there is a day left to
+      // work — a finished month grows by nothing.
+      const perDay =
+        workedWhole > workedSoFar
+          ? paise(amountForWorkedDays(config, workedSoFar + 1, period) - earned)
+          : ZERO;
+
       earnedToDate += earned;
       projectedMonth += projected;
+      nextDayValue += perDay;
 
       lines.push({
         configId: config.id,
@@ -271,6 +295,7 @@ export function livePosition(args: {
         earnedToDate: earned,
         settledToDate: settled,
         outstanding: paise(earned - settled),
+        nextDayValue: perDay,
         settledDayCount: settledCount,
         isDailySettled: dailySettled,
       });
@@ -284,6 +309,7 @@ export function livePosition(args: {
     elapsed,
     daysRemaining,
     earnedToDate: paise(earnedToDate),
+    nextDayValue: paise(nextDayValue),
     projectedMonth: paise(projectedMonth),
     lines,
   };

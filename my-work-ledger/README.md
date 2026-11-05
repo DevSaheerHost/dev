@@ -36,10 +36,15 @@ construct a `Date`, and a test enforces that.
 
 ### How a month works
 
-Salary is earned **day by day**, not in a lump at month end. ₹10,000 a month in a 30-day month
-adds about ₹333 a day, so the figure on screen climbs on its own — it is computed from the
-stored facts on every render, never written, so there is no daily job to miss and nothing to
-reconcile if you do not open the app for a week.
+Salary is earned **day by day**, not in a lump at month end. You enter the monthly figure and
+the date you joined, once. ₹20,000 a month in a 30-day month adds ₹666.67 a day, so the figure
+on screen climbs on its own — it is computed from the stored facts on every render, never
+written, so there is no daily job to miss and nothing to reconcile if you do not open the app
+for a week. The shop page states the step itself, **"₹666.67 more for each day you work"**, so
+the climb is visible rather than something you notice by comparing yesterday's screen.
+
+That step is a difference of two pro-rated amounts rather than `amount / days`, so the daily
+increments add up to exactly the month's salary instead of drifting a paisa at a time.
 
 A day marked **off** does not accrue. Two days off in November gives 28/30 of the salary, with
 the calendar month as the denominator so a full month still comes to exactly ₹10,000.
@@ -72,6 +77,22 @@ is no reliable way to wake a closed website on a phone. The Reminders screen say
 than letting you assume otherwise — a reminder you trust and that silently never arrives is
 worse than no reminder. Phase 6 wires the same schedule to Android local notifications, which
 do fire with the app closed.
+
+### Reading the ledger
+
+The history is laid out the way a shop ledger is kept on paper: a heading for each day, then
+two money columns — **owed to you** and **you got** — with the balance after each entry beside
+it as a `Bal. ₹…` chip, and a total for the month at the foot. Tapping an entry opens
+everything stored about it, which is where voiding lives.
+
+Each shop can hold the owner's phone number. From the shop you can then **call**, or open
+**Ask for payment**: the app builds a plain message from the ledger — the amount, the date it
+is as of, who it is from — shows it in full, and hands it to the phone's own SMS, share or
+clipboard. Nothing is ever sent for you, and nothing leaves the device from here.
+
+The number is validated on the way in, by the rules as well as the client, because it ends up
+inside a `tel:`/`sms:` link: `+` and 6–15 digits, nothing else. An arbitrary string there would
+be a URL injection.
 
 ### Settling up
 
@@ -249,7 +270,7 @@ nothing in the UI awaits. See `data/writes.ts`.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **323 unit tests**, all pure and needing no emulator, network or Java:
+- **374 unit tests**, all pure and needing no emulator, network or Java:
   - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
     month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
     and `lib/clock.ts`.
@@ -273,7 +294,15 @@ Phase 1 was checked by running things, not by assuming:
     weekly across a year boundary, and nothing firing before its hour.
   - *derived reminders (24)* — each of the four appearing and then clearing when the thing is
     done, and nothing at all for an archived or daily-wage shop.
-- **37 security rules tests** against the Firestore emulator: cross-account denial, forged
+  - *the daily step (6)* — what one more worked day adds, summing to exactly the month with no
+    drift, and nothing left to add once the month is over or the remaining days are off.
+  - *ledger grouping (12)* — entries grouped by day into the two columns with the right day
+    totals, and each row keeping the balance it had in ledger order whichever way the list is
+    read.
+  - *phone numbers and the message (28)* — what is kept and what is dropped, injection attempts
+    through a `tel:`/`sms:` link, and a message that never claims an unsettled part is
+    "included" in a balance it exceeds.
+- **38 security rules tests** against the Firestore emulator: cross-account denial, forged
   `uid`, field whitelists, immutable amounts and dates, profile and income-config validation,
   attendance records, a re-posted accrual being refused, the full seal sequence in order,
   sealed-statement immutability, append-only audit logs, reminder validation, and the
@@ -291,6 +320,13 @@ Phase 1 was checked by running things, not by assuming:
 - **A reminders pass**: all four appear for a shop that warrants them, four notifications are
   actually constructed once their hour passes, and each clears after the thing it asks for is
   done — while the salary notice correctly stays until its day.
+- **A ledger-view pass** at 390px: a shop on ₹20,000 a month joined last month shows
+  "₹766.67 more for each day you work" (₹666.67 of salary plus ₹100 of food money); an expense
+  and a payment land in the right columns with correct running-balance chips and a month total;
+  a row opens its detail sheet; the per-shop report downloads and `pdftotext` agrees with the
+  engine; the ask-for-payment message carries one `body` parameter and no second recipient;
+  archiving from the shop form hides the shop and restoring brings it back. Light and dark, no
+  console errors, no horizontal overflow, and the recording bar clear of the navigation.
 - **An offline pass**: with the network cut, an entry form closes in under a second, the entry
   appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
   everything synced. Settling is the one thing that needs a connection, and it says so and

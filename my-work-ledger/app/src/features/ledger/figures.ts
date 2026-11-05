@@ -60,6 +60,21 @@ export interface ShopFigures {
   /** Month-end accruals waiting for a tap, oldest first. */
   readonly proposals: readonly AccrualProposal[];
   readonly warnings: readonly LedgerWarning[];
+  /**
+   * The most recent day this shop has a live entry for, or null if it has
+   * none. Shown as "3 days ago" on the shop list, which is the quickest way to
+   * spot a shop nobody has recorded anything against in a fortnight.
+   */
+  readonly lastActivity: CalendarDate | null;
+}
+
+/** The latest `transactionDate` among live entries. Null when there are none. */
+function lastActivityDate(transactions: readonly Transaction[]): CalendarDate | null {
+  let latest: CalendarDate | null = null;
+  for (const entry of liveEntries(transactions)) {
+    if (latest === null || entry.transactionDate > latest) latest = entry.transactionDate;
+  }
+  return latest;
 }
 
 /** Accrual keys already present in the ledger, so nothing is counted twice. */
@@ -141,6 +156,7 @@ export function computeShopFigures(args: {
     ),
     proposals,
     warnings: findWarnings(transactions),
+    lastActivity: lastActivityDate(transactions),
   };
 }
 
