@@ -2,6 +2,11 @@
  * The history: every entry, in the order it happened, with the balance after
  * each one.
  *
+ * Laid out the way a shop ledger is kept on paper — a heading for each day,
+ * then two money columns, one for what was added to what you are owed and one
+ * for what you were paid — because that is the shape the people using this
+ * already read. The balance after each entry sits beside it as a chip.
+ *
  * The running balance is the point. A list of amounts tells you what happened;
  * a running balance tells you whether the figure you are arguing about is
  * right, and which entry it went wrong at.
@@ -17,7 +22,10 @@ import { Amount, Badge, Button, Card, EmptyState, Modal, TextInput } from '@/com
 import { voidEntry } from '@/data/transactions';
 import {
   addMonths,
+  dateOfMs,
+  formatClockTime,
   formatDateShort,
+  formatDaysAgo,
   formatPeriod,
   periodKeyOf,
   type CalendarDate,
@@ -30,30 +38,28 @@ import {
   type RunningRow,
 } from '@/features/ledger/engine';
 import { periodEnd, periodStart } from '@/lib/dates';
-import type { Paise } from '@/lib/money';
-import { KIND_LABEL, type Shop, type Transaction, type TransactionKind } from '@/types/models';
+import { absPaise, formatPaise, type Paise } from '@/lib/money';
+import { KIND_LABEL, type Shop, type Transaction } from '@/types/models';
 
 import { useAuth } from '../auth/AuthProvider';
+import { groupEntriesByDay, groupTotals, type EntryGroup, type GroupedRow } from './grouping';
 
-type Filter = 'all' | 'in' | 'out';
+type Filter = 'all' | 'credit' | 'debit';
 
 const FILTERS: readonly { value: Filter; label: string }[] = [
   { value: 'all', label: 'Everything' },
-  { value: 'in', label: 'You got' },
-  { value: 'out', label: 'You gave' },
+  { value: 'credit', label: 'Owed to you' },
+  { value: 'debit', label: 'You got' },
 ];
 
-/** Kinds that represent money arriving in your hand. */
-const INCOMING: ReadonlySet<TransactionKind> = new Set([
-  'advance_received',
-  'salary_payment_received',
-  'reimbursement_received',
-]);
+/** The two money columns, shared by the header, every row and the footer. */
+const COLUMNS = 'grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-2 sm:gap-4';
+const MONEY_CELL = 'min-w-[4.25rem] shrink-0 text-right sm:min-w-[6rem]';
 
-function matchesFilter(transaction: Transaction, filter: Filter): boolean {
+function matchesFilter(row: RunningRow, filter: Filter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'in') return INCOMING.has(transaction.kind);
-  return transaction.kind === 'expense_paid';
+  if (filter === 'credit') return row.effect > 0;
+  return row.effect < 0;
 }
 
 function matchesSearch(transaction: Transaction, needle: string): boolean {
@@ -63,59 +69,115 @@ function matchesSearch(transaction: Transaction, needle: string): boolean {
   return haystack.includes(needle);
 }
 
-function EntryRow({
-  row,
-  onVoid,
-}: {
-  row: RunningRow;
-  onVoid: (transaction: Transaction) => void;
-}) {
-  const { transaction, effect, balanceAfter } = row;
+/**
+ * The clock time an entry was written, but only when it was written on the day
+ * it is dated. For a backdated entry the two are different days and showing the
+ * time would suggest a precision the record does not have.
+ */
+function timeOfEntry(transaction: Transaction): string | null {
+  if (dateOfMs(transaction.clientCreatedAtMs) !== transaction.transactionDate) return null;
+  return formatClockTime(transaction.clientCreatedAtMs);
+}
+
+/**
+ * The running balance after an entry, as a chip.
+ *
+ * The magnitude only: the direction is carried by the colour and by the column
+ * the amount sits in, and a minus sign inside "Bal." reads as a negative debt
+ * rather than as "you owe them".
+ */
+function BalanceChip({ value }: { value: Paise }) {
+  const tone =
+    value > 0
+      ? 'bg-credit-soft text-credit-strong'
+      : value < 0
+        ? 'bg-debit-soft text-debit-strong'
+        : 'bg-surface-2 text-ink-3';
+  return (
+    <span
+      className={`wl-amount inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.7rem] font-semibold ${tone}`}
+    >
+      Bal. {formatPaise(absPaise(value))}
+      {/* Written out, because a tint alone does not say which way it goes. */}
+      {value < 0 ? <span className="font-normal">you owe</span> : null}
+    </span>
+  );
+}
+
+function EntryRow({ row, onOpen }: { row: GroupedRow; onOpen: (row: GroupedRow) => void }) {
+  const { transaction, effect, balanceAfter, side } = row;
   const voided = transaction.voidedAt != null;
+  const time = timeOfEntry(transaction);
+  const struck = voided ? 'line-through opacity-60' : '';
 
   return (
-    <li className="border-b border-line px-4 py-3 last:border-b-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`truncate text-sm font-semibold ${voided ? 'text-ink-3 line-through' : 'text-ink'}`}>
+    <li>
+      <button
+        type="button"
+        onClick={() => onOpen(row)}
+        aria-label={`${transaction.description || KIND_LABEL[transaction.kind]}, open details`}
+        className={`${COLUMNS} w-full px-4 py-2.5 text-left hover:bg-surface-2`}
+      >
+        <span className="min-w-0">
+          <span className={`block truncate text-sm font-semibold text-ink ${struck}`}>
             {transaction.description || KIND_LABEL[transaction.kind]}
-          </p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
-            <span>{formatDateShort(transaction.transactionDate)}</span>
-            <span aria-hidden>·</span>
-            <span>{KIND_LABEL[transaction.kind]}</span>
-            {transaction.category ? <Badge>{transaction.category}</Badge> : null}
-            {transaction.kind === 'expense_paid' && effect === 0 ? (
-              <Badge>not owed back</Badge>
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
+            {voided ? <Badge tone="danger">voided</Badge> : <BalanceChip value={balanceAfter} />}
+            {time ? <span>{time}</span> : null}
+            {/* Only when it is not already standing in as the title. */}
+            {transaction.description ? (
+              <span className="truncate">{KIND_LABEL[transaction.kind]}</span>
             ) : null}
             {transaction.isPriorPeriodAdjustment ? <Badge tone="debit">late entry</Badge> : null}
-          </p>
-          {voided && transaction.voidReason ? (
-            <p className="mt-1 text-xs text-ink-3">Voided: {transaction.voidReason}</p>
+          </span>
+        </span>
+
+        {/* Owed to you */}
+        <span className={MONEY_CELL}>
+          {side === 'credit' ? (
+            <span className={struck}>
+              <Amount value={effect} tone="credit" size="md" />
+            </span>
+          ) : side === 'none' ? (
+            <span className="text-xs text-ink-3">not owed back</span>
           ) : null}
-        </div>
+        </span>
 
-        <div className="shrink-0 text-right">
-          <p className={voided ? 'line-through opacity-60' : ''}>
-            <Amount value={effect} tone={effect < 0 ? 'debit' : 'credit'} size="md" signed />
-          </p>
-          <p className="mt-0.5 text-xs text-ink-3">
-            balance <Amount value={balanceAfter} tone="muted" size="sm" />
-          </p>
-        </div>
-      </div>
-
-      {!voided ? (
-        <button
-          type="button"
-          onClick={() => onVoid(transaction)}
-          className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-ink-3 hover:bg-surface-2 hover:text-danger"
-        >
-          <Ban size={13} />
-          Void this
-        </button>
-      ) : null}
+        {/* You got */}
+        <span className={MONEY_CELL}>
+          {side === 'debit' ? (
+            <span className={struck}>
+              <Amount value={absPaise(effect)} tone="debit" size="md" />
+            </span>
+          ) : null}
+        </span>
+      </button>
     </li>
+  );
+}
+
+function DayGroup({
+  group,
+  today,
+  onOpen,
+}: {
+  group: EntryGroup;
+  today: CalendarDate;
+  onOpen: (row: GroupedRow) => void;
+}) {
+  return (
+    <section>
+      <h3 className="flex flex-wrap items-baseline gap-x-2 border-y border-line bg-surface-2 px-4 py-1.5 text-xs font-semibold text-ink-2">
+        {formatDateShort(group.date)}
+        <span className="font-normal text-ink-3">· {formatDaysAgo(group.date, today)}</span>
+      </h3>
+      <ul className="divide-y divide-line/70">
+        {group.rows.map((row) => (
+          <EntryRow key={row.transaction.id} row={row} onOpen={onOpen} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -139,12 +201,13 @@ export function EntryList({
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [showVoided, setShowVoided] = useState(false);
+  const [opened, setOpened] = useState<GroupedRow | null>(null);
   const [voiding, setVoiding] = useState<Transaction | null>(null);
   const [reason, setReason] = useState('');
 
   const currentPeriod = periodKeyOf(today);
 
-  const rows = useMemo(() => {
+  const groups = useMemo(() => {
     // The running balance is computed over every live entry in the period, then
     // filtered for display — so hiding a row with the search box never changes
     // the balance shown beside the rows that remain.
@@ -166,10 +229,14 @@ export function EntryList({
 
     const all = showVoided ? [...live, ...voided] : live;
     const needle = search.trim().toLowerCase();
-    return all.filter(
-      (row) => matchesFilter(row.transaction, filter) && matchesSearch(row.transaction, needle),
+    const visible = all.filter(
+      (row) => matchesFilter(row, filter) && matchesSearch(row.transaction, needle),
     );
+    return groupEntriesByDay(visible, 'newest');
   }, [transactions, openingBalance, period, filter, search, showVoided]);
+
+  const totals = useMemo(() => groupTotals(groups), [groups]);
+  const rowCount = groups.reduce((count, group) => count + group.rows.length, 0);
 
   const voidedCount = transactions.filter(
     (transaction) =>
@@ -182,6 +249,7 @@ export function EntryList({
     if (!uid || !voiding) return;
     voidEntry(uid, shop.id, voiding.id, reason);
     setVoiding(null);
+    setOpened(null);
     setReason('');
   }
 
@@ -257,21 +325,64 @@ export function EntryList({
         ) : null}
       </div>
 
-      <Card>
-        {rows.length === 0 ? (
+      <Card className="overflow-hidden">
+        {rowCount === 0 ? (
           <EmptyState title={search || filter !== 'all' ? 'Nothing matches' : 'No entries yet'}>
             {search || filter !== 'all'
               ? 'Try a different search or filter.'
               : `Use "You got" or "You gave" to record what happened at ${shop.name}.`}
           </EmptyState>
         ) : (
-          <ul>
-            {rows.map((row) => (
-              <EntryRow key={row.transaction.id} row={row} onVoid={setVoiding} />
+          <>
+            <div
+              className={`${COLUMNS} px-4 pt-3 pb-2 text-[0.65rem] font-bold tracking-wide text-ink-3 uppercase`}
+            >
+              <span>Entries</span>
+              <span className={MONEY_CELL}>Owed to you</span>
+              <span className={MONEY_CELL}>You got</span>
+            </div>
+
+            {groups.map((group) => (
+              <DayGroup key={group.date} group={group} today={today} onOpen={setOpened} />
             ))}
-          </ul>
+
+            <div
+              className={`${COLUMNS} border-t-2 border-line-strong px-4 py-3 text-sm font-semibold text-ink`}
+            >
+              <span>{formatPeriod(period)} total</span>
+              <span className={MONEY_CELL}>
+                <Amount value={totals.credit} tone="credit" size="md" />
+              </span>
+              <span className={MONEY_CELL}>
+                <Amount value={totals.debit} tone="debit" size="md" />
+              </span>
+            </div>
+          </>
         )}
       </Card>
+
+      {opened ? (
+        <Modal
+          open
+          onClose={() => setOpened(null)}
+          title={opened.transaction.description || KIND_LABEL[opened.transaction.kind]}
+          footer={
+            <>
+              <Button tone="ghost" onClick={() => setOpened(null)} className="flex-1">
+                Close
+              </Button>
+              {opened.transaction.voidedAt == null ? (
+                <Button tone="danger" onClick={() => setVoiding(opened.transaction)}>
+                  <Ban size={14} />
+                  Void this
+                </Button>
+              ) : null}
+            </>
+          }
+        >
+          <EntryDetail row={opened} today={today} />
+        </Modal>
+      ) : null}
 
       {voiding ? (
         <Modal
@@ -311,6 +422,70 @@ export function EntryList({
             />
           </div>
         </Modal>
+      ) : null}
+    </div>
+  );
+}
+
+/** Everything stored about one entry, for the sheet a tap on a row opens. */
+function EntryDetail({ row, today }: { row: GroupedRow; today: CalendarDate }) {
+  const { transaction, effect, balanceAfter, side } = row;
+  const time = timeOfEntry(transaction);
+
+  const facts: readonly (readonly [string, string] | null)[] = [
+    ['Kind', KIND_LABEL[transaction.kind]],
+    [
+      'Date',
+      `${formatDateShort(transaction.transactionDate)} (${formatDaysAgo(
+        transaction.transactionDate,
+        today,
+      )})${time ? ` · entered ${time}` : ''}`,
+    ],
+    transaction.recognitionDate !== transaction.transactionDate
+      ? ['Counted in', formatDateShort(transaction.recognitionDate)]
+      : null,
+    transaction.category ? ['Category', transaction.category] : null,
+    transaction.fundedFrom
+      ? ['Paid from', transaction.fundedFrom === 'own' ? 'Your own money' : "The shop's float"]
+      : null,
+    transaction.reimbursable === false ? ['Owed back', 'No — your own cost'] : null,
+    transaction.settlementId ? ['Settled', 'Part of a sealed statement'] : null,
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-line bg-surface-2 px-4 py-3">
+        <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
+          {side === 'credit' ? 'Added to what you are owed' : side === 'debit' ? 'You got' : 'Recorded, nothing owed'}
+        </p>
+        <p className="mt-1">
+          <Amount
+            value={absPaise(effect)}
+            tone={side === 'credit' ? 'credit' : side === 'debit' ? 'debit' : 'muted'}
+            size="lg"
+            showPaise
+          />
+        </p>
+        <p className="mt-1 text-sm text-ink-2">
+          Balance after this entry: <Amount value={balanceAfter} tone="balance" size="sm" showPaise />
+        </p>
+      </div>
+
+      <dl className="flex flex-col gap-2 text-sm">
+        {facts.map((fact) =>
+          fact ? (
+            <div key={fact[0]} className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
+              <dt className="text-ink-3">{fact[0]}</dt>
+              <dd className="font-medium text-ink">{fact[1]}</dd>
+            </div>
+          ) : null,
+        )}
+      </dl>
+
+      {transaction.voidedAt != null ? (
+        <p className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
+          Voided{transaction.voidReason ? `: ${transaction.voidReason}` : ''}
+        </p>
       ) : null}
     </div>
   );

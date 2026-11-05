@@ -64,6 +64,7 @@ function shopDoc(overrides = {}) {
   return {
     name: 'Blue Mart',
     description: 'Evening shift',
+    phone: '+919876543210',
     joiningDate: '2025-01-01',
     salaryPayDay: 5,
     settlementMode: 'accrual',
@@ -138,6 +139,12 @@ test.before(async () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    // A shop stored before the phone field existed. Its updates must still be
+    // accepted, which is why the rule checks the key is present before reading
+    // it: reading a missing key is an evaluation error, not null.
+    const legacy = { ...shopDoc({ name: 'Legacy Shop' }), createdAt: new Date(), updatedAt: new Date() };
+    delete legacy.phone;
+    await setDoc(doc(db, 'users', ALICE, 'shops', 'shop_legacy'), legacy);
     await setDoc(doc(db, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_sealed'), {
       shopId: 'shop_one',
       periodStart: '2025-10-01',
@@ -264,10 +271,52 @@ test('shop fields are validated, not merely stored', async () => {
     ['created as archived', shopDoc({ status: 'archived' })],
     ['unknown extra field', { ...shopDoc(), isAdmin: true }],
     ['client-chosen createdAt', shopDoc({ createdAt: new Date(0) })],
+    // The phone number ends up inside a `tel:`/`sms:` link, so anything that
+    // is not a bare number is a URL injection and has to be refused here
+    // rather than relied on to be refused in the client.
+    ['phone with a scheme', shopDoc({ phone: 'tel:9876543210' })],
+    ['phone carrying an extra URL parameter', shopDoc({ phone: '9876543210?body=pay&to=1' })],
+    ['phone with spaces', shopDoc({ phone: '+91 98765 43210' })],
+    ['phone too short to dial', shopDoc({ phone: '12345' })],
+    ['phone longer than E.164 allows', shopDoc({ phone: '1'.repeat(16) })],
+    ['phone as a number rather than a string', shopDoc({ phone: 9876543210 })],
+    ['phone with letters', shopDoc({ phone: '98765abcde' })],
   ];
   for (const [label, payload] of cases) {
     await mustReject(label, setDoc(doc(alice, 'users', ALICE, 'shops', 'shop_reject'), payload));
   }
+});
+
+test('the phone number is optional, and a shop stored without one still updates', async () => {
+  // Absent, null and a plain number are all acceptable.
+  await assertSucceeds(
+    setDoc(doc(alice, 'users', ALICE, 'shops', 'shop_nophone'), shopDoc({ phone: null })),
+  );
+  await assertSucceeds(
+    setDoc(doc(alice, 'users', ALICE, 'shops', 'shop_localphone'), shopDoc({ phone: '9876543210' })),
+  );
+  // A shop created before this field existed has no `phone` key at all. An
+  // unrelated update to it must still be allowed.
+  await assertSucceeds(
+    updateDoc(doc(alice, 'users', ALICE, 'shops', 'shop_legacy'), {
+      status: 'archived',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  // And a number can be added to it afterwards, but still only a valid one.
+  await assertSucceeds(
+    updateDoc(doc(alice, 'users', ALICE, 'shops', 'shop_legacy'), {
+      phone: '+919876543210',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await mustReject(
+    'adding a malformed phone number to an older shop',
+    updateDoc(doc(alice, 'users', ALICE, 'shops', 'shop_legacy'), {
+      phone: 'sms:1?body=x',
+      updatedAt: serverTimestamp(),
+    }),
+  );
 });
 
 test('a shop can be archived but its seal date cannot be rolled back', async () => {

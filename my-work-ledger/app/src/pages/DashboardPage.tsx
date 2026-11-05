@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react';
 import {
   Bell,
   ChevronRight,
-  Download,
+  FileText,
   Info,
   Loader2,
   Store,
@@ -37,42 +37,13 @@ import { runningBalance, entriesForPeriod } from '@/features/ledger/engine';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { TRANSACTION_KINDS, type TransactionKind } from '@/types/models';
 import { describeWarning } from '@/features/ledger/engine';
-import { combineFigures, computeShopFigures, type ShopFigures } from '@/features/ledger/figures';
+import { combineFigures, computeShopFigures } from '@/features/ledger/figures';
 import { useAllLedgers, useReminders } from '@/features/ledger/LedgerProvider';
 import { deriveReminders, type DerivedKind, type ReminderPrefs } from '@/features/reminders/derived';
+import { AskSheet } from '@/features/shops/AskSheet';
+import { ShopBalanceRow } from '@/features/shops/ShopBalanceRow';
 import { ShopForm } from '@/features/shops/ShopForm';
 import { useShops } from '@/features/shops/ShopsProvider';
-
-function ShopRow({ figures, onOpen }: { figures: ShopFigures; onOpen: () => void }) {
-  const { shop, balance, position } = figures;
-  const sentence =
-    balance > 0 ? `${shop.name} owes you` : balance < 0 ? `You owe ${shop.name}` : 'Square';
-
-  return (
-    <li className="border-b border-line last:border-b-0">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
-      >
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-ink">{shop.name}</span>
-          <span className="mt-0.5 block truncate text-xs text-ink-3">
-            {sentence}
-            {position.counts.total > 0
-              ? ` · day ${position.elapsed.worked} of ${position.counts.total}`
-              : ''}
-            {position.counts.off > 0 ? ` · ${position.counts.off} off` : ''}
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1.5">
-          <Amount value={balance} tone="balance" size="md" />
-          <ChevronRight size={16} className="text-ink-3" />
-        </span>
-      </button>
-    </li>
-  );
-}
 
 export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => void }) {
   const { activeShops, loading, error } = useShops();
@@ -80,6 +51,7 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   const { displayName } = useAuth();
   const storedReminders = useReminders();
   const [adding, setAdding] = useState(false);
+  const [asking, setAsking] = useState<string | null>(null);
   const [building, setBuilding] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -101,6 +73,7 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   );
 
   const combined = useMemo(() => combineFigures(figures), [figures]);
+  const askingFigures = asking ? figures.find((entry) => entry.shop.id === asking) : undefined;
 
   const needsYou = useMemo(() => {
     const prefs: ReminderPrefs = new Map(
@@ -220,43 +193,65 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
       {error ? <Banner tone="debit">{error}</Banner> : null}
       {ledgerError ? <Banner tone="debit">{ledgerError}</Banner> : null}
 
-      <Card className="p-5">
-        <div className="flex items-center gap-2">
-          <Wallet size={15} className="text-ink-3" />
-          <p className="text-sm font-semibold text-ink-2">What you are owed right now</p>
-        </div>
-        <p className="mt-2">
-          <Amount value={combined.net} tone="balance" size="xl" showPaise />
-        </p>
-        <p className="mt-1 text-sm text-ink-2">
-          {combined.net > 0
-            ? 'across every active shop'
-            : combined.net < 0
-              ? 'you owe, across every active shop'
-              : 'square across every active shop'}
-        </p>
-        {combined.unposted !== 0 ? (
-          <p className="mt-1 text-sm text-ink-3">
-            including {formatPaise(combined.unposted)} earned but not yet confirmed
-          </p>
-        ) : null}
-
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4">
-          <div>
-            <dt className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
-              Owed to you
+      {/*
+        The two sides first, then the net. Which way round a balance goes is the
+        thing people get wrong, so each side is tinted, labelled and kept in its
+        own half rather than folded into one signed figure.
+      */}
+      <Card className="overflow-hidden">
+        <dl className="grid grid-cols-2 divide-x divide-line">
+          <div className="bg-credit-soft/40 px-4 py-4">
+            <dt className="text-xs font-semibold tracking-wide text-credit-strong uppercase">
+              You will get
             </dt>
-            <dd className="mt-1">
+            <dd className="mt-1.5">
               <Amount value={combined.owedToYou} tone="credit" size="lg" />
             </dd>
           </div>
-          <div>
-            <dt className="text-xs font-semibold tracking-wide text-ink-3 uppercase">You owe</dt>
-            <dd className="mt-1">
+          <div className="bg-debit-soft/40 px-4 py-4">
+            <dt className="text-xs font-semibold tracking-wide text-debit-strong uppercase">
+              You will give
+            </dt>
+            <dd className="mt-1.5">
               <Amount value={combined.owedByYou} tone="debit" size="lg" />
             </dd>
           </div>
         </dl>
+
+        <div className="border-t border-line px-4 py-4">
+          <div className="flex items-center gap-2">
+            <Wallet size={15} className="text-ink-3" />
+            <p className="text-sm font-semibold text-ink-2">
+              {combined.net > 0
+                ? 'Owed to you, across every active shop'
+                : combined.net < 0
+                  ? 'You owe, across every active shop'
+                  : 'Square across every active shop'}
+            </p>
+          </div>
+          <p className="mt-1.5">
+            <Amount value={combined.net} tone="balance" size="xl" showPaise />
+          </p>
+          {combined.unposted !== 0 ? (
+            <p className="mt-1 text-sm text-ink-3">
+              counting {formatPaise(combined.unposted)} earned but not yet confirmed
+            </p>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => void downloadCombined()}
+            disabled={building}
+            className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong px-3 text-sm font-semibold text-ink hover:bg-surface-2 disabled:text-ink-3"
+          >
+            {building ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <FileText size={15} />
+            )}
+            {building ? 'Building…' : 'View a report for every shop'}
+          </button>
+        </div>
       </Card>
 
       {needsYou.length > 0 ? (
@@ -304,10 +299,12 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
         <Card>
           <ul>
             {figures.map((shop) => (
-              <ShopRow
+              <ShopBalanceRow
                 key={shop.shop.id}
                 figures={shop}
+                today={today}
                 onOpen={() => onOpenShop(shop.shop.id)}
+                onAsk={() => setAsking(shop.shop.id)}
               />
             ))}
           </ul>
@@ -315,11 +312,6 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
       </section>
 
       {pdfError ? <Banner tone="danger">{pdfError}</Banner> : null}
-
-      <Button tone="neutral" onClick={() => void downloadCombined()} disabled={building} fullWidth>
-        {building ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-        {building ? 'Building…' : 'Download a statement for every shop'}
-      </Button>
 
       {warnings.length > 0 ? (
         <Banner tone="debit" title="Worth a look">
@@ -346,6 +338,17 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
           </span>
         </p>
       </Banner>
+
+      {askingFigures ? (
+        <AskSheet
+          shop={askingFigures.shop}
+          balance={askingFigures.balance}
+          unconfirmed={askingFigures.unposted}
+          personName={displayName}
+          today={today}
+          onClose={() => setAsking(null)}
+        />
+      ) : null}
 
       {form}
     </div>

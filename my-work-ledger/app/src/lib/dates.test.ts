@@ -9,9 +9,12 @@ import {
   asCalendarDate,
   clampDayToMonth,
   compareDates,
+  dateOfMs,
   daysInMonth,
+  formatClockTime,
   formatDateRelative,
   formatDateShort,
+  formatDaysAgo,
   formatPeriod,
   fromDayNumber,
   inclusiveDays,
@@ -175,6 +178,52 @@ describe('formatting', () => {
 
   it('splits a date back into its parts', () => {
     expect(splitDate(date('2025-11-04'))).toEqual({ year: 2025, month: 11, day: 4 });
+  });
+});
+
+describe('formatDaysAgo', () => {
+  const today = date('2025-11-04');
+
+  it('says it in words for the days people care about', () => {
+    expect(formatDaysAgo(today, today)).toBe('today');
+    expect(formatDaysAgo(date('2025-11-03'), today)).toBe('yesterday');
+    expect(formatDaysAgo(date('2025-11-01'), today)).toBe('3 days ago');
+  });
+
+  it('switches to months and then years rather than counting to 400', () => {
+    expect(formatDaysAgo(date('2025-10-01'), today)).toBe('a month ago');
+    expect(formatDaysAgo(date('2025-05-04'), today)).toBe('6 months ago');
+    expect(formatDaysAgo(date('2024-11-04'), today)).toBe('a year ago');
+    expect(formatDaysAgo(date('2023-11-04'), today)).toBe('2 years ago');
+  });
+
+  it('reads a future date forwards, which a backdated ledger can produce', () => {
+    expect(formatDaysAgo(date('2025-11-05'), today)).toBe('tomorrow');
+    expect(formatDaysAgo(date('2025-11-08'), today)).toBe('in 4 days');
+  });
+});
+
+describe('dateOfMs and formatClockTime', () => {
+  it('reads the local calendar day a timestamp falls on', () => {
+    const at = new Date(2025, 10, 4, 23, 59, 0).getTime();
+    expect(dateOfMs(at)).toBe('2025-11-04');
+  });
+
+  it('formats the time with a lowercase am or pm, like the rest of the app', () => {
+    expect(formatClockTime(new Date(2025, 10, 4, 18, 41, 0).getTime())).toBe('6:41 pm');
+    expect(formatClockTime(new Date(2025, 10, 4, 9, 5, 0).getTime())).toBe('9:05 am');
+  });
+
+  it('calls midnight and noon twelve rather than zero', () => {
+    expect(formatClockTime(new Date(2025, 10, 4, 0, 0, 0).getTime())).toBe('12:00 am');
+    expect(formatClockTime(new Date(2025, 10, 4, 12, 0, 0).getTime())).toBe('12:00 pm');
+  });
+
+  it('refuses a timestamp it cannot use rather than inventing a time', () => {
+    expect(dateOfMs(0)).toBeNull();
+    expect(dateOfMs(Number.NaN)).toBeNull();
+    expect(formatClockTime(0)).toBeNull();
+    expect(formatClockTime(Number.NaN)).toBeNull();
   });
 });
 

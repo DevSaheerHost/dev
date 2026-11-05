@@ -12,6 +12,7 @@
 
 import { onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 
+import { isValidPhone, normalisePhone } from '@/lib/contact';
 import { isCalendarDate, type CalendarDate } from '@/lib/dates';
 import { isValidAmount, paise, type Paise } from '@/lib/money';
 import { randomId } from '@/lib/ids';
@@ -28,6 +29,8 @@ export const MAX_SHOP_DESCRIPTION = 240;
 export interface ShopInput {
   readonly name: string;
   readonly description: string;
+  /** Already normalised by `normalisePhone`, or empty for "not given". */
+  readonly phone: string;
   readonly joiningDate: CalendarDate;
   readonly salaryPayDay: number;
   readonly settlementMode: SettlementMode;
@@ -52,6 +55,13 @@ export function validateShopInput(input: ShopInput): ValidationError[] {
       field: 'description',
       message: `Keep the note under ${MAX_SHOP_DESCRIPTION} characters`,
     });
+  }
+
+  // Optional, but if given it has to be a number — a half-typed one would be
+  // stored and then offered as a link that silently goes nowhere.
+  const phone = normalisePhone(input.phone);
+  if (phone !== '' && !isValidPhone(phone)) {
+    errors.push({ field: 'phone', message: 'That does not look like a phone number' });
   }
 
   if (!isCalendarDate(input.joiningDate)) {
@@ -79,9 +89,14 @@ export function validateShopInput(input: ShopInput): ValidationError[] {
 }
 
 function toWriteShape(input: ShopInput) {
+  const phone = normalisePhone(input.phone);
   return {
     name: input.name.trim(),
     description: input.description.trim(),
+    // Normalised again here rather than trusted from the caller: this is the
+    // only place the value reaches the database, and it is later interpolated
+    // into a `tel:`/`sms:` link.
+    phone: phone === '' ? null : phone,
     joiningDate: input.joiningDate,
     salaryPayDay: input.salaryPayDay,
     settlementMode: input.settlementMode,
@@ -178,6 +193,13 @@ function fromDoc(id: string, data: Record<string, unknown>): Shop {
     id,
     name: typeof data.name === 'string' ? data.name : 'Untitled shop',
     description: typeof data.description === 'string' ? data.description : '',
+    // Validated on the way out as well as in. A stored value that is not a
+    // phone number is dropped rather than shown, because this one ends up in a
+    // link — and a document could predate the rule that now rejects it.
+    phone:
+      typeof data.phone === 'string' && isValidPhone(normalisePhone(data.phone))
+        ? normalisePhone(data.phone)
+        : null,
     joiningDate: isCalendarDate(data.joiningDate) ? data.joiningDate : FALLBACK_DATE,
     salaryPayDay: Number.isInteger(payDay) && payDay >= 1 && payDay <= 31 ? payDay : 1,
     settlementMode: data.settlementMode === 'cashOnly' ? 'cashOnly' : 'accrual',

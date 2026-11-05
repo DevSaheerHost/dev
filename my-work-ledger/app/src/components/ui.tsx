@@ -166,13 +166,13 @@ export function TextInput({
 }: {
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'email' | 'password' | 'date';
+  type?: 'text' | 'email' | 'password' | 'date' | 'tel';
   placeholder?: string;
   error?: string | undefined;
   hint?: string | undefined;
   label: string;
   autoComplete?: string;
-  inputMode?: 'text' | 'email' | 'numeric' | 'decimal';
+  inputMode?: 'text' | 'email' | 'numeric' | 'decimal' | 'tel';
   maxLength?: number;
   required?: boolean;
   disabled?: boolean;
@@ -453,6 +453,49 @@ export function Badge({
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${tones[tone]}`}
     >
       {children}
+    </span>
+  );
+}
+
+/** Up to two initials for a name, or "?" for a name with no letters in it. */
+export function initialsOf(name: string): string {
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => /\p{L}|\p{N}/u.test(word));
+  if (words.length === 0) return '?';
+  const first = [...(words[0] ?? '')][0] ?? '';
+  const second = words.length > 1 ? ([...(words[words.length - 1] ?? '')][0] ?? '') : '';
+  return (first + second).toUpperCase();
+}
+
+const AVATAR_TONES = [
+  'bg-accent-soft text-accent-ink',
+  'bg-credit-soft text-credit-strong',
+  'bg-debit-soft text-debit-strong',
+  'bg-surface-2 text-ink-2',
+] as const;
+
+/**
+ * A name as a coloured disc, so a list of shops can be scanned by shape.
+ *
+ * The colour is a deterministic function of the name, never random: a shop that
+ * changed colour between renders would be worse than no colour at all.
+ */
+export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash * 31 + name.charCodeAt(index)) % 100003;
+  }
+  const tone = AVATAR_TONES[hash % AVATAR_TONES.length] ?? AVATAR_TONES[0];
+  return (
+    <span
+      aria-hidden
+      className={`grid shrink-0 place-items-center rounded-full font-bold ${tone} ${
+        size === 'sm' ? 'size-9 text-xs' : 'size-11 text-sm'
+      }`}
+    >
+      {initialsOf(name)}
     </span>
   );
 }
