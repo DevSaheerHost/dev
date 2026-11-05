@@ -11,12 +11,12 @@
  */
 
 import type { ReactNode } from 'react';
-import { BookLock, CloudOff, LayoutDashboard, Settings, Store } from 'lucide-react';
+import { Bell, BookLock, CloudOff, LayoutDashboard, Settings, Store } from 'lucide-react';
 
 import { ShopSwitcher } from '@/features/shops/ShopSwitcher';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
-export type Route = 'dashboard' | 'shops' | 'settings';
+export type Route = 'dashboard' | 'shops' | 'reminders' | 'settings';
 
 interface NavItem {
   readonly route: Route;
@@ -27,6 +27,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { route: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { route: 'shops', label: 'Shops', icon: Store },
+  { route: 'reminders', label: 'Reminders', icon: Bell },
   { route: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -124,14 +125,14 @@ export function AppShell({
         </main>
 
         {/* Mobile bottom navigation */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.route}
               type="button"
               onClick={() => onNavigate(item.route)}
               aria-current={route === item.route ? 'page' : undefined}
-              className={`flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold transition-colors ${
+              className={`flex min-h-16 flex-col items-center justify-center gap-1 px-0.5 text-[0.7rem] font-semibold transition-colors ${
                 route === item.route ? 'text-accent-ink' : 'text-ink-3'
               }`}
             >

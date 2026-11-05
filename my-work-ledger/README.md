@@ -10,12 +10,12 @@ outstanding. At the end of a period you can seal a statement and hand it over.
 Live at **/my-work-ledger/**. Built to be used daily on a phone, offline, and to survive a
 reinstall.
 
-> **Status: Phase 4 of 7 — statements.** Open a shop, see what it owes you right now, record
-> an advance or an expense in two taps, then settle a period and hand over a PDF. Salary builds
-> up day by day, days off reduce it, and food money is owed daily with a tick for the days it
-> actually arrived. Reminders (Phase 5) and the Android build (Phase 6) are still to come —
-> there are no notifications yet. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
-> full plan.
+> **Status: Phase 5 of 7 — reminders.** Open a shop, see what it owes you right now, record an
+> advance or an expense in two taps, settle a period and hand over a PDF. The app now also
+> tells you what needs doing: the month is over, a statement is ready, salary is a week away,
+> today has not been ticked. **On the web those arrive only while the app is open** — a page
+> cannot wake itself once closed. The Android build (Phase 6) is what makes them real alarms.
+> See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
 
 ---
 
@@ -51,6 +51,27 @@ exactly how many days of food money are outstanding.
 Once a month ends, the app *offers* the entries — it never writes them itself. One tap turns the
 live figures into real ledger entries, under a deterministic id so the same month can never be
 posted twice.
+
+### Reminders
+
+Four of them are worked out from the ledger rather than created by hand, and each stops on its
+own once it has been dealt with:
+
+| Reminder | Appears | Clears when |
+| --- | --- | --- |
+| The month is over | while a finished month still needs confirming | you confirm it |
+| Ready to settle | while a period can be closed into a statement | you settle |
+| Salary coming up | a week before a shop's salary day | the day arrives |
+| Food money and days off | each evening a day has not been ticked | you tick it or mark it off |
+
+Their wording and figures are derived every time they are shown, so they cannot go stale, and
+nothing stores a "dismissed" flag that could drift out of step with the facts.
+
+**What a browser can honestly do:** a web notification only fires while the app is open. There
+is no reliable way to wake a closed website on a phone. The Reminders screen says so rather
+than letting you assume otherwise — a reminder you trust and that silently never arrives is
+worse than no reminder. Phase 6 wires the same schedule to Android local notifications, which
+do fire with the app closed.
 
 ### Settling up
 
@@ -204,6 +225,7 @@ my-work-ledger/
         │   ├── attendance/      the month calendar
         │   ├── settlements/     settling a period, and past statements
         │   ├── reports/         statement content and the PDF writer
+        │   ├── reminders/       scheduling, the derived four, and delivery
         │   ├── auth/
         │   └── shops/
         ├── components/          UI primitives and the app shell
@@ -227,7 +249,7 @@ nothing in the UI awaits. See `data/writes.ts`.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **275 unit tests**, all pure and needing no emulator, network or Java:
+- **323 unit tests**, all pure and needing no emulator, network or Java:
   - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
     month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
     and `lib/clock.ts`.
@@ -247,11 +269,15 @@ Phase 1 was checked by running things, not by assuming:
   - *settlements (33)* — statements chain across periods, a backdated entry leaves a sealed
     snapshot byte-identical, and the default range sweeps in months that were skipped.
   - *statement content (14)* — what the PDF prints, including the closing balance in words.
-- **33 security rules tests** against the Firestore emulator: cross-account denial, forged
+  - *reminder scheduling (24)* — month-end clamping so "the 31st" fires twelve times a year,
+    weekly across a year boundary, and nothing firing before its hour.
+  - *derived reminders (24)* — each of the four appearing and then clearing when the thing is
+    done, and nothing at all for an archived or daily-wage shop.
+- **37 security rules tests** against the Firestore emulator: cross-account denial, forged
   `uid`, field whitelists, immutable amounts and dates, profile and income-config validation,
   attendance records, a re-posted accrual being refused, the full seal sequence in order,
-  sealed-statement immutability, append-only audit logs, and the collection-group query
-  constraint.
+  sealed-statement immutability, append-only audit logs, reminder validation, and the
+  collection-group query constraint.
 - **An end-to-end browser pass** at 390px, against the Auth and Firestore emulators: create a
   shop with a salary and food money, check the earned-so-far figure against the pro-rata the
   engine computes, confirm the dashboard shows the same number, tick food money, mark a day off
@@ -262,6 +288,9 @@ Phase 1 was checked by running things, not by assuming:
   disturbed.
 - **The PDF is read, not glanced at**: `pdftotext` over the downloaded file, checking the
   closing balance and every category total against the engine's figures.
+- **A reminders pass**: all four appear for a shop that warrants them, four notifications are
+  actually constructed once their hour passes, and each clears after the thing it asks for is
+  done — while the salary notice correctly stays until its day.
 - **An offline pass**: with the network cut, an entry form closes in under a second, the entry
   appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
   everything synced. Settling is the one thing that needs a connection, and it says so and

@@ -640,6 +640,85 @@ test('a sealed settlement cannot be rewritten', async () => {
   await assertSucceeds(updateDoc(sealed, { status: 'needs_reconciliation' }));
 });
 
+/* ------------------------------------------------------------------ reminders */
+
+function reminderDoc(overrides = {}) {
+  return {
+    kind: 'custom',
+    shopId: null,
+    type: 'monthly',
+    title: 'Pay the room rent',
+    body: '',
+    weekday: null,
+    dayOfMonth: 5,
+    onDate: null,
+    time: '20:00',
+    enabled: true,
+    lastFiredAt: null,
+    ...overrides,
+  };
+}
+
+const aliceReminder = (id, db = alice) => doc(db, 'users', ALICE, 'reminders', id);
+
+test('a reminder can be created, edited and removed', async () => {
+  // The only collection in this app whose documents may be deleted: a reminder
+  // holds no financial record, so losing one explains nothing away.
+  await assertSucceeds(setDoc(aliceReminder('rem_rent'), reminderDoc()));
+  await assertSucceeds(updateDoc(aliceReminder('rem_rent'), { enabled: false }));
+  await assertSucceeds(deleteDoc(aliceReminder('rem_rent')));
+});
+
+test('an automatic reminder uses a fixed id, so it cannot be duplicated', async () => {
+  await assertSucceeds(
+    setDoc(
+      aliceReminder('auto_month_ended'),
+      reminderDoc({ kind: 'monthEnded', type: 'daily', dayOfMonth: null, title: 'The month is over' }),
+    ),
+  );
+  // Writing it again is the same document — switching it on from a second
+  // device must not leave two of them firing.
+  await assertSucceeds(
+    setDoc(
+      aliceReminder('auto_month_ended'),
+      reminderDoc({
+        kind: 'monthEnded',
+        type: 'daily',
+        dayOfMonth: null,
+        title: 'The month is over',
+        time: '09:00',
+      }),
+    ),
+  );
+});
+
+test('reminder fields are validated', async () => {
+  const cases = [
+    ['unknown type', reminderDoc({ type: 'hourly' })],
+    ['unknown kind', reminderDoc({ kind: 'whenever' })],
+    ['empty title', reminderDoc({ title: '' })],
+    ['over-long title', reminderDoc({ title: 'x'.repeat(81) })],
+    ['12-hour time', reminderDoc({ time: '8:00 pm' })],
+    ['impossible time', reminderDoc({ time: '25:00' })],
+    ['weekday out of range', reminderDoc({ type: 'weekly', weekday: 7, dayOfMonth: null })],
+    ['day of month 0', reminderDoc({ dayOfMonth: 0 })],
+    ['day of month 32', reminderDoc({ dayOfMonth: 32 })],
+    ['malformed onDate', reminderDoc({ type: 'oneTime', onDate: '5-11-2025', dayOfMonth: null })],
+    ['unknown extra field', { ...reminderDoc(), loud: true }],
+    ['missing a required field', (() => { const { time: _drop, ...rest } = reminderDoc(); return rest; })()],
+  ];
+  for (const [label, payload] of cases) {
+    await mustReject(label, setDoc(aliceReminder('rem_reject'), payload));
+  }
+});
+
+test("one account cannot touch another's reminders", async () => {
+  await assertSucceeds(setDoc(aliceReminder('rem_mine'), reminderDoc()));
+  await mustReject('cross-account reminder read', getDoc(aliceReminder('rem_mine', bob)));
+  await mustReject('cross-account reminder write', setDoc(aliceReminder('rem_theirs', bob), reminderDoc()));
+  await mustReject('cross-account reminder delete', deleteDoc(aliceReminder('rem_mine', bob)));
+});
+
 /* ----------------------------------------------------------------- audit logs */
 
 test('audit entries are append-only', async () => {

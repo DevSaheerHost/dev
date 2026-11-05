@@ -8,7 +8,16 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ChevronRight, Download, Info, Loader2, Store, TriangleAlert, Wallet } from 'lucide-react';
+import {
+  Bell,
+  ChevronRight,
+  Download,
+  Info,
+  Loader2,
+  Store,
+  TriangleAlert,
+  Wallet,
+} from 'lucide-react';
 
 import {
   Amount,
@@ -29,7 +38,8 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { TRANSACTION_KINDS, type TransactionKind } from '@/types/models';
 import { describeWarning } from '@/features/ledger/engine';
 import { combineFigures, computeShopFigures, type ShopFigures } from '@/features/ledger/figures';
-import { useAllLedgers } from '@/features/ledger/LedgerProvider';
+import { useAllLedgers, useReminders } from '@/features/ledger/LedgerProvider';
+import { deriveReminders, type DerivedKind, type ReminderPrefs } from '@/features/reminders/derived';
 import { ShopForm } from '@/features/shops/ShopForm';
 import { useShops } from '@/features/shops/ShopsProvider';
 
@@ -68,6 +78,7 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   const { activeShops, loading, error } = useShops();
   const { ledgers, error: ledgerError } = useAllLedgers();
   const { displayName } = useAuth();
+  const storedReminders = useReminders();
   const [adding, setAdding] = useState(false);
   const [building, setBuilding] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -90,6 +101,30 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   );
 
   const combined = useMemo(() => combineFigures(figures), [figures]);
+
+  const needsYou = useMemo(() => {
+    const prefs: ReminderPrefs = new Map(
+      storedReminders
+        .filter((reminder) => reminder.kind !== 'custom')
+        .map((reminder) => [
+          reminder.kind as DerivedKind,
+          { enabled: reminder.enabled, time: reminder.time },
+        ]),
+    );
+    return deriveReminders({
+      shops: activeShops.map((shop) => {
+        const ledger = ledgers.get(shop.id);
+        return {
+          shop,
+          transactions: ledger?.transactions ?? [],
+          configs: ledger?.configs ?? [],
+          days: ledger?.days ?? [],
+        };
+      }),
+      prefs,
+      today,
+    });
+  }, [activeShops, ledgers, storedReminders, today]);
   const warnings = figures.flatMap((shop) =>
     shop.warnings.map((warning) => ({ shop: shop.shop.name, warning })),
   );
@@ -224,7 +259,40 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
         </dl>
       </Card>
 
-      {pending > 0 ? (
+      {needsYou.length > 0 ? (
+        <section>
+          <SectionHeading
+            title="Needs you"
+            action={
+              <span className="flex items-center gap-1 text-xs text-ink-3">
+                <Bell size={13} />
+                {needsYou.length}
+              </span>
+            }
+          />
+          <Card>
+            <ul>
+              {needsYou.map((reminder) => (
+                <li key={reminder.id} className="border-b border-line last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => onOpenShop(reminder.shopId)}
+                    className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-ink">
+                        {reminder.title}
+                      </span>
+                      <span className="mt-0.5 block text-sm text-ink-2">{reminder.body}</span>
+                    </span>
+                    <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      ) : pending > 0 ? (
         <Banner tone="accent" title={`${pending} entr${pending === 1 ? 'y' : 'ies'} ready to confirm`}>
           A finished month is waiting to be added to the ledger. Open the shop to check the figures
           and confirm.

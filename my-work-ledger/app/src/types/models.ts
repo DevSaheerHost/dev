@@ -263,20 +263,62 @@ export interface DayRecord {
   readonly updatedAt: unknown;
 }
 
-export type ReminderType = 'weekly' | 'monthly' | 'oneTime';
+export type ReminderType = 'daily' | 'weekly' | 'monthly' | 'oneTime';
+
+/**
+ * What a reminder is for.
+ *
+ * The four automatic kinds work out what to say from the ledger every time
+ * they are shown, so their wording and figures cannot go stale. Only the
+ * schedule — whether they are on, and at what time — is stored, under a
+ * deterministic id so creating them on first run is idempotent.
+ */
+export type ReminderKind =
+  | 'custom'
+  | 'salaryDueSoon'
+  | 'monthEnded'
+  | 'dailyTick'
+  | 'settleReady';
+
+export const AUTO_REMINDER_KINDS: readonly ReminderKind[] = [
+  'salaryDueSoon',
+  'monthEnded',
+  'dailyTick',
+  'settleReady',
+];
+
+/** The stored id for an automatic reminder. Deterministic, so writes are upserts. */
+export const AUTO_REMINDER_IDS: Readonly<Record<string, string>> = {
+  salaryDueSoon: 'auto_salary_due',
+  monthEnded: 'auto_month_ended',
+  dailyTick: 'auto_daily_tick',
+  settleReady: 'auto_settle_ready',
+};
 
 export interface Reminder {
   readonly id: string;
+  readonly kind: ReminderKind;
+  /** The shop it concerns, or null when it is not about one shop. */
+  readonly shopId: string | null;
   readonly type: ReminderType;
   readonly title: string;
   readonly body: string;
+  /** 0-6, Sunday first, for a weekly reminder. */
   readonly weekday: number | null;
+  /** 1-31 for a monthly reminder, clamped into short months when it fires. */
   readonly dayOfMonth: number | null;
+  /** The single day a one-time reminder falls on. */
+  readonly onDate: CalendarDate | null;
   /** `HH:MM` in the device's own timezone. */
   readonly time: string;
   readonly enabled: boolean;
   readonly lastFiredAt: unknown | null;
-  readonly createdAt: unknown;
+  /**
+   * No `createdAt`. The automatic reminders are addressed by a deterministic
+   * id, so switching one on is an upsert — and an immutable creation stamp
+   * would make the second write to the same document illegal. A reminder has
+   * no audit value to protect, unlike every other record here.
+   */
 }
 
 export type AuditAction = 'create' | 'update' | 'void' | 'seal' | 'reconcile';

@@ -15,10 +15,18 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { watchIncomeConfigs } from '@/data/incomeConfigs';
 import { watchDaysFrom } from '@/data/days';
+import { watchReminders } from '@/data/reminders';
 import { watchSettlements } from '@/data/settlements';
 import { watchShopTransactions } from '@/data/transactions';
 import { maxDate, type CalendarDate } from '@/lib/dates';
-import type { DayRecord, IncomeConfig, Settlement, Shop, Transaction } from '@/types/models';
+import type {
+  DayRecord,
+  IncomeConfig,
+  Reminder,
+  Settlement,
+  Shop,
+  Transaction,
+} from '@/types/models';
 
 import { useAuth } from '../auth/AuthProvider';
 import { useShops } from '../shops/ShopsProvider';
@@ -41,6 +49,8 @@ const EMPTY: ShopLedger = {
 
 interface LedgerState {
   readonly ledgers: ReadonlyMap<string, ShopLedger>;
+  /** Reminders belong to the account, not to a shop, so there is one list. */
+  readonly reminders: readonly Reminder[];
   readonly error: string | null;
 }
 
@@ -58,6 +68,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const { uid } = useAuth();
   const { activeShops } = useShops();
   const [ledgers, setLedgers] = useState<ReadonlyMap<string, ShopLedger>>(new Map());
+  const [reminders, setReminders] = useState<readonly Reminder[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -139,7 +150,20 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     };
   }, [uid, descriptor]);
 
-  const value = useMemo<LedgerState>(() => ({ ledgers, error }), [ledgers, error]);
+  // One listener for the whole account, not one per shop.
+  useEffect(() => {
+    if (!uid) return;
+    return watchReminders(
+      uid,
+      setReminders,
+      () => setError('Could not load reminders.'),
+    );
+  }, [uid]);
+
+  const value = useMemo<LedgerState>(
+    () => ({ ledgers, reminders, error }),
+    [ledgers, reminders, error],
+  );
 
   return <LedgerContext.Provider value={value}>{children}</LedgerContext.Provider>;
 }
@@ -157,6 +181,11 @@ export function useShopLedger(shopId: string | null): ShopLedger {
 }
 
 /** Every shop's ledger, for the cross-shop dashboard. */
-export function useAllLedgers(): { ledgers: ReadonlyMap<string, ShopLedger>; error: string | null } {
+export function useAllLedgers(): LedgerState {
   return useLedgerState();
+}
+
+/** The account's reminders. */
+export function useReminders(): readonly Reminder[] {
+  return useLedgerState().reminders;
 }

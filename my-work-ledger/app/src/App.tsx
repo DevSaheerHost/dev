@@ -2,7 +2,7 @@
  * The application root.
  *
  * Routing is the URL hash, read and written directly. A router dependency buys
- * nothing here: there are four screens, no nested layouts and no data loading
+ * nothing here: there are five screens, no nested layouts and no data loading
  * tied to a route. The hash also survives the `file://`-style origin a
  * Capacitor WebView serves from, where path-based routing needs a server.
  *
@@ -20,11 +20,12 @@ import { ShopsProvider, useShops } from '@/features/shops/ShopsProvider';
 import { ShopsPage } from '@/features/shops/ShopsPage';
 import { LedgerProvider } from '@/features/ledger/LedgerProvider';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { RemindersPage } from '@/pages/RemindersPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ShopPage } from '@/pages/ShopPage';
 import { useTheme } from '@/hooks/useTheme';
 
-const ROUTES: readonly Route[] = ['dashboard', 'shops', 'settings'];
+const ROUTES: readonly Route[] = ['dashboard', 'shops', 'reminders', 'settings'];
 
 interface Location {
   readonly route: Route;
@@ -88,6 +89,7 @@ function Screens({
     <>
       {location.route === 'dashboard' ? <DashboardPage onOpenShop={openShop} /> : null}
       {location.route === 'shops' ? <ShopsPage onOpenShop={openShop} /> : null}
+      {location.route === 'reminders' ? <RemindersPage onOpenShop={openShop} /> : null}
       {location.route === 'settings' ? <SettingsPage /> : null}
     </>
   );
