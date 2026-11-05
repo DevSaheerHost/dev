@@ -101,13 +101,24 @@ export function ShopForm({
   const [draft, setDraft] = useState<Draft>(() => draftFromShop(shop));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ShopInput, string>>>({});
   const [amountError, setAmountError] = useState<string | undefined>(undefined);
+  // Until the user edits the balance date themselves it follows the joining
+  // date. Without this, backdating a new shop to last month would silently
+  // accrue nothing: the balance date governs where accrual starts, and it would
+  // still be sitting on today.
+  const [balanceDateTouched, setBalanceDateTouched] = useState(false);
   const [salaryError, setSalaryError] = useState<string | undefined>(undefined);
   const [foodError, setFoodError] = useState<string | undefined>(undefined);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
-    setDraft((previous) => ({ ...previous, [key]: value }));
+    setDraft((previous) => {
+      const next = { ...previous, [key]: value };
+      if (key === 'joiningDate' && !balanceDateTouched) {
+        next.openingBalanceAsOf = value as string;
+      }
+      return next;
+    });
   }
 
   function buildInput(): ShopInput | null {
@@ -323,9 +334,12 @@ export function ShopForm({
               label="Balance applies from"
               type="date"
               value={draft.openingBalanceAsOf}
-              onChange={(value) => set('openingBalanceAsOf', value)}
+              onChange={(value) => {
+                setBalanceDateTouched(true);
+                set('openingBalanceAsOf', value);
+              }}
               error={fieldErrors.openingBalanceAsOf}
-              hint="Entries dated before this day are refused, so the opening figure is never double-counted."
+              hint="Entries and salary before this day are not counted, so the opening figure is never double-counted. It follows the joining date unless you change it."
             />
           </div>
         </div>

@@ -545,6 +545,90 @@ test("one account cannot touch another's attendance", async () => {
 
 /* ---------------------------------------------------------------- settlements */
 
+test('the full seal sequence is permitted, in order', async () => {
+  // create as `stamping` -> claim the entries -> flip to `sealed`. The rules
+  // have to allow exactly this and nothing looser, because a statement that
+  // called itself final before claiming its entries would be a lie.
+  const id = 'set_sequence';
+  const ref = doc(alice, 'users', ALICE, 'shops', 'shop_one', 'settlements', id);
+
+  await assertSucceeds(
+    setDoc(ref, {
+      shopId: 'shop_one',
+      periodStart: '2025-11-01',
+      periodEnd: '2025-11-30',
+      settlementDate: '2025-12-01',
+      openingBalance: 0,
+      closingBalance: 1800000,
+      totals: { salary_earned: 1800000 },
+      transactionCount: 1,
+      statementNo: 2,
+      sealState: 'stamping',
+      status: 'sealed',
+      notes: '',
+      sealedAt: null,
+      createdAt: serverTimestamp(),
+    }),
+  );
+
+  const entryId = 'txn_to_stamp';
+  await assertSucceeds(
+    setDoc(aliceTxn(entryId), txnDoc({ transactionDate: '2025-11-04', recognitionDate: '2025-11-04' })),
+  );
+  await assertSucceeds(
+    updateDoc(aliceTxn(entryId), { settlementId: id, updatedAt: serverTimestamp() }),
+  );
+
+  await assertSucceeds(updateDoc(ref, { sealState: 'sealed', sealedAt: serverTimestamp() }));
+
+  // A stamped entry is frozen: it cannot be voided or edited any more.
+  await mustReject(
+    'voiding a settled entry',
+    updateDoc(aliceTxn(entryId), {
+      voidedAt: serverTimestamp(),
+      voidReason: 'nope',
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await mustReject(
+    'editing a settled entry',
+    updateDoc(aliceTxn(entryId), { description: 'rewritten', updatedAt: serverTimestamp() }),
+  );
+});
+
+test('a seal cannot be undone', async () => {
+  const ref = doc(alice, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_sequence');
+  await mustReject('reopening a sealed statement', updateDoc(ref, { sealState: 'stamping' }));
+  await mustReject(
+    'sealing without a server timestamp',
+    updateDoc(ref, { sealState: 'sealed', sealedAt: new Date(0) }),
+  );
+});
+
+test('a settlement cannot be created already sealed', async () => {
+  // Skipping `stamping` would mean a final statement whose entries were never
+  // claimed, so nothing stops them being edited afterwards.
+  await mustReject(
+    'creating a settlement as sealed',
+    setDoc(doc(alice, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_cheat'), {
+      shopId: 'shop_one',
+      periodStart: '2025-11-01',
+      periodEnd: '2025-11-30',
+      settlementDate: '2025-12-01',
+      openingBalance: 0,
+      closingBalance: 0,
+      totals: {},
+      transactionCount: 0,
+      statementNo: 9,
+      sealState: 'sealed',
+      status: 'sealed',
+      notes: '',
+      sealedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    }),
+  );
+});
+
 test('a sealed settlement cannot be rewritten', async () => {
   const sealed = doc(alice, 'users', ALICE, 'shops', 'shop_one', 'settlements', 'set_sealed');
   await mustReject('editing a closing balance', updateDoc(sealed, { closingBalance: 0 }));

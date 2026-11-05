@@ -10,12 +10,12 @@ outstanding. At the end of a period you can seal a statement and hand it over.
 Live at **/my-work-ledger/**. Built to be used daily on a phone, offline, and to survive a
 reinstall.
 
-> **Status: Phase 3 of 7 — usable.** Open a shop, see what it owes you right now, and record
-> an advance or an out-of-pocket expense in two taps. Salary builds up day by day, days off
-> reduce it, and food money is owed daily with a tick for the days it actually arrived.
-> Settlements and printed statements (Phase 4), reminders (Phase 5) and the Android build
-> (Phase 6) are still to come — there is no sealing, no PDF and no notification yet. See
-> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
+> **Status: Phase 4 of 7 — statements.** Open a shop, see what it owes you right now, record
+> an advance or an expense in two taps, then settle a period and hand over a PDF. Salary builds
+> up day by day, days off reduce it, and food money is owed daily with a tick for the days it
+> actually arrived. Reminders (Phase 5) and the Android build (Phase 6) are still to come —
+> there are no notifications yet. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
+> full plan.
 
 ---
 
@@ -51,6 +51,21 @@ exactly how many days of food money are outstanding.
 Once a month ends, the app *offers* the entries — it never writes them itself. One tap turns the
 live figures into real ledger entries, under a deterministic id so the same month can never be
 posted twice.
+
+### Settling up
+
+A settlement is a **statement, not a money movement**. It records what was owed for a span of
+days and freezes it, so the figures you hand to the shop owner stay true. Cash the owner gives
+you is a separate payment entry — the app asks about it right after sealing, with a Skip, and
+never assumes it happened.
+
+Once a period is settled its entries cannot be edited or voided. Something that turns up later
+and is dated inside that period keeps its true date, is recognised in the open period, and the
+old statement is flagged as disturbed rather than rewritten. A mistake inside a sealed period is
+corrected with an adjustment in the current one.
+
+Statements download as a PDF: a summary, every line with a running balance, and a footer saying
+plainly that it is a statement of account and not a receipt.
 
 | Entry | Effect | Note |
 | --- | --- | --- |
@@ -187,6 +202,8 @@ my-work-ledger/
         │   │                    pure, no React, no clock
         │   ├── entries/         the You got / You gave sheet, and the history
         │   ├── attendance/      the month calendar
+        │   ├── settlements/     settling a period, and past statements
+        │   ├── reports/         statement content and the PDF writer
         │   ├── auth/
         │   └── shops/
         ├── components/          UI primitives and the app shell
@@ -210,7 +227,7 @@ nothing in the UI awaits. See `data/writes.ts`.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **228 unit tests**, all pure and needing no emulator, network or Java:
+- **275 unit tests**, all pure and needing no emulator, network or Java:
   - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
     month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
     and `lib/clock.ts`.
@@ -227,18 +244,28 @@ Phase 1 was checked by running things, not by assuming:
     received, and spans clipped to the joining and opening-balance dates.
   - *figures (19)* — the dashboard figure equals the engine's, and the balance does not lurch
     when the month turns.
-- **30 security rules tests** against the Firestore emulator: cross-account denial, forged
+  - *settlements (33)* — statements chain across periods, a backdated entry leaves a sealed
+    snapshot byte-identical, and the default range sweeps in months that were skipped.
+  - *statement content (14)* — what the PDF prints, including the closing balance in words.
+- **33 security rules tests** against the Firestore emulator: cross-account denial, forged
   `uid`, field whitelists, immutable amounts and dates, profile and income-config validation,
-  attendance records, a re-posted accrual being refused, sealed-statement immutability,
-  append-only audit logs, and the collection-group query constraint.
+  attendance records, a re-posted accrual being refused, the full seal sequence in order,
+  sealed-statement immutability, append-only audit logs, and the collection-group query
+  constraint.
 - **An end-to-end browser pass** at 390px, against the Auth and Firestore emulators: create a
   shop with a salary and food money, check the earned-so-far figure against the pro-rata the
   engine computes, confirm the dashboard shows the same number, tick food money, mark a day off
   and watch the month drop to zero, record a You got and a You gave, void one, and reload. No
   console errors, no horizontal overflow, no touch target under 36px.
+- **A settlement pass**: seal a period, back-date an entry into it, and confirm the sealed
+  figure is unchanged, the entry lands in the open period, and the statement is flagged as
+  disturbed.
+- **The PDF is read, not glanced at**: `pdftotext` over the downloaded file, checking the
+  closing balance and every category total against the engine's figures.
 - **An offline pass**: with the network cut, an entry form closes in under a second, the entry
   appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
-  everything synced, proving it reached the server and not just the local cache.
+  everything synced. Settling is the one thing that needs a connection, and it says so and
+  disables itself rather than hanging.
 
 **Not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
 there yet and this environment has no credentials to enable it, so that path has only been

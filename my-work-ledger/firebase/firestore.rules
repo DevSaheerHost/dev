@@ -399,7 +399,13 @@ service cloud.firestore {
                         && incoming().transactionCount >= 0
                         && incoming().statementNo is int
                         && incoming().statementNo >= 1
-                        && incoming().sealState in ['stamping', 'sealed']
+                        // A statement is always born `stamping` and may only
+                        // become `sealed` once its entries have been claimed.
+                        // Allowing it to be created final would leave a
+                        // statement whose entries were never frozen, so they
+                        // could still be edited out from under it.
+                        && incoming().sealState == 'stamping'
+                        && incoming().sealedAt == null
                         && incoming().status in ['sealed', 'needs_reconciliation']
                         && isText(incoming().notes, 1000)
                         && isServerTime(incoming().createdAt);

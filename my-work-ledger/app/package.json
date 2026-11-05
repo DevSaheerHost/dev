@@ -14,11 +14,13 @@
     "test:watch": "vitest",
     "publish:static": "node scripts/publish.mjs",
     "test:rules": "node scripts/test-rules.mjs",
-    "emulator": "firebase emulators:start --only firestore --project demo-ledger --config ../firebase.json"
+    "emulator": "firebase emulators:start --only firestore --project demo-ledger --config ../firebase.json",
+    "build:pdf-font": "node scripts/build-pdf-font.mjs"
   },
   "dependencies": {
     "firebase": "^13.2.0",
     "framer-motion": "^14.9.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.67.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
