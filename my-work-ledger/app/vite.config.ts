@@ -31,7 +31,11 @@ export default defineConfig({
           if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion')) {
             return 'motion';
           }
-          if (id.includes('node_modules/jspdf')) return 'pdf';
+          // jsPDF is deliberately NOT named here. Forcing it into a manual
+          // chunk promoted it to an initial chunk, so the entry page
+          // modulepreloaded 400 KB that is only needed when someone asks for a
+          // PDF. Left alone, it lands inside the dynamically imported
+          // statement chunk, which is the whole point of importing it lazily.
           return undefined;
         },
       },

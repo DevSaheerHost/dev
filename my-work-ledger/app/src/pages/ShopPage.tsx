@@ -15,6 +15,8 @@ import {
   CalendarDays,
   CheckCheck,
   ChevronRight,
+  FileText,
+  Lock,
   Minus,
   Plus,
   TriangleAlert,
@@ -44,6 +46,9 @@ import { EntryList } from '@/features/entries/EntryList';
 import { EntrySheet, type SheetMode } from '@/features/entries/EntrySheet';
 import { toDayMap } from '@/features/ledger/attendance';
 import { describeWarning } from '@/features/ledger/engine';
+import { defaultSettlementRange } from '@/features/ledger/settlement';
+import { SettleSheet } from '@/features/settlements/SettleSheet';
+import { SettlementList } from '@/features/settlements/SettlementList';
 import { computeShopFigures } from '@/features/ledger/figures';
 import { useShopLedger } from '@/features/ledger/LedgerProvider';
 import { useShops } from '@/features/shops/ShopsProvider';
@@ -95,10 +100,11 @@ function MonthProgress({
 }
 
 export function ShopPage({ shop, onBack }: { shop: Shop; onBack: () => void }) {
-  const { uid } = useAuth();
+  const { uid, displayName } = useAuth();
   const { selectShop } = useShops();
   const ledger = useShopLedger(shop.id);
   const [sheet, setSheet] = useState<SheetMode | null>(null);
+  const [settling, setSettling] = useState(false);
   const [posting, setPosting] = useState(false);
 
   const today = todayFn();
@@ -124,6 +130,7 @@ export function ShopPage({ shop, onBack }: { shop: Shop; onBack: () => void }) {
   const owed = figures.balance;
   const salaryDay = clampDayToMonth(periodKeyOf(today), shop.salaryPayDay);
   const daysToSalary = inclusiveDays(today, salaryDay) - 1;
+  const settleable = defaultSettlementRange(shop, today);
 
   function postAll() {
     if (!uid || posting) return;
@@ -223,6 +230,13 @@ export function ShopPage({ shop, onBack }: { shop: Shop; onBack: () => void }) {
         </Button>
       </div>
 
+      {settleable ? (
+        <Button tone="neutral" onClick={() => setSettling(true)} fullWidth>
+          <Lock size={15} />
+          Settle up to {formatPeriod(periodKeyOf(settleable.to))}
+        </Button>
+      ) : null}
+
       {/* Waiting to be confirmed */}
       {figures.proposals.length > 0 ? (
         <Card className="border-accent/30 bg-accent-soft/40 p-4">
@@ -299,6 +313,26 @@ export function ShopPage({ shop, onBack }: { shop: Shop; onBack: () => void }) {
         </Card>
       </section>
 
+      {/* Statements */}
+      <section>
+        <SectionHeading
+          title="Statements"
+          description="A settled period is frozen, so what you hand over stays true."
+          action={
+            <span className="flex items-center gap-1 text-xs text-ink-3">
+              <FileText size={13} />
+              PDF
+            </span>
+          }
+        />
+        <SettlementList
+          shop={shop}
+          settlements={ledger.settlements}
+          transactions={ledger.transactions}
+          personName={displayName}
+        />
+      </section>
+
       {/* History */}
       <section>
         <SectionHeading
@@ -330,6 +364,16 @@ export function ShopPage({ shop, onBack }: { shop: Shop; onBack: () => void }) {
 
       {sheet ? (
         <EntrySheet open mode={sheet} shop={shop} onClose={() => setSheet(null)} />
+      ) : null}
+
+      {settling ? (
+        <SettleSheet
+          open
+          shop={shop}
+          transactions={ledger.transactions}
+          settlements={ledger.settlements}
+          onClose={() => setSettling(false)}
+        />
       ) : null}
     </div>
   );

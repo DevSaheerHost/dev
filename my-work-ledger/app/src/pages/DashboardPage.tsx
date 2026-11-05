@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ChevronRight, Info, Store, TriangleAlert, Wallet } from 'lucide-react';
+import { ChevronRight, Download, Info, Loader2, Store, TriangleAlert, Wallet } from 'lucide-react';
 
 import {
   Amount,
@@ -21,7 +21,12 @@ import {
   Spinner,
 } from '@/components/ui';
 import { today as todayFn } from '@/lib/clock';
-import { formatPaise } from '@/lib/money';
+import { formatDateLong } from '@/lib/dates';
+import { formatPaise, paise } from '@/lib/money';
+import { buildDraftStatement } from '@/features/reports/statement';
+import { runningBalance, entriesForPeriod } from '@/features/ledger/engine';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { TRANSACTION_KINDS, type TransactionKind } from '@/types/models';
 import { describeWarning } from '@/features/ledger/engine';
 import { combineFigures, computeShopFigures, type ShopFigures } from '@/features/ledger/figures';
 import { useAllLedgers } from '@/features/ledger/LedgerProvider';
@@ -62,7 +67,10 @@ function ShopRow({ figures, onOpen }: { figures: ShopFigures; onOpen: () => void
 export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => void }) {
   const { activeShops, loading, error } = useShops();
   const { ledgers, error: ledgerError } = useAllLedgers();
+  const { displayName } = useAuth();
   const [adding, setAdding] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const today = todayFn();
 
@@ -87,6 +95,53 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   );
   const pending = figures.reduce((count, shop) => count + shop.proposals.length, 0);
   const everyLedgerLoaded = activeShops.every((shop) => ledgers.get(shop.id)?.loaded);
+
+  /**
+   * One document covering every shop, as it stands today.
+   *
+   * Marked a draft throughout: these days have not been agreed with anyone, so
+   * the figures are a position rather than a record. Sealed statements are
+   * downloaded from the shop they belong to.
+   */
+  async function downloadCombined() {
+    setBuilding(true);
+    setPdfError(null);
+    try {
+      const { downloadCombinedPdf } = await import('@/features/reports/statementPdf');
+      const statements = figures.map((shopFigures) => {
+        const ledger = ledgers.get(shopFigures.shop.id);
+        const transactions = ledger?.transactions ?? [];
+        const from = shopFigures.shop.openingBalanceAsOf;
+        const entries = entriesForPeriod(transactions, from, today);
+
+        const totals = {} as Record<TransactionKind, ReturnType<typeof paise>>;
+        for (const kind of TRANSACTION_KINDS) totals[kind] = paise(0);
+        for (const entry of entries) totals[entry.kind] = paise(totals[entry.kind] + entry.amount);
+
+        return buildDraftStatement({
+          shop: shopFigures.shop,
+          personName: displayName,
+          from,
+          to: today,
+          openingBalance: shopFigures.shop.openingBalance,
+          closingBalance: shopFigures.postedBalance,
+          totals,
+          rows: runningBalance(shopFigures.shop.openingBalance, entries),
+        });
+      });
+
+      await downloadCombinedPdf({
+        statements,
+        personName: displayName,
+        dateLabel: formatDateLong(today),
+        unconfirmed: combined.unposted,
+      });
+    } catch {
+      setPdfError('Could not build the PDF. Please try again.');
+    } finally {
+      setBuilding(false);
+    }
+  }
 
   const form = adding ? (
     <ShopForm open shop={null} onClose={() => setAdding(false)} onSaved={onOpenShop} />
@@ -190,6 +245,13 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
           </ul>
         </Card>
       </section>
+
+      {pdfError ? <Banner tone="danger">{pdfError}</Banner> : null}
+
+      <Button tone="neutral" onClick={() => void downloadCombined()} disabled={building} fullWidth>
+        {building ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+        {building ? 'Building…' : 'Download a statement for every shop'}
+      </Button>
 
       {warnings.length > 0 ? (
         <Banner tone="debit" title="Worth a look">

@@ -26,12 +26,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 
 import { getAuthClient, isCloudConfigured, requireAuth } from '@/data/client';
-import { ensureProfile, normaliseDisplayName } from '@/data/profile';
+import { ensureProfile, normaliseDisplayName, watchProfile } from '@/data/profile';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn' | 'unconfigured';
 
@@ -112,6 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCloudConfigured() ? 'loading' : 'unconfigured',
   );
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<{ uid: string; name: string } | null>(null);
+  /**
+   * True while `signUp` is in flight.
+   *
+   * The auth-state listener fires the instant the account exists — before
+   * `updateProfile` has returned — so without this it would create the profile
+   * with a name derived from the email address, and that write could land after
+   * the real one. The name ends up printed on statements handed to other
+   * people, so it is worth being deterministic about.
+   */
+  const signingUp = useRef(false);
 
   useEffect(() => {
     const auth = getAuthClient();
@@ -125,7 +137,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (next) {
           // The profile document is what a later migration keys off, so it is
           // created on first sign-in. A failure here must not block the app.
-          void ensureProfile(next.uid, next.displayName ?? next.email ?? 'Me').catch((error) => {
+          //
+          // The fallback is the email's local part rather than the whole
+          // address: this name is printed on statements handed to other people.
+          // During sign-up this listener usually wins the race against
+          // `updateProfile`, so `signUp` overwrites the name afterwards.
+          if (signingUp.current) return;
+          const fallback = next.displayName ?? next.email?.split('@')[0] ?? 'Me';
+          void ensureProfile(next.uid, fallback).catch((error) => {
             if (import.meta.env.DEV) console.error('[work-ledger] profile bootstrap failed', error);
           });
         }
@@ -134,15 +153,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  /**
+   * The display name comes from the profile document, not from the auth user.
+   *
+   * `updateProfile` during sign-up does not refresh the cached auth object, so
+   * reading the name from there showed the email prefix until the next reload —
+   * and that name goes on a statement handed to a shop owner. Watching the
+   * document also means a rename in Settings takes effect everywhere at once.
+   */
+  useEffect(() => {
+    if (!user) return;
+    const uid = user.uid;
+    return watchProfile(
+      uid,
+      (stored) => setProfile({ uid, name: stored?.displayName ?? '' }),
+      () => {},
+    );
+  }, [user]);
+
+  // Derived rather than cleared in the effect: a name left over from a previous
+  // account is discarded during render, so it can never be shown to the next one.
+  const profileName = user && profile?.uid === user.uid && profile.name !== '' ? profile.name : null;
+
   const signIn = useCallback(async (email: string, password: string) => {
     await signInWithEmailAndPassword(requireAuth(), email.trim(), password);
   }, []);
 
   const signUp = useCallback(async (name: string, email: string, password: string) => {
-    const credential = await createUserWithEmailAndPassword(requireAuth(), email.trim(), password);
-    const displayName = normaliseDisplayName(name);
-    await updateProfile(credential.user, { displayName });
-    await ensureProfile(credential.user.uid, displayName);
+    signingUp.current = true;
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        requireAuth(),
+        email.trim(),
+        password,
+      );
+      const displayName = normaliseDisplayName(name);
+      await updateProfile(credential.user, { displayName });
+      await ensureProfile(credential.user.uid, displayName);
+    } finally {
+      signingUp.current = false;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -158,13 +208,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       uid: user?.uid ?? null,
       email: user?.email ?? null,
-      displayName: user?.displayName ?? user?.email?.split('@')[0] ?? 'Me',
+      displayName: profileName ?? user?.displayName ?? user?.email?.split('@')[0] ?? 'Me',
       signIn,
       signUp,
       signOut,
       resetPassword,
     }),
-    [status, user, signIn, signUp, signOut, resetPassword],
+    [status, user, profileName, signIn, signUp, signOut, resetPassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

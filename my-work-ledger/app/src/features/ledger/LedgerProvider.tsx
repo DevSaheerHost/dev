@@ -1,8 +1,8 @@
 /**
  * One place that subscribes to everything the ledger screens need.
  *
- * Three listeners per active shop — entries, income configs and day records —
- * opened once here rather than per screen. The dashboard needs all shops at
+ * Four listeners per active shop — entries, income configs, day records and
+ * statements — opened once here rather than per screen. The dashboard needs all shops at
  * once and the shop page needs one; both read from the same snapshots, so they
  * can never disagree about a balance.
  *
@@ -15,9 +15,10 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { watchIncomeConfigs } from '@/data/incomeConfigs';
 import { watchDaysFrom } from '@/data/days';
+import { watchSettlements } from '@/data/settlements';
 import { watchShopTransactions } from '@/data/transactions';
 import { maxDate, type CalendarDate } from '@/lib/dates';
-import type { DayRecord, IncomeConfig, Shop, Transaction } from '@/types/models';
+import type { DayRecord, IncomeConfig, Settlement, Shop, Transaction } from '@/types/models';
 
 import { useAuth } from '../auth/AuthProvider';
 import { useShops } from '../shops/ShopsProvider';
@@ -26,10 +27,17 @@ export interface ShopLedger {
   readonly transactions: readonly Transaction[];
   readonly configs: readonly IncomeConfig[];
   readonly days: readonly DayRecord[];
+  readonly settlements: readonly Settlement[];
   readonly loaded: boolean;
 }
 
-const EMPTY: ShopLedger = { transactions: [], configs: [], days: [], loaded: false };
+const EMPTY: ShopLedger = {
+  transactions: [],
+  configs: [],
+  days: [],
+  settlements: [],
+  loaded: false,
+};
 
 interface LedgerState {
   readonly ledgers: ReadonlyMap<string, ShopLedger>;
@@ -43,7 +51,8 @@ export function shopStartDate(shop: Shop): CalendarDate {
   return maxDate(shop.joiningDate, shop.openingBalanceAsOf);
 }
 
-type Part = 'transactions' | 'configs' | 'days';
+type Part = 'transactions' | 'configs' | 'days' | 'settlements';
+const PART_COUNT = 4;
 
 export function LedgerProvider({ children }: { children: ReactNode }) {
   const { uid } = useAuth();
@@ -51,14 +60,27 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const [ledgers, setLedgers] = useState<ReadonlyMap<string, ShopLedger>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
-  // `activeShops` keeps a stable identity across renders unless the shops
-  // snapshot itself changes (see the memo in ShopsProvider), so depending on it
-  // directly rebuilds the listeners only when the shop list genuinely changes
-  // — no ref read during render, and no stale closure.
+  /**
+   * Keyed on a plain string rather than on `activeShops` itself.
+   *
+   * Any edit to a shop document — a rename, an archive, moving the seal date —
+   * gives `activeShops` a new identity. Depending on that directly tore down
+   * and rebuilt every listener on each such edit, which flashed the loading
+   * spinner and, because the spinner replaces the page, unmounted whatever
+   * dialog was open and threw away its state. Sealing a period did exactly
+   * that to the settle dialog, mid-flow.
+   *
+   * Only the shop ids and their start dates actually affect the queries, so
+   * that is what the effect depends on.
+   */
+  const descriptor = activeShops.map((shop) => `${shop.id}@${shopStartDate(shop)}`).join('|');
+
   useEffect(() => {
-    if (!uid) return;
-    const shops = activeShops;
-    if (shops.length === 0) return;
+    if (!uid || descriptor === '') return;
+    const shops = descriptor.split('|').map((part) => {
+      const [id = '', start = ''] = part.split('@');
+      return { id, start: start as CalendarDate };
+    });
 
     const loadedParts = new Map<string, Set<Part>>();
 
@@ -70,7 +92,13 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       setLedgers((previous) => {
         const next = new Map(previous);
         const current = next.get(shopId) ?? EMPTY;
-        next.set(shopId, { ...current, ...patch, loaded: parts.size === 3 });
+        next.set(shopId, {
+          ...current,
+          ...patch,
+          // Latches. Once a shop's data has been seen, a later resubscribe must
+          // not drop the screen back to a spinner and unmount what is on it.
+          loaded: current.loaded || parts.size === PART_COUNT,
+        });
         return next;
       });
     };
@@ -94,8 +122,14 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       watchDaysFrom(
         uid,
         shop.id,
-        shopStartDate(shop),
+        shop.start,
         (days) => apply(shop.id, 'days', { days }),
+        onError,
+      ),
+      watchSettlements(
+        uid,
+        shop.id,
+        (settlements) => apply(shop.id, 'settlements', { settlements }),
         onError,
       ),
     ]);
@@ -103,7 +137,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     return () => {
       for (const unsubscribe of unsubscribes) unsubscribe();
     };
-  }, [uid, activeShops]);
+  }, [uid, descriptor]);
 
   const value = useMemo<LedgerState>(() => ({ ledgers, error }), [ledgers, error]);
 
