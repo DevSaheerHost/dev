@@ -394,11 +394,31 @@ Phase 1 was checked by running things, not by assuming:
   engine; the ask-for-payment message carries one `body` parameter and no second recipient;
   archiving from the shop form hides the shop and restoring brings it back. Light and dark, no
   console errors, no horizontal overflow, and the recording bar clear of the navigation.
+- **The APK is built, downloaded and opened** — not assumed. The workflow run that produced
+  [`work-ledger-v0.1.0`](https://github.com/DevSaheerHost/dev/releases/tag/work-ledger-v0.1.0)
+  finished `BUILD SUCCESSFUL in 1m 46s` over 154 Gradle tasks, after the same typecheck, lint
+  and 401 tests that gate every other change. The published 5.1 MB file was then downloaded and
+  inspected here: its sha256 matches the one the build computed, the web build is inside it at
+  `assets/public/`, and `aapt2 dump badging` reports
+  `com.saheerlab.myworkledger versionCode=1 versionName=0.1.0 compileSdkVersion=36` with exactly
+  five permissions — `INTERNET`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`, `POST_NOTIFICATIONS` and
+  `SCHEDULE_EXACT_ALARM`. No location, no contacts, no storage.
+- **A reminder-delivery pass**: with every automatic reminder moved to a time already past,
+  four notifications are constructed while sitting on the **dashboard**, with the Reminders tab
+  never opened — the bug this phase fixed — and are not repeated when moving between screens.
+  The dashboard and the Reminders screen show the identical list. Capacitor is not in the
+  production preload graph, so a browser pays nothing for the Android support.
 - **An offline pass**: with the network cut, an entry form closes in under a second, the entry
   appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
   everything synced. Settling is the one thing that needs a connection, and it says so and
   disables itself rather than hanging.
 
-**Not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
+**Not verified:** that a reminder actually arrives on a physical phone with the app closed. The
+scheduling logic is tested, the alarms are registered through Capacitor's local-notifications
+plugin and the APK carries the permissions to do it — but nobody has yet installed this build on
+an Android device and waited for 8pm. That is the one claim here that rests on the plugin
+behaving as documented rather than on something observed.
+
+**Also not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
 there yet and this environment has no credentials to enable it, so that path has only been
 exercised against the Auth emulator.
