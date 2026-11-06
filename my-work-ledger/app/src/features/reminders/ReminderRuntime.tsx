@@ -77,6 +77,9 @@ const EMPTY: ReminderRuntime = {
   notifiedCount: 0,
 };
 
+/** How often an open app re-reads the clock. Slow: nothing here is urgent. */
+const CLOCK_REFRESH_MS = 15 * 60_000;
+
 const Context = createContext<ReminderRuntime>(EMPTY);
 
 export function useReminderRuntime(): ReminderRuntime {
@@ -88,12 +91,36 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
   const { ledgers } = useAllLedgers();
   const stored = useReminders();
 
-  const [native, setNative] = useState(false);
+  // null until the platform check resolves. Starting at `false` would let the
+  // web notifier fire once on Android before we knew better, which is a
+  // notification the phone's own alarm is also going to show.
+  const [native, setNative] = useState<boolean | null>(null);
   const [androidPermission, setAndroidPermission] = useState<PermissionState>('unsupported');
   const [sync, setSync] = useState<NativeSyncResult | null>(null);
+  // Bumped whenever the app comes back to the foreground, so the alarms are
+  // re-registered even when the plan itself works out identical.
   const [resumes, setResumes] = useState(0);
 
-  const today = todayFn();
+  /**
+   * The clock, read deliberately rather than on every render.
+   *
+   * Everything here — what is due, and what the phone is asked to hold — is a
+   * function of "now", so "now" is a value that changes at known moments: when
+   * the app comes back to the foreground, and on a slow timer while it is
+   * open. An app left open past a reminder's hour would otherwise still be
+   * holding a plan built before it, and re-registering that plan would
+   * schedule an alarm for a moment already gone, which fires immediately.
+   */
+  const [clock, setClock] = useState(() => ({ date: todayFn(), time: nowTime() }));
+  const today = clock.date;
+
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => setClock({ date: todayFn(), time: nowTime() }),
+      CLOCK_REFRESH_MS,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
 
   /* ---- what needs doing right now ---------------------------------------- */
 
@@ -130,7 +157,7 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
 
   /* ---- the web: while the app is open, on any screen ---------------------- */
 
-  const notifier = useNotifier(native ? [] : derived);
+  const notifier = useNotifier(native === false ? derived : []);
 
   /* ---- Android: real alarms ----------------------------------------------- */
 
@@ -149,14 +176,16 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
 
   // Re-plan when the app comes back to the foreground.
   useEffect(() => {
-    if (!native) return;
+    if (native !== true) return;
     let detach: (() => void) | undefined;
     let cancelled = false;
 
     void (async () => {
       const { App } = await import('@capacitor/app');
       const handle = await App.addListener('appStateChange', ({ isActive }) => {
-        if (isActive) setResumes((count) => count + 1);
+        if (!isActive) return;
+        setClock({ date: todayFn(), time: nowTime() });
+        setResumes((count) => count + 1);
       });
       if (cancelled) void handle.remove();
       else detach = () => void handle.remove();
@@ -185,14 +214,14 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
 
   const plan = useMemo(
     () =>
-      native
+      native === true
         ? planNotifications({
             reminders: stored,
             shops: planShops,
-            now: { date: today, time: nowTime() },
+            now: clock,
           })
         : [],
-    [native, stored, planShops, today],
+    [native, stored, planShops, clock],
   );
 
   // The fingerprint, not the array: a new array on every render would have the
@@ -200,7 +229,7 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
   const fingerprint = planFingerprint(plan);
 
   useEffect(() => {
-    if (!native || androidPermission !== 'granted') return;
+    if (native !== true || androidPermission !== 'granted') return;
     let cancelled = false;
     void (async () => {
       const result = await syncNotifications(plan);
@@ -216,17 +245,17 @@ export function ReminderRuntimeProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ReminderRuntime>(
     () => ({
       derived,
-      native,
+      native: native === true,
       plan,
       sync,
-      permission: native ? androidPermission : notifier.permission,
+      permission: native === true ? androidPermission : notifier.permission,
       requestPermission: async () => {
-        if (!native) return notifier.request();
+        if (native !== true) return notifier.request();
         const result = await requestNativePermission();
         setAndroidPermission(result);
         return result;
       },
-      notifiedCount: native ? 0 : notifier.notifiedCount,
+      notifiedCount: native === true ? 0 : notifier.notifiedCount,
     }),
     [derived, native, plan, sync, androidPermission, notifier],
   );

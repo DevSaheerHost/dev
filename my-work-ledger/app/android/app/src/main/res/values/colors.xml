@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The system bar colours, matching the web app's own `--wl-bg` token so the
-  status bar is the same shade as the page under it. The night variant in
+  The system bar colours, matching the web app's own wl-bg custom property so
+  the status bar is the same shade as the page under it. The night variant in
   `values-night/` is what Android picks when the phone is in dark mode, which
   is the same signal the web app reads from `prefers-color-scheme`.
 -->
