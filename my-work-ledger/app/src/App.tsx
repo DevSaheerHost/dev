@@ -19,6 +19,8 @@ import { SignInPage } from '@/features/auth/SignInPage';
 import { ShopsProvider, useShops } from '@/features/shops/ShopsProvider';
 import { ShopsPage } from '@/features/shops/ShopsPage';
 import { LedgerProvider } from '@/features/ledger/LedgerProvider';
+import { ReminderRuntimeProvider } from '@/features/reminders/ReminderRuntime';
+import { useAndroidBackButton } from '@/hooks/useAndroidBackButton';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { RemindersPage } from '@/pages/RemindersPage';
 import { SettingsPage } from '@/pages/SettingsPage';
@@ -103,13 +105,21 @@ function Screens({
 
 function SignedInApp() {
   const [location, navigate, openShop] = useHashLocation();
+  useAndroidBackButton();
 
   return (
     <ShopsProvider>
       <LedgerProvider>
-        <AppShell route={location.route} onNavigate={navigate}>
-          <Screens location={location} navigate={navigate} openShop={openShop} />
-        </AppShell>
+        {/*
+          Reminders are derived and delivered here, above the screens, so a
+          notification fires wherever you are in the app — and, on Android, so
+          the phone's alarms are kept in step with the ledger.
+        */}
+        <ReminderRuntimeProvider>
+          <AppShell route={location.route} onNavigate={navigate}>
+            <Screens location={location} navigate={navigate} openShop={openShop} />
+          </AppShell>
+        </ReminderRuntimeProvider>
       </LedgerProvider>
     </ShopsProvider>
   );

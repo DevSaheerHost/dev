@@ -10,12 +10,13 @@ outstanding. At the end of a period you can seal a statement and hand it over.
 Live at **/my-work-ledger/**. Built to be used daily on a phone, offline, and to survive a
 reinstall.
 
-> **Status: Phase 5 of 7 — reminders.** Open a shop, see what it owes you right now, record an
-> advance or an expense in two taps, settle a period and hand over a PDF. The app now also
+> **Status: Phase 6 of 7 — the Android app.** Open a shop, see what it owes you right now,
+> record an advance or an expense in two taps, settle a period and hand over a PDF. The app
 > tells you what needs doing: the month is over, a statement is ready, salary is a week away,
-> today has not been ticked. **On the web those arrive only while the app is open** — a page
-> cannot wake itself once closed. The Android build (Phase 6) is what makes them real alarms.
-> See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
+> today has not been ticked. On the web those arrive only while the app is open — a page
+> cannot wake itself once closed. **The Android build registers them with the phone instead,
+> so they arrive with the app closed and survive a restart.** See
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full plan.
 
 ---
 
@@ -93,6 +94,63 @@ clipboard. Nothing is ever sent for you, and nothing leaves the device from here
 The number is validated on the way in, by the rules as well as the client, because it ends up
 inside a `tel:`/`sms:` link: `+` and 6–15 digits, nothing else. An arbitrary string there would
 be a URL injection.
+
+### The Android app
+
+The Android build is not a second app. It is the same web build inside a WebView, wrapped by
+Capacitor, with the one capability a web page genuinely does not have: **a reminder that fires
+when the app is closed.**
+
+Everything else — the ledger, the figures, the PDFs, the offline cache — is the same code. There
+is no second implementation to keep in step, and no feature that exists on one platform only.
+
+What the native layer actually adds:
+
+| | Web | Android |
+| --- | --- | --- |
+| Reminders while the app is open | yes | yes |
+| Reminders with the app closed | **no** | yes, registered with the OS |
+| Survive a restart | n/a | yes, re-registered on boot |
+| Hardware back button | n/a | goes back a step; backgrounds at the dashboard |
+
+**What a scheduled reminder is allowed to say.** An alarm's text is fixed when it is set, not
+when it goes off. A notification scheduled for the 1st of next month cannot quote a balance,
+because by then the figure would be a fortnight stale — and a wrong amount in a notification is
+worse than no notification. So everything in `features/reminders/plan.ts` is phrased as a
+question or an instruction that stays true ("did you get your food money today?", "October is
+over at Blue Mart"), and the amounts stay in the app, worked out fresh. The plan covers a
+rolling three weeks and is rebuilt every time the app is opened or resumed, so an alarm for
+something already dealt with is withdrawn before it can fire.
+
+**Exact alarms.** Android 14 and later refuse exact alarms to an app that is not a clock or a
+calendar. The plugin falls back to an inexact alarm, so a reminder set for 8pm can arrive a few
+minutes late while the phone is dozing. It does arrive. The Reminders screen says so rather
+than implying a stopwatch.
+
+**Privacy on the device.** Automatic backup and device transfer are both switched off
+(`allowBackup="false"` plus explicit data-extraction rules). The app's private storage holds the
+Firestore offline cache of the whole ledger and the signed-in session; copying that into a Drive
+backup would put the ledger in one more place for no benefit, since signing in refetches
+everything. Cleartext traffic is off too — nothing here loads over `http://`.
+
+Building it:
+
+```bash
+cd my-work-ledger/app
+npm ci
+npm run android:sync      # web build, then copy it into the Android project
+cd android && ./gradlew assembleDebug
+```
+
+The published APK is a **debug** build signed with the standard Android debug key, which is what
+makes it installable by sideloading. `android/app/build.gradle` will produce a signed release
+build instead when a keystore is supplied through `ANDROID_KEYSTORE_FILE`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`; nothing about a key
+is committed. Code shrinking is deliberately off: Capacitor resolves its plugins by class name
+through reflection, and a shrunk build that drops one fails on the phone rather than in CI.
+
+Icons and splash screens are generated from `app/assets/*.svg` with `npm run android:assets`,
+and the generated PNGs are committed so a build needs no image tooling.
 
 ### Settling up
 
@@ -232,8 +290,12 @@ my-work-ledger/
 ├── firebase.json, .firebaserc, deploy.sh
 ├── docs/ARCHITECTURE.md         money rules, schema, phase plan, risks
 └── app/
+    ├── capacitor.config.ts      the Android wrapper's configuration
+    ├── assets/                  icon and splash sources (SVG)
+    ├── android/                 the committed Capacitor project
     ├── scripts/
     │   ├── publish.mjs          dist -> parent folder
+    │   ├── build-notification-icon.mjs
     │   └── test-rules.mjs       rules tests against the emulator
     └── src/
         ├── lib/                 money, dates, clock, ids — no React, no Firestore
@@ -246,7 +308,8 @@ my-work-ledger/
         │   ├── attendance/      the month calendar
         │   ├── settlements/     settling a period, and past statements
         │   ├── reports/         statement content and the PDF writer
-        │   ├── reminders/       scheduling, the derived four, and delivery
+        │   ├── reminders/       scheduling, the derived four, what the phone
+        │   │                    is asked to hold, and delivery on both platforms
         │   ├── auth/
         │   └── shops/
         ├── components/          UI primitives and the app shell
@@ -270,7 +333,7 @@ nothing in the UI awaits. See `data/writes.ts`.
 
 Phase 1 was checked by running things, not by assuming:
 
-- **374 unit tests**, all pure and needing no emulator, network or Java:
+- **401 unit tests**, all pure and needing no emulator, network or Java:
   - *money and dates (40)* — exact-sum pro-rata splits, the `8.17` float trap, leap years,
     month clamping, and a guard test that fails if `new Date(` appears outside `lib/dates.ts`
     and `lib/clock.ts`.
@@ -302,6 +365,10 @@ Phase 1 was checked by running things, not by assuming:
   - *phone numbers and the message (28)* — what is kept and what is dropped, injection attempts
     through a `tel:`/`sms:` link, and a message that never claims an unsettled part is
     "included" in a balance it exceeds.
+  - *what the phone is asked to hold (23)* — alarm ids stable across a reschedule, nothing
+    scheduled for a moment already past, a 31st pay day clamped into February, the two
+    month-turn reminders merging at a shared time and splitting at different ones, and no
+    amount in any scheduled wording.
 - **38 security rules tests** against the Firestore emulator: cross-account denial, forged
   `uid`, field whitelists, immutable amounts and dates, profile and income-config validation,
   attendance records, a re-posted accrual being refused, the full seal sequence in order,
@@ -327,11 +394,31 @@ Phase 1 was checked by running things, not by assuming:
   engine; the ask-for-payment message carries one `body` parameter and no second recipient;
   archiving from the shop form hides the shop and restoring brings it back. Light and dark, no
   console errors, no horizontal overflow, and the recording bar clear of the navigation.
+- **The APK is built, downloaded and opened** — not assumed. The workflow run that produced
+  [`work-ledger-v0.1.0`](https://github.com/DevSaheerHost/dev/releases/tag/work-ledger-v0.1.0)
+  finished `BUILD SUCCESSFUL in 1m 46s` over 154 Gradle tasks, after the same typecheck, lint
+  and 401 tests that gate every other change. The published 5.1 MB file was then downloaded and
+  inspected here: its sha256 matches the one the build computed, the web build is inside it at
+  `assets/public/`, and `aapt2 dump badging` reports
+  `com.saheerlab.myworkledger versionCode=1 versionName=0.1.0 compileSdkVersion=36` with exactly
+  five permissions — `INTERNET`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`, `POST_NOTIFICATIONS` and
+  `SCHEDULE_EXACT_ALARM`. No location, no contacts, no storage.
+- **A reminder-delivery pass**: with every automatic reminder moved to a time already past,
+  four notifications are constructed while sitting on the **dashboard**, with the Reminders tab
+  never opened — the bug this phase fixed — and are not repeated when moving between screens.
+  The dashboard and the Reminders screen show the identical list. Capacitor is not in the
+  production preload graph, so a browser pays nothing for the Android support.
 - **An offline pass**: with the network cut, an entry form closes in under a second, the entry
   appears, the balance updates and attendance ticks work; on reconnect a *fresh page* shows
   everything synced. Settling is the one thing that needs a connection, and it says so and
   disables itself rather than hanging.
 
-**Not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
+**Not verified:** that a reminder actually arrives on a physical phone with the app closed. The
+scheduling logic is tested, the alarms are registered through Capacitor's local-notifications
+plugin and the APK carries the permissions to do it — but nobody has yet installed this build on
+an Android device and waited for 8pm. That is the one claim here that rests on the plugin
+behaving as documented rather than on something observed.
+
+**Also not verified:** sign-in against the live `my-web-b35e3` project. Email/Password is not enabled
 there yet and this environment has no credentials to enable it, so that path has only been
 exercised against the Auth emulator.

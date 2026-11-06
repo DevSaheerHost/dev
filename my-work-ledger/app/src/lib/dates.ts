@@ -124,6 +124,31 @@ export function todayFrom(now: Date): CalendarDate {
   return makeDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
+/** The wall-clock time `now` shows, as `HH:MM` — the form reminders store. */
+export function timeFrom(now: Date): string {
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * A calendar day plus an `HH:MM` wall time as a real instant.
+ *
+ * The one place the app turns its timezone-free dates back into a `Date`, for
+ * the Android alarm scheduler, which takes a timestamp. Built from local parts,
+ * so "8pm on 4 November" means 8pm where the phone is — including across a
+ * daylight-saving change, which `Date` resolves for the day in question.
+ *
+ * Returns null rather than an Invalid Date for input it cannot use: a bad value
+ * here would schedule an alarm at the epoch, which fires immediately.
+ */
+export function atLocalTime(date: CalendarDate, time: string): Date | null {
+  if (!isCalendarDate(date)) return null;
+  const match = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(time);
+  if (!match) return null;
+  const { year, month, day } = splitDate(date);
+  const at = new Date(year, month - 1, day, Number(match[1]), Number(match[2]), 0, 0);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
 /**
  * The calendar date a millisecond timestamp falls on, in the device's timezone.
  *

@@ -140,8 +140,27 @@ export function useNotifier(due: readonly DerivedReminder[]): Notifier {
   return { permission, request, notifiedCount };
 }
 
-/** What to tell the user about where reminders will and will not reach them. */
-export function describeDelivery(permission: PermissionState): string {
+/**
+ * What to tell the user about where reminders will and will not reach them.
+ *
+ * The two platforms differ in the one way that matters, so they are not given
+ * the same sentence: on Android these are alarms held by the phone, on the web
+ * they are prompts that only exist while a tab is open.
+ */
+export function describeDelivery(permission: PermissionState, native: boolean): string {
+  if (native) {
+    switch (permission) {
+      case 'unsupported':
+        return 'This phone will not let the app post notifications. Reminders still appear in the app whenever you open it.';
+      case 'denied':
+        return 'Notifications are turned off for this app. Turn them back on in Android settings → Apps → My Work Ledger → Notifications.';
+      case 'default':
+        return 'Android has not been asked yet whether this app may notify you.';
+      case 'granted':
+        return 'Reminders are set with Android itself, so they arrive with the app closed and survive a restart. Android may hold one back a few minutes while the phone is asleep.';
+    }
+  }
+
   switch (permission) {
     case 'unsupported':
       return 'This browser cannot show notifications. Reminders still appear in the app whenever you open it.';
@@ -150,6 +169,6 @@ export function describeDelivery(permission: PermissionState): string {
     case 'default':
       return 'Notifications are not switched on yet.';
     case 'granted':
-      return 'Notifications are on — but a web page can only show them while the app is open. Until the Android app is ready, treat these as a prompt for when you look, not an alarm.';
+      return 'Notifications are on — but a web page can only show them while the app is open. For reminders that reach you with the app closed, install the Android build.';
   }
 }
