@@ -1,0 +1,157 @@
+name: Release My Work Ledger APK
+
+# Builds the Android app from the Capacitor project committed under
+# my-work-ledger/app/android and publishes the APK as a GitHub Release asset.
+#
+# Why a release asset rather than a build artifact: artifacts are only served to
+# signed-in GitHub users, arrive as a zip around the APK, and are deleted after
+# 90 days. A release asset is a plain URL that does not expire.
+#
+# Unlike the Food Money workflow, nothing here scaffolds Capacitor on the fly.
+# The native project is in the repository — manifest, permissions, icons, system
+# bar colours and all — because that configuration is the app, not a build step,
+# and a build step cannot be reviewed in a diff.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: false
+        default: work-ledger-v0.1.0
+  push:
+    branches:
+      - claude/freelance-pricing-calculator-rfj154
+    paths:
+      - .github/workflows/release-work-ledger-apk.yml
+      - my-work-ledger/app/src/**
+      - my-work-ledger/app/android/**
+      - my-work-ledger/app/package-lock.json
+      - my-work-ledger/app/capacitor.config.ts
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-work-ledger-apk
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      TAG: ${{ github.event.inputs.tag || 'work-ledger-v0.1.0' }}
+
+    defaults:
+      run:
+        working-directory: my-work-ledger/app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: my-work-ledger/app/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      # A broken build is worse than no build, and these take seconds next to
+      # the Gradle run. An APK is only published if the ledger's own tests pass.
+      - name: Typecheck, lint and test
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Build the web app
+        run: npm run build
+
+      - name: Copy the web build into the Android project
+        run: npx cap sync android
+
+      - name: Build the APK
+        working-directory: my-work-ledger/app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Name the APK after its release
+        id: apk
+        working-directory: my-work-ledger/app/android
+        run: |
+          set -euo pipefail
+          src=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$src"
+          dest="${GITHUB_WORKSPACE}/${TAG}.apk"
+          cp "$src" "$dest"
+          echo "path=$dest" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c%s "$dest")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$dest" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Show what the APK contains
+        working-directory: my-work-ledger/app/android
+        run: |
+          set -euo pipefail
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort | tail -1)
+          "$aapt" dump badging app/build/outputs/apk/debug/app-debug.apk \
+            | grep -E "^package|^application-label|uses-permission|sdkVersion" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the release
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.apk.outputs.path }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          notes=$(cat <<EOF
+          Android build of [My Work Ledger](https://saheerlab.vercel.app/my-work-ledger/), the
+          multi-shop salary and expense ledger.
+
+          - Salary builds up day by day from the date you joined — no monthly entry to make
+          - Food money owed per day, with a tick for the days you were given it
+          - A two-column ledger with the running balance after every entry
+          - Statements as PDFs, and the balance as a message you can send the shop
+          - **Reminders that arrive with the app closed**, which is the reason this build exists
+
+          **Install:** Android blocks apps from outside the Play Store by default. Open the file
+          and allow installs from your browser when prompted.
+
+          This is a debug build, signed with the standard Android debug key. The project is set
+          up to produce a signed release build instead when a keystore is supplied through the
+          repository secrets; see my-work-ledger/README.md.
+
+          \`\`\`
+          sha256  ${SHA256}
+          \`\`\`
+          EOF
+          )
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists; replacing the asset."
+            gh release upload "$TAG" "$APK" --clobber
+            gh release edit "$TAG" --notes "$notes"
+          else
+            gh release create "$TAG" "$APK" \
+              --title "My Work Ledger ${TAG#work-ledger-} (Android)" \
+              --notes "$notes" \
+              --latest=false
+          fi
+
+          echo "### Released" >> "$GITHUB_STEP_SUMMARY"
+          gh release view "$TAG" --json url,assets \
+            --jq '"\(.url)\n\(.assets[] | "\(.name)  \(.size) bytes  \(.url)")"' >> "$GITHUB_STEP_SUMMARY"
