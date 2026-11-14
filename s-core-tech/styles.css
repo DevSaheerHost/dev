@@ -54,7 +54,10 @@ html[data-core="software"]{
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;
+  /* Jumping to #work pinned the header over the heading it landed on.
+     Leave it the bar's height plus a little air. */
+  scroll-padding-top:84px}
 body{
   margin:0;background:var(--bg);color:var(--tx);
   font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
@@ -126,7 +129,18 @@ section{position:relative;z-index:2;padding:clamp(3.5rem,8vw,7rem) 0}
 /* ---------- Nav --------------------------------------------------------- */
 header{position:sticky;top:0;z-index:60;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line-soft);
-  transition:background .5s ease,border-color .5s ease}
+  transition:background .5s ease,border-color .5s ease,transform .32s cubic-bezier(.2,.9,.3,1),
+             box-shadow .3s ease}
+
+/* Headroom: the header gets out of the way going down and comes back the
+   moment you move up. Same class names Headroom.js uses, so swapping the
+   library back in is a change of script and nothing else. */
+.headroom--unpinned{transform:translateY(-100%)}
+.headroom--pinned{transform:none}
+/* At the very top it should look like part of the page, not a bar floating
+   over it; once you have scrolled it earns its edge. */
+.headroom--top{border-bottom-color:transparent;box-shadow:none}
+.headroom--not-top{border-bottom-color:var(--line);box-shadow:0 10px 30px -22px rgba(0,0,0,.9)}
 .nav{display:flex;align-items:center;gap:1rem;height:66px}
 .brand{display:flex;align-items:center;gap:.7rem;min-width:0}
 .brand-mark{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;

@@ -234,6 +234,7 @@ function openDrawer(mode, preselect) {
   }
 
   track('book_open', { core, mode: bookMode, picked: bookPicked.size });
+  dispatchEvent(new Event('score:drawer'));   // bring the header back first
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -269,6 +270,7 @@ $$('[data-book]').forEach(b => b.addEventListener('click', () => {
 function openDrawerNoRebuild() {
   lastFocus = document.activeElement;
   track('book_open', { core, mode: bookMode, picked: bookPicked.size, from: 'estimator' });
+  dispatchEvent(new Event('score:drawer'));   // bring the header back first
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -350,6 +352,71 @@ if (matchMedia('(hover: hover)').matches) {
     b.addEventListener('pointerleave', () => { b.style.transform = ''; });
   });
 }
+
+/* ------------------------------------------------------------- HEADROOM -- */
+/* The header hides when you scroll down and returns the instant you scroll
+   up, so a phone gets its 66px back while reading and the switcher is never
+   more than a flick away.
+
+   This is Headroom.js's behaviour and its exact class names — headroom,
+   --pinned, --unpinned, --top, --not-top — written out rather than pulled
+   from a CDN, for the same reason the icons are inline: nothing on this page
+   should stop working because someone else's server is slow. To use the real
+   library instead, load it and replace this block with
+   `new Headroom(el, { offset: 96, tolerance: { up: 6, down: 6 } }).init()`;
+   the stylesheet needs no change at all.                                   */
+(() => {
+  const el = document.querySelector('header');
+  if (!el) return;
+
+  const OFFSET = 96;       // never hide while still near the top
+  const TOL_UP = 6;        // ignore the jitter of a trackpad or a thumb
+  const TOL_DOWN = 6;
+
+  let last = window.scrollY;
+  let ticking = false;
+
+  el.classList.add('headroom', 'headroom--top', 'headroom--pinned');
+
+  function update() {
+    ticking = false;
+    const y = Math.max(0, window.scrollY);
+    const delta = y - last;
+
+    // At the top, or bounced past the end on iOS: always visible, no edge.
+    const atTop = y <= OFFSET;
+    el.classList.toggle('headroom--top', atTop);
+    el.classList.toggle('headroom--not-top', !atTop);
+
+    if (Math.abs(delta) < (delta > 0 ? TOL_DOWN : TOL_UP)) return;
+
+    if (delta > 0 && !atTop) {
+      el.classList.add('headroom--unpinned');
+      el.classList.remove('headroom--pinned');
+    } else if (delta < 0) {
+      el.classList.add('headroom--pinned');
+      el.classList.remove('headroom--unpinned');
+    }
+    last = y;
+  }
+
+  addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  // A hidden header while the drawer is open would strand the close button,
+  // and the body cannot scroll then anyway, so pin it and leave it pinned.
+  const pin = () => {
+    el.classList.add('headroom--pinned');
+    el.classList.remove('headroom--unpinned');
+    last = window.scrollY;
+  };
+  addEventListener('score:drawer', pin);
+
+  update();
+})();
 
 /* Reveal on scroll. */
 const io = new IntersectionObserver(es => {
