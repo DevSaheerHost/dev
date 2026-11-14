@@ -4,6 +4,8 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 nav{display:flex;gap:6px;padding:10px;background:var(--p);overflow-x:auto;position:sticky;top:0;z-index:5}
+nav button{display:inline-flex;align-items:center;gap:7px}
+nav button svg{width:19px;height:19px;flex:0 0 auto}
 nav b{color:var(--ac);padding:8px 6px;white-space:nowrap}
 button,select,input,textarea{font:inherit;color:var(--t);background:var(--p2);border:1px solid #3a3150;border-radius:10px;padding:8px 10px;min-width:0}
 button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var(--ac)}button.dng{border-color:#a33}
@@ -13,6 +15,20 @@ button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var
 .demo b{color:var(--t)}
 .lnk{background:none;border:0;padding:0;min-height:0;color:var(--ac);
  text-decoration:underline;font:inherit;cursor:pointer}
+/* Icon buttons. A square target, never smaller than a fingertip, with the
+   meaning in aria-label and title rather than in a word that wraps the
+   toolbar onto a fourth row. */
+.ib{width:44px;height:44px;padding:0;display:inline-grid;place-items:center;flex:0 0 auto}
+.ib svg{width:21px;height:21px;display:block}
+.ib.on{background:var(--ac);border-color:var(--ac)}
+.ib.dng{border-color:#a33;color:#ff9a9a}
+.ib.ok:not(:disabled){background:var(--g);border-color:var(--g);color:#06220a}
+button:disabled{opacity:.42;cursor:not-allowed}
+.tools{align-items:center}
+.gr{flex:1 1 auto;min-width:0}
+.sp{flex:1 1 auto;min-width:4px}
+.ctx{align-items:center;gap:6px}
+.ctx .m{margin-right:auto}
 .g3{display:grid;grid-template-columns:300px 1fr 280px;gap:0;height:calc(100vh - 56px)}
 .col{overflow:auto}.vw{position:relative;overflow:hidden;background:#000;touch-action:none;border-radius:14px;margin:8px;height:calc(100vh - 170px);min-height:300px}.ge{grid-template-columns:1fr 320px}
 .st{position:absolute;left:0;top:0;transform-origin:0 0}
@@ -50,9 +66,11 @@ button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var
 table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c2540;text-align:left}.tw{overflow-x:auto}
 .warn{background:#5a3b05;border-radius:10px;padding:8px;margin:6px 0}
 dialog{background:var(--p);color:var(--t);border:1px solid var(--ac);border-radius:14px;width:min(440px,94vw)}dialog label{display:block;margin:6px 0}dialog input{width:100%}
-@media(max-width:900px){nav{position:fixed;top:auto;bottom:0;left:0;right:0;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid #3a3150}nav b{display:none}nav button{flex:1;padding:12px 4px}main{display:block;padding-bottom:84px}.g3{display:flex;flex-direction:column;height:auto}.ge{display:block}#fs{display:contents}#q{order:0;margin:8px;width:calc(100% - 16px)!important}#fm{order:1}#fd{order:2}#fl{order:3;margin:8px}.vw{height:52vh}button,select,input{min-height:42px}}
+@media(max-width:900px){nav{position:fixed;top:auto;bottom:0;left:0;right:0;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid #3a3150}nav b{display:none}nav button{flex:1;padding:7px 2px;flex-direction:column;gap:3px}
+ nav button span{font-size:11px;line-height:1.2}
+ nav button svg{width:21px;height:21px}main{display:block;padding-bottom:84px}.g3{display:flex;flex-direction:column;height:auto}.ge{display:block}#fs{display:contents}#q{order:0;margin:8px;width:calc(100% - 16px)!important}#fm{order:1}#fd{order:2}#fl{order:3;margin:8px}.vw{height:52vh}button,select,input{min-height:42px}}
 </style></head><body>
-<nav><b>Smart Accessories Finder</b><button data-a="tab" data-v="find">Find</button><button data-a="tab" data-v="inv">Inventory</button><button data-a="tab" data-v="ed">Store Editor</button></nav>
+<nav><b>Smart Accessories Finder</b><button data-a="tab" data-v="find" aria-label="Find"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/></svg><span>Find</span></button><button data-a="tab" data-v="inv" aria-label="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8.2 12 3.3 3 8.2v7.6l9 4.9 9-4.9z"/><path d="m3 8.2 9 4.9 9-4.9M12 13.1V21"/></svg><span>Inventory</span></button><button data-a="tab" data-v="ed" aria-label="Store Editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/><path d="m14.5 13.5 6.2-6.2a1.9 1.9 0 0 0-2.7-2.7l-6.2 6.2-.6 3.3z"/></svg><span>Store Editor</span></button></nav>
 <main id="app"></main><dialog id="dlg"></dialog>
 <script>
 const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -266,12 +284,43 @@ const hpts=m=>{if(!isR(m))return m.poly;const[a,b,c,d]=bb(m.poly),mx=(a+c)/2,my=
 function rectDrag(d,n){let[x0,y0,x1,y1]=bb(d.p0);const i=d.vi;if(i==0||i==3||i==7)x0=n[0];if(i==1||i==2||i==5)x1=n[0];if(i==0||i==1||i==4)y0=n[1];if(i==2||i==3||i==6)y1=n[1];setRect(d.m,x0,y0,x1,y1)}
 const nudge=m=>`<div class="m">Fine tune</div><div class="row">${[['◀','-1,0'],['▲','0,-1'],['▼','0,1'],['▶','1,0']].map(a=>`<button data-a="mv" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`+(isR(m)?`<div class="row">${[['Bigger','1,1'],['Smaller','-1,-1'],['Wider','1,0'],['Narrower','-1,0'],['Taller','0,1'],['Shorter','0,-1']].map(a=>`<button data-a="rs" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`:'');
 function addMap(poly){pushU();const m={id:uid(),productId:'',versionId:cur().active,row:'',slot:'',poly,status:'published'};db.maps.push(m);S.ms=m.id;S.draft=[];S.tool='edit';save();render()}
-function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];$('#eb').innerHTML=`<div class="row"><select data-c="erack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select><button data-a="newrack">+ Rack</button><select data-c="eph">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="addph" data-v="0">+ Photo</button><button data-a="addmany">＋ Add multiple photos</button><button data-a="addph" data-v="1">📷 Camera</button></div>
-<div class="row">${['pan','rect','poly','edit'].map(t=>`<button class="${S.tool==t?'on':''}" data-a="tool" data-v="${t}">${{pan:'Pan/Zoom',rect:'Rectangle',poly:'Polygon',edit:'Select/Move'}[t]}</button>`).join('')}<button data-a="fin">Finish polygon</button><button data-a="undo">Undo</button><button data-a="redo">Redo</button></div>${S.draft.length?`<div class="row"><span class="m">Polygon: ${S.draft.length} point${S.draft.length==1?'':'s'} placed.</span><button data-a="undopt">Undo point</button><button class="dng" data-a="cancel">Cancel shape</button></div>`:''}${S.ms?`<div class="row"><span class="m">One shape selected.</span><button class="dng" data-a="delmap">Delete shape</button><button data-a="desel">Deselect</button></div>`:''}<div class="m">Draw a rectangle, then drag the dots to resize it. In Select/Move, tap a shape to select it &mdash; then Delete shape, or the Delete key.</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
+
+/* Inline icons, stroked in currentColor so they take the button's state.
+   Every icon button carries an aria-label and a title: an icon on its own
+   is a guess, and the people using this are not going to hover to find out. */
+const ICON={
+ pan:'<path d="M5 9V5.5a1.5 1.5 0 0 1 3 0V9m0-1.5a1.5 1.5 0 0 1 3 0V9m0-1a1.5 1.5 0 0 1 3 0v1m0 .5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.6a5 5 0 0 1-3.9-1.9L5.2 15a1.6 1.6 0 0 1 2.5-2L9 14.5"/>',
+ rect:'<rect x="4" y="5" width="16" height="14" rx="2"/>',
+ poly:'<path d="M12 3.5 21 10l-3.4 10.5H6.4L3 10z"/>',
+ edit:'<path d="m5 3 14 8-6 1.6L10.5 19z"/>',
+ undo:'<path d="M3 9h11a5 5 0 0 1 0 10h-4"/><path d="M7 5 3 9l4 4"/>',
+ redo:'<path d="M21 9H10a5 5 0 0 0 0 10h4"/><path d="m17 5 4 4-4 4"/>',
+ check:'<path d="m4 12.5 5.5 5.5L20 6.5"/>',
+ trash:'<path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7"/>',
+ x:'<path d="m6 6 12 12M18 6 6 18"/>',
+ back:'<path d="M11 6 5 12l6 6"/><path d="M5 12h9a5 5 0 0 1 0 10"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m4 17 5-4 4 3 3-2 5 4"/>',
+ stack:'<rect x="7" y="3" width="14" height="12" rx="2"/><path d="M17 18H5a2 2 0 0 1-2-2V7"/>',
+ cam:'<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.1-2h8.4l1.1 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.5" r="3.4"/>'
+};
+const ic=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
+const ib=(name,label,attrs='',extra='')=>`<button class="ib ${extra}" title="${label}" aria-label="${label}" ${attrs}>${ic(name)}</button>`;
+
+function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];$('#eb').innerHTML=`<div class="row"><select class="gr" data-c="erack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select>${ib('plus','Add a rack','data-a="newrack"')}</div>
+<div class="row"><select class="gr" data-c="eph">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select>${ib('photo','Add a shelf photo','data-a="addph" data-v="0"')}${ib('stack','Add several photos','data-a="addmany"')}${ib('cam','Take a photo now','data-a="addph" data-v="1"')}</div>
+<div class="row tools">${[['pan','Pan and zoom'],['rect','Draw a rectangle'],['poly','Draw a polygon'],['edit','Select and move']].map(([t,l])=>`<button class="ib ${S.tool==t?'on':''}" title="${l}" aria-label="${l}" aria-pressed="${S.tool==t}" data-a="tool" data-v="${t}">${ic(t)}</button>`).join('')}<span class="sp"></span>${ib('undo','Undo','data-a="undo"')}${ib('redo','Redo','data-a="redo"')}</div>
+${S.draft.length?`<div class="row ctx"><span class="m">${S.draft.length} of 3 points${S.draft.length>=3?' — ready':''}</span><button class="ib ok" title="${S.draft.length>=3?'Finish the polygon':'Place at least 3 points'}" aria-label="Finish the polygon" data-a="fin" ${S.draft.length>=3?'':'disabled'}>${ic('check')}</button>${ib('back','Undo the last point','data-a="undopt"')}${ib('x','Cancel this shape','data-a="cancel"','dng')}</div>`:''}
+${S.ms?`<div class="row ctx"><span class="m">One shape selected</span>${ib('trash','Delete this shape','data-a="delmap"','dng')}${ib('x','Deselect','data-a="desel"')}</div>`:''}
+<div class="m">${S.tool=='poly'?'Tap points around the item, then the tick to finish.':S.tool=='rect'?'Drag a box around the item.':S.tool=='edit'?'Tap a shape to select it, then drag it or its dots. Delete it with the bin.':'Drag to move the photo, pinch to zoom.'}</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
 function drawEd(light){const ph=cur();if(!ph||!EV.svg)return;let s='';db.maps.filter(m=>m.versionId==ph.active).forEach(m=>{const on=m.id==S.ms;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.18)':m.productId?'rgba(139,92,246,.2)':'rgba(251,146,60,.25)'}" stroke="${on?'#39ff14':m.productId?'#8b5cf6':'#fb923c'}" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:pointer"/>`;if(on&&S.tool=='edit')hpts(m).forEach((p,i)=>s+=`<path data-h="${i}" d="M${p[0]} ${p[1]}h.00001" stroke="${i>3&&isR(m)?'#39ff14':'#fff'}" stroke-opacity=".9" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`)});
 if(S.rc){const{a,b}=S.rc;s+=`<path d="${pd([[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]])}" fill="none" stroke="#fff" data-s="dash" stroke-dasharray="6" vector-effect="non-scaling-stroke"/>`}
 if(S.draft.length)s+=`<path data-s="line" d="M${S.draft.map(p=>p.join(' ')).join('L')}" fill="none" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`+S.draft.map(p=>`<path data-s="dot" d="M${p[0]} ${p[1]}h.00001" stroke="#fff" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('');
-EV.svg.innerHTML=s;EV.tool=S.tool;if(!light)panel()}
+EV.svg.innerHTML=s;EV.tool=S.tool;
+/* The toolbar is redrawn too, not just the side panel: the point counter and
+   the tick live up there, and placing a point has to move them. Skipped on a
+   light redraw, which is what a drag uses. */
+if(!light){bar();panel()}}
 function panel(){const ph=cur(),m=db.maps.find(x=>x.id==S.ms);if(!$('#es'))return;
 let h='';if(m)h+=`<h3 style="margin:0">Selected mapping</h3><div class="row"><select data-c="mprod"><option value="">– unassigned –</option>${db.products.map(p=>`<option value="${p.id}" ${p.id==m.productId?'selected':''}>${esc(p.name)} (${esc(p.sku)})</option>`).join('')}</select><button data-a="newprodmap">+ New</button></div><div class="row"><input data-c="mrow" type="number" placeholder="Row" value="${esc(m.row)}"><input data-c="mslot" type="number" placeholder="Slot" value="${esc(m.slot)}"></div>${nudge(m)}<button class="dng" data-a="delmap">Delete mapping</button><hr>`;
 if(ph){h+=`<b>Photo versions</b>`+ph.versions.slice().reverse().map((v,i)=>`<div class="item" style="cursor:default"><div>${new Date(v.at).toLocaleString()}<div class="m">${db.maps.filter(x=>x.versionId==v.id).length} mappings${v.id==ph.active?' · ACTIVE':''}</div></div>${v.id==ph.active?'':`<button data-a="restore" data-v="${v.id}">Restore</button>`}</div>`).join('')+`<div class="row"><button data-a="newver" data-v="0">Replace photo</button><button data-a="newver" data-v="1">📷 Camera</button></div><label class="m"><input type="checkbox" id="cp" checked style="width:auto"> Copy current mappings to the new version (adjust afterwards)</label><p class="m">Old versions and their mappings are kept; restoring one makes it the one searches use.</p>`}
@@ -335,6 +384,7 @@ addEventListener('keydown',e=>{
   const t=e.target,tag=t&&t.tagName;
   if(tag=='INPUT'||tag=='TEXTAREA'||tag=='SELECT'||(t&&t.isContentEditable))return;
   if(e.key=='Escape'){if(S.draft.length){A.cancel()}else if(S.ms){A.desel()}else return;e.preventDefault();return}
+  if(e.key=='Enter'&&S.draft.length>=3){A.fin();e.preventDefault();return}
   if(e.key=='Delete'||e.key=='Backspace'){
     if(S.draft.length){A.undopt();e.preventDefault();return}
     if(S.ms){A.delmap();e.preventDefault()}
