@@ -138,7 +138,7 @@ function rectDrag(d,n){let[x0,y0,x1,y1]=bb(d.p0);const i=d.vi;if(i==0||i==3||i==
 const nudge=m=>`<div class="m">Fine tune</div><div class="row">${[['◀','-1,0'],['▲','0,-1'],['▼','0,1'],['▶','1,0']].map(a=>`<button data-a="mv" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`+(isR(m)?`<div class="row">${[['Bigger','1,1'],['Smaller','-1,-1'],['Wider','1,0'],['Narrower','-1,0'],['Taller','0,1'],['Shorter','0,-1']].map(a=>`<button data-a="rs" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`:'');
 function addMap(poly){pushU();const m={id:uid(),productId:'',versionId:cur().active,row:'',slot:'',poly,status:'published'};db.maps.push(m);S.ms=m.id;S.draft=[];S.tool='edit';save();render()}
 function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];$('#eb').innerHTML=`<div class="row"><select data-c="erack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select><button data-a="newrack">+ Rack</button><select data-c="eph">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="addph" data-v="0">+ Photo</button><button data-a="addmany">＋ Add multiple photos</button><button data-a="addph" data-v="1">📷 Camera</button></div>
-<div class="row">${['pan','rect','poly','edit'].map(t=>`<button class="${S.tool==t?'on':''}" data-a="tool" data-v="${t}">${{pan:'Pan/Zoom',rect:'Rectangle',poly:'Polygon',edit:'Select/Move'}[t]}</button>`).join('')}<button data-a="fin">Finish polygon</button><button data-a="undo">Undo</button><button data-a="redo">Redo</button></div><div class="m">Draw a rectangle, then drag the dots to resize it. In Select/Move you can drag the box or pan the photo.</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
+<div class="row">${['pan','rect','poly','edit'].map(t=>`<button class="${S.tool==t?'on':''}" data-a="tool" data-v="${t}">${{pan:'Pan/Zoom',rect:'Rectangle',poly:'Polygon',edit:'Select/Move'}[t]}</button>`).join('')}<button data-a="fin">Finish polygon</button><button data-a="undo">Undo</button><button data-a="redo">Redo</button></div>${S.draft.length?`<div class="row"><span class="m">Polygon: ${S.draft.length} point${S.draft.length==1?'':'s'} placed.</span><button data-a="undopt">Undo point</button><button class="dng" data-a="cancel">Cancel shape</button></div>`:''}${S.ms?`<div class="row"><span class="m">One shape selected.</span><button class="dng" data-a="delmap">Delete shape</button><button data-a="desel">Deselect</button></div>`:''}<div class="m">Draw a rectangle, then drag the dots to resize it. In Select/Move, tap a shape to select it &mdash; then Delete shape, or the Delete key.</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
 function drawEd(light){const ph=cur();if(!ph||!EV.svg)return;let s='';db.maps.filter(m=>m.versionId==ph.active).forEach(m=>{const on=m.id==S.ms;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.18)':m.productId?'rgba(139,92,246,.2)':'rgba(251,146,60,.25)'}" stroke="${on?'#39ff14':m.productId?'#8b5cf6':'#fb923c'}" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:pointer"/>`;if(on&&S.tool=='edit')hpts(m).forEach((p,i)=>s+=`<path data-h="${i}" d="M${p[0]} ${p[1]}h.00001" stroke="${i>3&&isR(m)?'#39ff14':'#fff'}" stroke-opacity=".9" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`)});
 if(S.rc){const{a,b}=S.rc;s+=`<path d="${pd([[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]])}" fill="none" stroke="#fff" data-s="dash" stroke-dasharray="6" vector-effect="non-scaling-stroke"/>`}
 if(S.draft.length)s+=`<path data-s="line" d="M${S.draft.map(p=>p.join(' ')).join('L')}" fill="none" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`+S.draft.map(p=>`<path data-s="dot" d="M${p[0]} ${p[1]}h.00001" stroke="#fff" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('');
@@ -180,8 +180,14 @@ addmany:()=>{
 
 addph:v=>{if(!db.racks.length)return alert('Add a rack first.');let rid=S.er;if(!rid){if(db.racks.length==1)rid=db.racks[0].id;else{const rn=prompt('Rack name for this photo:\n'+db.racks.map(r=>r.name).join(', '));rid=db.racks.find(r=>r.name==rn)?.id;if(!rid)return}}const name=prompt('Photo/angle name','Front view');if(!name)return;pick(v=='1',s=>{const vid=uid(),id=uid();db.photos.push({id,rackId:rid,name,active:vid,versions:[{id:vid,src:s,at:Date.now()}]});S.edPh=id;save();render()})},
 tool:v=>{S.tool=v;S.draft=[];render()},fin:()=>{if(S.draft.length>=3)addMap(S.draft);else alert('Click at least 3 points on the photo first.')},
-undo:()=>{if(S.undo.length){S.redo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.undo.pop());save();drawEd()}},redo:()=>{if(S.redo.length){S.undo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.redo.pop());save();drawEd()}},
-delmap:()=>{if(confirm('Delete this mapping? The product itself is kept.')){pushU();db.maps=db.maps.filter(m=>m.id!=S.ms);S.ms=null;save();render()}},
+undo:()=>{if(S.draft.length){S.draft.pop();render();return}if(S.undo.length){S.redo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.undo.pop());save();drawEd()}},redo:()=>{if(S.redo.length){S.undo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.redo.pop());save();drawEd()}},
+delmap:()=>{if(confirm('Delete this shape? The product itself is kept.')){pushU();db.maps=db.maps.filter(m=>m.id!=S.ms);S.ms=null;save();render()}},
+desel:()=>{S.ms=null;render()},
+/* Drop the last point of a polygon still being drawn. Undo works on saved
+   shapes, so before this there was no way back from a mis-tap except
+   starting the shape again. */
+undopt:()=>{if(S.draft.length){S.draft.pop();render()}},
+cancel:()=>{S.draft=[];render()},
 newprodmap:()=>{S.after=1;pform()},mv:v=>{const[a,b]=v.split(',').map(Number);changeMap(m=>m.poly=m.poly.map(p=>[cl(p[0]+a*.004),cl(p[1]+b*.004)]))},rs:v=>{const[a,b]=v.split(',').map(Number);changeMap(m=>{const[x0,y0,x1,y1]=bb(m.poly);setRect(m,x0-a*.003,y0-b*.003,x1+a*.003,y1+b*.003)})},
 restore:v=>{const ph=cur();ph.active=v;S.ms=null;save();render();loadImg()},
 newver:v=>{const ph=cur(),cp=$('#cp').checked;pick(v=='1',s=>{const vid=uid(),old=ph.active;ph.versions.push({id:vid,src:s,at:Date.now()});if(cp)db.maps.filter(m=>m.versionId==old).forEach(m=>db.maps.push({...JSON.parse(JSON.stringify(m)),id:uid(),versionId:vid}));ph.active=vid;S.ms=null;save();render();loadImg()})}};
@@ -191,5 +197,18 @@ if(c=='erack'){S.er=v;S.edPh=db.photos.find(p=>!v||p.rackId==v)?.id;render()}els
 else if(c=='mprod')changeMap(m=>m.productId=v);else if(c=='mrow')changeMap(m=>m.row=v);else if(c=='mslot')changeMap(m=>m.slot=v)};
 const _sp=savep;savep=function(id){_sp(id);if(S.after&&S.newId){const nid=S.newId;S.after=0;S.newId=null;if($('#es'))changeMap(m=>m.productId=nid)}};
 function render(){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==S.tab));({find:viewFind,inv:viewInv,ed:viewEd})[S.tab]()}
+/* Keyboard, for the editor on a desktop. Delete removes the selected shape,
+   Escape backs out of a polygon still being drawn and otherwise deselects.
+   Ignored while typing, so Backspace in a text box still edits the text. */
+addEventListener('keydown',e=>{
+  if(S.tab!='ed')return;
+  const t=e.target,tag=t&&t.tagName;
+  if(tag=='INPUT'||tag=='TEXTAREA'||tag=='SELECT'||(t&&t.isContentEditable))return;
+  if(e.key=='Escape'){if(S.draft.length){A.cancel()}else if(S.ms){A.desel()}else return;e.preventDefault();return}
+  if(e.key=='Delete'||e.key=='Backspace'){
+    if(S.draft.length){A.undopt();e.preventDefault();return}
+    if(S.ms){A.delmap();e.preventDefault()}
+  }
+});
 load().then(render);
 </script></body></html>
