@@ -8,6 +8,11 @@ nav b{color:var(--ac);padding:8px 6px;white-space:nowrap}
 button,select,input,textarea{font:inherit;color:var(--t);background:var(--p2);border:1px solid #3a3150;border-radius:10px;padding:8px 10px;min-width:0}
 button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var(--ac)}button.dng{border-color:#a33}
 .pn{background:var(--p);border-radius:14px;padding:12px;margin:8px}
+.demo{background:#231c3a;border:1px solid #3a3150;border-left:3px solid var(--ac);
+ border-radius:10px;padding:10px 12px;margin:0 0 8px;font-size:13px;line-height:1.5;color:var(--m)}
+.demo b{color:var(--t)}
+.lnk{background:none;border:0;padding:0;min-height:0;color:var(--ac);
+ text-decoration:underline;font:inherit;cursor:pointer}
 .g3{display:grid;grid-template-columns:300px 1fr 280px;gap:0;height:calc(100vh - 56px)}
 .col{overflow:auto}.vw{position:relative;overflow:hidden;background:#000;touch-action:none;border-radius:14px;margin:8px;height:calc(100vh - 170px);min-height:300px}.ge{grid-template-columns:1fr 320px}
 .st{position:absolute;left:0;top:0;transform-origin:0 0}
@@ -116,9 +121,12 @@ function pickMany(cb){
 
 /* ---------- FIND ---------- */
 let FV;
-function viewFind(){$('#app').innerHTML=`<div class="g3"><div id="fs" class="col pn" style="margin:8px"><input id="q" placeholder="Search name, model, SKU, barcode" style="width:100%" value="${esc(S.q)}"><div id="fl"></div></div><div id="fm"><div class="row" style="margin:8px 8px 0"><select id="rk"><option value="">Browse a rack photo…</option>${db.photos.map(p=>`<option value="${p.id}">${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="foc">Focus on Item</button><button data-a="fit">Reset view</button></div><div id="fv"></div></div><div class="col pn" id="fd"></div></div>`;
+function viewFind(){$('#app').innerHTML=`<div class="g3"><div id="fs" class="col pn" style="margin:8px">${db.products.some(p=>p.demo)?`<div class="demo">This is <b>sample data</b> so you can try it out. Tap a product below &mdash; the photo moves to where it sits on the shelf. Add your own in <b>Inventory</b> and <b>Store Editor</b>, then <button class="lnk" data-a="cleardemo">remove the sample</button>.</div>`:''}<input id="q" placeholder="Search name, model, SKU, barcode" style="width:100%" value="${esc(S.q)}"><div id="fl"></div></div><div id="fm"><div class="row" style="margin:8px 8px 0"><select id="rk"><option value="">Browse a rack photo…</option>${db.photos.map(p=>`<option value="${p.id}">${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="foc">Focus on Item</button><button data-a="fit">Reset view</button></div><div id="fv"></div></div><div class="col pn" id="fd"></div></div>`;
 FV=Viewer($('#fv'));FV.svg.onclick=e=>{const m=db.maps.find(m=>m.id==e.target.dataset.id);if(m&&m.productId){S.sel=m.productId;showProd()}};
-$('#q').oninput=e=>{S.q=e.target.value;list()};$('#rk').onchange=e=>{const ph=db.photos.find(p=>p.id==e.target.value);if(ph)showPhoto(ph)};list();showProd(true)}
+$('#q').oninput=e=>{S.q=e.target.value;list()};$('#rk').onchange=e=>{const ph=db.photos.find(p=>p.id==e.target.value);if(ph)showPhoto(ph)};list();showProd(true);
+/* With nothing picked the stage was a black rectangle, which says nothing
+   about what this screen is for. Showing a rack straight away does. */
+if(!S.sel&&db.photos.length){const ph=db.photos.find(p=>p.id==S.ph?.id)||db.photos[0];$('#rk').value=ph.id;showPhoto(ph)}}
 function list(){const r=search(S.q);$('#fl').innerHTML=r.map(p=>{const l=locs(p.id)[0];return`<div class="item ${p.id==S.sel?'on':''}" data-a="pick" data-v="${p.id}"><div><b>${esc(p.name)}</b><div class="m">${esc(p.sku)} · ₹${esc(p.sell)}</div><div class="m">${l?lbl(l):'No mapped location'}</div></div><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></div>`}).join('')||'<p class="m">No products found. Add some in Inventory.</p>'}
 function shapesF(ph,hi){const ms=db.maps.filter(m=>m.versionId==ph.active);let s='';if(hi)s+=`<path class="dim" d="M0 0H1V1H0Z${pd(hi.poly)}" fill="#000" fill-opacity=".62" fill-rule="evenodd"/>`;
 ms.forEach(m=>{const on=hi&&m.id==hi.id;if(hi&&!on)return;s+=`<path data-id="${m.id}" class="${on?'on hit':''}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.12)':'rgba(139,92,246,.15)'}" stroke="${on?'#39ff14':'#8b5cf6'}" stroke-width="${on?4:2}" vector-effect="non-scaling-stroke" ${on?'style="filter:drop-shadow(0 0 6px #39ff14)"':''}/>`});FV.svg.innerHTML=s}
@@ -131,7 +139,7 @@ d.innerHTML=`<h3 style="margin:0">${esc(p.name)}</h3><div class="m">SKU ${esc(p.
 if(L[S.li]){const l=L[S.li];showPhoto(l.ph,l.m,()=>{FV.focus(l.m.poly);FV.cap.textContent=lbl(l);FV.cap.style.display='block'})}}
 /* ---------- INVENTORY ---------- */
 const F=[['name','Name'],['sku','SKU'],['barcode','Barcode'],['category','Category'],['models','Compatible models'],['buy','Purchase price',1],['sell','Selling price',1],['qty','Quantity',1],['supplier','Supplier'],['description','Description']];
-function viewInv(){const low=db.products.filter(p=>p.qty<=LOW).length;$('#app').innerHTML=`<div class="pn"><div class="row"><button class="pri" data-a="newp">+ Add product</button><button data-a="imp">Import CSV</button><button data-a="exp">Export CSV</button><button data-a="seed">Load demo data</button><span class="m">${db.products.length} products · ${low} low stock (≤${LOW})</span></div><div class="tw"><table><tr><th>Name</th><th>SKU</th><th>Category</th><th>₹ Sell</th><th>Qty</th><th>Location</th><th></th></tr>${db.products.map(p=>{const l=locs(p.id)[0];return`<tr><td>${esc(p.name)}${p.demo?' <span class="m">(demo)</span>':''}</td><td>${esc(p.sku)}</td><td>${esc(p.category)}</td><td>${esc(p.sell)}</td><td><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></td><td class="m">${l?lbl(l):'–'}</td><td style="white-space:nowrap"><button data-a="adj" data-v="${p.id}" data-d="-1">−</button> <button data-a="adj" data-v="${p.id}" data-d="1">+</button> <button data-a="editp" data-v="${p.id}">Edit</button> <button class="dng" data-a="delp" data-v="${p.id}">Delete</button></td></tr>`}).join('')}</table></div></div>`}
+function viewInv(){const low=db.products.filter(p=>p.qty<=LOW).length;$('#app').innerHTML=`<div class="pn"><div class="row"><button class="pri" data-a="newp">+ Add product</button><button data-a="imp">Import CSV</button><button data-a="exp">Export CSV</button><button data-a="seed">Load demo data</button><button data-a="cleardemo">Remove demo data</button><span class="m">${db.products.length} products · ${low} low stock (≤${LOW})</span></div><div class="tw"><table><tr><th>Name</th><th>SKU</th><th>Category</th><th>₹ Sell</th><th>Qty</th><th>Location</th><th></th></tr>${db.products.map(p=>{const l=locs(p.id)[0];return`<tr><td>${esc(p.name)}${p.demo?' <span class="m">(demo)</span>':''}</td><td>${esc(p.sku)}</td><td>${esc(p.category)}</td><td>${esc(p.sell)}</td><td><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></td><td class="m">${l?lbl(l):'–'}</td><td style="white-space:nowrap"><button data-a="adj" data-v="${p.id}" data-d="-1">−</button> <button data-a="adj" data-v="${p.id}" data-d="1">+</button> <button data-a="editp" data-v="${p.id}">Edit</button> <button class="dng" data-a="delp" data-v="${p.id}">Delete</button></td></tr>`}).join('')}</table></div></div>`}
 function pform(id){const p=prod(id)||{};const d=$('#dlg');d.innerHTML=`<h3>${id?'Edit':'Add'} product</h3>${F.map(f=>`<label>${f[1]}<input name="${f[0]}" ${f[2]?'type="number" min="0" step="any"':''} value="${esc(p[f[0]]??'')}"></label>`).join('')}<div id="er" class="warn" style="display:none"></div><div class="row"><button class="pri" data-a="savep" data-v="${id||''}">Save</button><button data-a="close">Cancel</button></div>`;d.showModal()}
 function savep(id){const o={};$('#dlg').querySelectorAll('input').forEach(i=>o[i.name]=i.value.trim());const er=m=>{const e=$('#er');e.textContent=m;e.style.display='block'};
 if(!o.name||!o.sku)return er('Name and SKU are required.');if(db.products.some(p=>p.sku.toLowerCase()==o.sku.toLowerCase()&&p.id!=id))return er('Duplicate SKU.');
@@ -139,7 +147,108 @@ if(!o.name||!o.sku)return er('Name and SKU are required.');if(db.products.some(p
 function exportCsv(){const k=F.map(f=>f[0]),q=v=>`"${String(v??'').replace(/"/g,'""')}"`;const t=[k.join(',')].concat(db.products.map(p=>k.map(c=>q(p[c])).join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='products.csv';a.click()}
 function csv(t){const r=[];let row=[],c='',q=0;for(let i=0;i<t.length;i++){const h=t[i];if(q){if(h=='"'){if(t[i+1]=='"'){c+='"';i++}else q=0}else c+=h}else if(h=='"')q=1;else if(h==','){row.push(c);c=''}else if(h=='\n'){row.push(c);r.push(row);row=[];c=''}else if(h!='\r')c+=h}if(c||row.length){row.push(c);r.push(row)}return r}
 function importCsv(){const i=document.createElement('input');i.type='file';i.accept='.csv';i.onchange=async()=>{const r=csv(await i.files[0].text()),h=r.shift().map(x=>x.trim().toLowerCase());let a=0,s=0;r.forEach(c=>{const o={};h.forEach((k,j)=>o[k]=(c[j]||'').trim());if(!o.name||!o.sku||db.products.some(p=>p.sku.toLowerCase()==o.sku.toLowerCase())){s++;return}['buy','sell','qty'].forEach(k=>o[k]=Number(o[k])||0);F.forEach(f=>o[f[0]]=o[f[0]]??'');db.products.push({id:uid(),created:new Date().toISOString(),updated:new Date().toISOString(),...Object.fromEntries(F.map(f=>[f[0],o[f[0]]]))});a++});save();alert(`Imported ${a}, skipped ${s} (missing or duplicate SKU).`);render()};i.click()}
-function seed(){if(db.products.length&&!confirm('Add demo products alongside existing ones? They are marked “demo”.'))return;[['iPhone 13 Pro Max Magnetic Case','CASE-001','Cases','iPhone 13 Pro Max',499,12],['Galaxy S23 Silicone Case','CASE-002','Cases','Galaxy S23',299,4],['USB-C Fast Cable 1m','CBL-001','Cables','Universal',199,30]].forEach((a,i)=>{if(!db.products.some(p=>p.sku==a[1]))db.products.push({id:uid(),demo:1,name:a[0],sku:a[1],barcode:'890000'+i,category:a[2],models:a[3],buy:a[4]*.6,sell:a[4],qty:a[5],supplier:'',description:'',created:new Date().toISOString(),updated:new Date().toISOString()})});save();render()}
+/* ---------- DEMO ----------
+   A visitor arriving at an empty app sees empty lists and no way to tell what
+   it is for. The point of this app is the loop — search a product, see where
+   it sits on a photo of the shelf — and that loop needs a photo with shapes
+   on it before any of it means anything.
+
+   So the demo is the whole loop, not three rows in a table: a rack, a picture
+   of that rack, and products pinned onto it. The picture is drawn here rather
+   than shipped as a file, so the page stays a single self-contained document
+   and the shelves line up exactly with the shapes mapped onto them.        */
+
+const DEMO_ITEMS=[
+ /* name, sku, category, models, price, qty, shelf, slot, colour */
+ ['Clear Case · iPhone 13','CASE-001','Cases','iPhone 13 Pro Max',499,12,0,0,'#9fd0ff'],
+ ['Silicone Case · Galaxy S23','CASE-002','Cases','Galaxy S23',299,4,0,1,'#bba8ff'],
+ ['USB-C Cable 1m','CBL-001','Cables','Universal',199,30,0,2,'#9affc8'],
+ ['Fast Charger 33W','CHG-001','Chargers','Universal',899,7,1,0,'#ffd79a'],
+ ['Earbuds · Bass','AUD-001','Audio','Universal',1299,3,1,1,'#ff9ab5'],
+ ['Power Bank 10000mAh','PWR-001','Power',"Universal",1499,9,1,2,'#9fe8ff'],
+ ['Tempered Glass · Redmi','GLS-001','Screen','Redmi Note 12',149,22,2,0,'#d6d6d6'],
+ ['Car Mount · Magnetic','MNT-001','Mounts','Universal',599,2,2,1,'#ffc49a'],
+];
+
+/* Where each box sits on the drawn photo, in 0..1 coordinates. The drawing
+   below and these numbers are generated from the same grid, so a shape can
+   never drift off the box it labels. */
+const DEMO_COLS=3,DEMO_ROWS=3,DEMO_PAD=.06,DEMO_GAP=.035;
+function demoBox(shelf,slot){
+ const w=(1-DEMO_PAD*2-DEMO_GAP*(DEMO_COLS-1))/DEMO_COLS,
+       h=(1-DEMO_PAD*2-DEMO_GAP*(DEMO_ROWS-1))/DEMO_ROWS,
+       x=DEMO_PAD+slot*(w+DEMO_GAP),y=DEMO_PAD+shelf*(h+DEMO_GAP);
+ return{x,y,w,h};
+}
+function demoPoly(shelf,slot){const b=demoBox(shelf,slot);
+ return[[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h]].map(p=>[+p[0].toFixed(4),+p[1].toFixed(4)])}
+
+function demoPhoto(){
+ const W=900,H=1200,c=document.createElement('canvas');c.width=W;c.height=H;
+ const g=c.getContext('2d');
+ g.fillStyle='#2b2118';g.fillRect(0,0,W,H);
+ /* the unit itself, so it reads as a shelf rather than a grid of swatches */
+ g.fillStyle='#7c2b2b';g.fillRect(W*.02,H*.02,W*.96,H*.96);
+ g.fillStyle='#1d1612';g.fillRect(W*.045,H*.04,W*.91,H*.92);
+ for(let shelf=0;shelf<DEMO_ROWS;shelf++){
+  const b=demoBox(shelf,0);
+  g.fillStyle='#8c3434';
+  g.fillRect(W*.03,(b.y+b.h+DEMO_GAP*.25)*H,W*.94,H*.012);
+ }
+ DEMO_ITEMS.forEach(it=>{
+  const b=demoBox(it[6],it[7]),x=b.x*W,y=b.y*H,w=b.w*W,h=b.h*H;
+  g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+6,y+8,w,h);
+  g.fillStyle=it[8];g.fillRect(x,y,w,h);
+  g.fillStyle='rgba(255,255,255,.75)';g.fillRect(x+w*.08,y+h*.1,w*.84,h*.42);
+  g.fillStyle='#1d1612';
+  g.font='600 '+Math.round(w*.1)+'px system-ui,sans-serif';
+  g.textBaseline='top';
+  it[0].split('·')[0].trim().split(' ').slice(0,2).forEach((word,i)=>
+   g.fillText(word,x+w*.12,y+h*.6+i*w*.12,w*.78));
+ });
+ g.fillStyle='rgba(255,255,255,.5)';
+ g.font='500 22px system-ui,sans-serif';
+ g.fillText('SAMPLE RACK — demo data',W*.05,H*.955);
+ return c.toDataURL('image/jpeg',.82);
+}
+
+function seed(auto){
+ if(!auto&&db.products.length&&!confirm('Add the demo rack and products alongside what is already here? Everything it adds is marked “demo”.'))return;
+ const now=new Date().toISOString(),rid=uid(),vid=uid(),pid=uid();
+ db.racks.push({id:rid,demo:1,name:'Sample Rack'});
+ db.photos.push({id:pid,demo:1,rackId:rid,name:'Front shelf',active:vid,
+  versions:[{id:vid,src:demoPhoto(),at:Date.now()}]});
+ DEMO_ITEMS.forEach((a,i)=>{
+  const prid=uid();
+  db.products.push({id:prid,demo:1,name:a[0],sku:a[1],barcode:'89000'+(10+i),category:a[2],
+   models:a[3],buy:Math.round(a[4]*.6),sell:a[4],qty:a[5],supplier:'Demo Supplies',
+   description:'Sample item, so you can see how finding one works.',created:now,updated:now});
+  db.maps.push({id:uid(),demo:1,versionId:vid,productId:prid,row:a[6]+1,slot:a[7]+1,
+   poly:demoPoly(a[6],a[7])});
+ });
+ save();render()
+}
+
+/* Removes everything the demo added and nothing else, so a real product or a
+   real photo added alongside it survives. */
+function clearDemo(){
+ if(!confirm('Remove the sample rack and its products? Anything you added yourself stays.'))return;
+ const gone=new Set(db.products.filter(p=>p.demo).map(p=>p.id));
+ db.products=db.products.filter(p=>!p.demo);
+ db.maps=db.maps.filter(m=>!m.demo&&!gone.has(m.productId));
+ db.photos=db.photos.filter(p=>!p.demo);
+ db.racks=db.racks.filter(r=>!r.demo);
+ S.sel=null;S.ms=null;S.ph=null;S.li=0;
+ try{localStorage.setItem('saf.nodemo','1')}catch(e){}
+ save();render()
+}
+
+/* First visit only: an empty store, and the demo not previously cleared. */
+function maybeSeed(){
+ if(db.products.length||db.racks.length||db.photos.length||db.maps.length)return;
+ try{if(localStorage.getItem('saf.nodemo'))return}catch(e){}
+ seed(1)
+}
 /* ---------- EDITOR ---------- */
 let EV;const cur=()=>db.photos.find(p=>p.id==S.edPh)||db.photos.find(p=>p.id==S.ph?.id);
 const pushU=()=>{S.undo.push(JSON.stringify(db.maps));S.redo=[]};
@@ -203,6 +312,7 @@ tool:v=>{S.tool=v;S.draft=[];render()},fin:()=>{if(S.draft.length>=3)addMap(S.dr
 undo:()=>{if(S.draft.length){S.draft.pop();render();return}if(S.undo.length){S.redo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.undo.pop());save();drawEd()}},redo:()=>{if(S.redo.length){S.undo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.redo.pop());save();drawEd()}},
 delmap:()=>{if(confirm('Delete this shape? The product itself is kept.')){pushU();db.maps=db.maps.filter(m=>m.id!=S.ms);S.ms=null;save();render()}},
 desel:()=>{S.ms=null;render()},
+cleardemo:()=>clearDemo(),
 /* Drop the last point of a polygon still being drawn. Undo works on saved
    shapes, so before this there was no way back from a mis-tap except
    starting the shape again. */
@@ -230,5 +340,5 @@ addEventListener('keydown',e=>{
     if(S.ms){A.delmap();e.preventDefault()}
   }
 });
-load().then(render);
+load().then(()=>{maybeSeed();render()});
 </script></body></html>
