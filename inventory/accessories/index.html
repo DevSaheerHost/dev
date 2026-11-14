@@ -31,6 +31,79 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .ctx .m{margin-right:auto}
 .g3{display:grid;grid-template-columns:300px 1fr 280px;gap:0;height:calc(100vh - 56px)}
 .col{overflow:auto}.vw{position:relative;overflow:hidden;background:#000;touch-action:none;border-radius:14px;margin:8px;height:calc(100vh - 170px);min-height:300px}.ge{grid-template-columns:1fr 320px}
+/* ------------------------------------------------------------------
+   Workspace chrome.
+
+   The phone layout is a stack and stays one; these rules only take over
+   from 901px, where there is room for the shape a desktop tool actually
+   has: a rail of tools down one side, an options bar across the top that
+   changes with the tool, the canvas taking everything that is left, and a
+   status strip along the foot.
+   ------------------------------------------------------------------ */
+.ws{display:flex;flex-direction:column;min-width:0;min-height:0}
+.ob{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;background:var(--p)}
+.grp{display:flex;align-items:center;gap:6px;min-width:0}
+.ob .hint{color:var(--m);font-size:12px}
+.stage{display:flex;flex-direction:column;min-height:0;min-width:0;flex:1 1 auto}
+.rail{display:flex;gap:6px;padding:8px;background:var(--p);flex-wrap:wrap}
+.rsep{flex:1 1 auto}
+.sb{display:none}
+
+@media(min-width:901px){
+ /* Flatter, tighter, hairline-separated: the look of a tool you keep open
+    all day rather than a page you visit. */
+ body{font-size:13px}
+ button,select,input,textarea{border-radius:6px;padding:6px 9px}
+ .pn{border-radius:0;margin:0;padding:12px;background:var(--p)}
+ .g3{height:calc(100vh - 49px);gap:1px;background:#0a0812}
+ .ge{grid-template-columns:1fr 300px}
+ .vw{border-radius:0;margin:0;height:auto;flex:1 1 auto;min-height:0;background:#07060c}
+
+ .ws{background:var(--bg)}
+ .ob{padding:6px 8px;border-bottom:1px solid #2a2340;min-height:44px}
+ .grp{padding-right:8px;border-right:1px solid #2a2340}
+ .grp:last-of-type{border-right:0}
+ .ob .hint{margin-left:auto;padding-left:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .ob .gr{max-width:230px}
+
+ /* The rail: Photoshop's toolbox, in the place people look for it. */
+ .stage{flex-direction:row}
+ .rail{flex-direction:column;flex-wrap:nowrap;width:52px;flex:0 0 52px;
+  padding:6px;gap:4px;border-right:1px solid #2a2340;background:var(--p)}
+ .rail .ib{width:40px;height:40px;border-radius:6px}
+ .rail .ib svg{width:19px;height:19px}
+ .rsep{flex:0 0 auto;height:1px;background:#2a2340;margin:4px 2px}
+
+ .sb{display:flex;align-items:center;gap:8px;padding:0 8px;height:30px;
+  border-top:1px solid #2a2340;background:var(--p);color:var(--m);font-size:12px}
+ .sb .dot{opacity:.5}
+ .sb .zm{font-variant-numeric:tabular-nums;color:var(--t)}
+ .sb .ib{width:26px;height:26px;border:0;background:none}
+ .sb .ib svg{width:15px;height:15px}
+ .sb .ib:hover{background:var(--p2)}
+
+ /* Panels get a heading, a rule, and the same padding as each other. */
+ .col{background:var(--p)}
+ .col h3,.col .ph{margin:0 -12px 10px;padding:0 12px 8px;border-bottom:1px solid #2a2340;
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--m);font-weight:600}
+ nav{padding:6px 8px;border-bottom:1px solid #2a2340}
+ nav button{border-radius:6px}
+ .ib{width:34px;height:34px;border-radius:6px}
+ .ib svg{width:18px;height:18px}
+ .demo{border-radius:6px}
+
+ /* Find gets the same bones: a strip of controls across the top, then the
+    canvas taking the rest. Without this the photo had no height at all,
+    because .vw stopped carrying its own and nothing here was a flex column. */
+ #fm{display:flex;flex-direction:column;min-height:0;min-width:0}
+ #fm>.row{flex:0 0 auto;margin:0!important;padding:6px 8px;gap:6px;
+  background:var(--p);border-bottom:1px solid #2a2340;min-height:44px;align-items:center}
+ #fm>.row select{flex:1 1 auto;max-width:360px}
+ #fv{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+ #fs,#fd{padding:12px}
+ #fs{border-right:1px solid #2a2340}
+ #fd{border-left:1px solid #2a2340}
+}
 .st{position:absolute;left:0;top:0;transform-origin:0 0}
 /* The camera move when you pick an item. Opt-in with .gl so a finger
    dragging the photo still tracks it exactly — a transition on every
@@ -89,7 +162,7 @@ function search(q){const t=toks(q);if(!t.length)return db.products.slice(0,60);r
 function Viewer(el){el.classList.add('vw');el.innerHTML='<div class="st"><img alt=""><svg viewBox="0 0 1 1" preserveAspectRatio="none"></svg></div><div class="cap"></div>';
 const st=el.children[0],img=st.children[0],svg=st.children[1],cap=el.children[1];let k=1,x=0,y=0,ar=1,P=new Map(),d0=0;
 let gt=0;
-const ap=()=>{st.style.transform=`translate(${x}px,${y}px) scale(${k})`;st.style.setProperty('--k',k)},
+const ap=()=>{st.style.transform=`translate(${x}px,${y}px) scale(${k})`;st.style.setProperty('--k',k);if(v.onview)v.onview(k)},
 /* Move there over half a second instead of teleporting. The class comes
    off at the end so the next pinch is immediate; a pointer landing
    mid-flight takes it off early and the photo follows the finger. */
@@ -97,7 +170,7 @@ glide=()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){ap();return
  st.classList.add('gl');ap();clearTimeout(gt);gt=setTimeout(()=>st.classList.remove('gl'),520)},
 stop=()=>{clearTimeout(gt);st.classList.remove('gl')},A=()=>[...P.values()],dist=()=>Math.hypot(A()[0][0]-A()[1][0],A()[0][1]-A()[1][1]);
 const zoom=(f,cx,cy)=>{const r=el.getBoundingClientRect(),px=cx-r.left,py=cy-r.top,n=Math.min(14,Math.max(.5,k*f));x=px-(px-x)*n/k;y=py-(py-y)*n/k;k=n;ap()};
-const v={el,svg,cap,tool:'pan',down:null,move:null,up:null,
+const v={el,svg,cap,tool:'pan',down:null,move:null,up:null,onview:null,
 set(s,cb){const go=()=>{ar=img.naturalHeight/img.naturalWidth;v.fit();cb&&cb()};if(img.getAttribute('src')==s&&img.complete)go();else{img.onload=go;img.src=s}},
 fit(soft){const w=el.clientWidth,h=el.clientHeight;let a=w,b=w*ar;if(b>h){b=h;a=h/ar}st.style.width=a+'px';st.style.height=b+'px';k=1;x=(w-a)/2;y=(h-b)/2;soft?glide():ap()},
 focus(p){const X=p.map(a=>a[0]),Y=p.map(a=>a[1]),bw=Math.max(...X)-Math.min(...X),bh=Math.max(...Y)-Math.min(...Y),cx=(Math.max(...X)+Math.min(...X))/2,cy=(Math.max(...Y)+Math.min(...Y))/2,sw=st.offsetWidth,sh=st.offsetHeight;
@@ -279,7 +352,8 @@ function viewEd(){
  /* Read before EV is replaced below. */
  keepV=EV&&EV.photoId?{id:EV.photoId,...EV.view}:null;
  if(!S.edPh||!db.photos.some(p=>p.id==S.edPh))S.edPh=db.photos[0]?.id;
-$('#app').innerHTML=`<div class="g3 ge"><div><div class="pn" id="eb" style="margin-bottom:0"></div><div id="ev"></div></div><div class="col pn" id="es"></div></div>`;EV=Viewer($('#ev'));EV.tool=S.tool;EV.cancel=()=>{S.rc=null;drawEd(true)};
+$('#app').innerHTML=`<div class="g3 ge"><div class="ws"><div class="ob" id="eb"></div><div class="stage"><div class="rail" id="erail"></div><div id="ev"></div></div><div class="sb" id="esb"></div></div><div class="col pn" id="es"></div></div>`;EV=Viewer($('#ev'));
+EV.onview=()=>status();EV.tool=S.tool;EV.cancel=()=>{S.rc=null;drawEd(true)};
 EV.svg.onpointerdown=e=>{const t=e.target,m=db.maps.find(m=>m.id==(t.dataset.id||S.ms));if(S.tool!='edit'||!m||!(t.dataset.id||t.dataset.h))return;e.stopPropagation();S.ms=m.id;pushU();S.dr={rect:isR(m),m,vi:t.dataset.h!=null?+t.dataset.h:-1,o:EV.n(e),p0:JSON.parse(JSON.stringify(m.poly))};drawEd(true)};
 EV.down=e=>{const n=EV.n(e);if(S.tool=='rect')S.rc={a:n,b:n};else if(S.tool=='poly'){S.draft.push(n)}drawEd()};
 EV.move=e=>{if(S.rc){S.rc.b=EV.n(e);drawEd()}};EV.up=()=>{if(S.rc){const{a,b}=S.rc;S.rc=null;if(Math.abs(a[0]-b[0])>.005&&Math.abs(a[1]-b[1])>.005)addMap(rp(a[0],a[1],b[0],b[1]));else drawEd()}};
@@ -319,17 +393,36 @@ const ICON={
  plus:'<path d="M12 5v14M5 12h14"/>',
  photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m4 17 5-4 4 3 3-2 5 4"/>',
  stack:'<rect x="7" y="3" width="14" height="12" rx="2"/><path d="M17 18H5a2 2 0 0 1-2-2V7"/>',
+ fit:'<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/>',
  cam:'<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.1-2h8.4l1.1 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.5" r="3.4"/>'
 };
 const ic=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
 const ib=(name,label,attrs='',extra='')=>`<button class="ib ${extra}" title="${label}" aria-label="${label}" ${attrs}>${ic(name)}</button>`;
 
-function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];$('#eb').innerHTML=`<div class="row"><select class="gr" data-c="erack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select>${ib('plus','Add a rack','data-a="newrack"')}</div>
-<div class="row"><select class="gr" data-c="eph">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select>${ib('photo','Add a shelf photo','data-a="addph" data-v="0"')}${ib('stack','Add several photos','data-a="addmany"')}${ib('cam','Take a photo now','data-a="addph" data-v="1"')}</div>
-<div class="row tools">${[['pan','Pan and zoom'],['rect','Draw a rectangle'],['poly','Draw a polygon'],['edit','Select and move']].map(([t,l])=>`<button class="ib ${S.tool==t?'on':''}" title="${l}" aria-label="${l}" aria-pressed="${S.tool==t}" data-a="tool" data-v="${t}">${ic(t)}</button>`).join('')}<span class="sp"></span>${ib('undo','Undo','data-a="undo"')}${ib('redo','Redo','data-a="redo"')}</div>
-${S.draft.length?`<div class="row ctx"><span class="m">${S.draft.length} of 3 points${S.draft.length>=3?' — ready':''}</span><button class="ib ok" title="${S.draft.length>=3?'Finish the polygon':'Place at least 3 points'}" aria-label="Finish the polygon" data-a="fin" ${S.draft.length>=3?'':'disabled'}>${ic('check')}</button>${ib('back','Undo the last point','data-a="undopt"')}${ib('x','Cancel this shape','data-a="cancel"','dng')}</div>`:''}
-${S.ms?`<div class="row ctx"><span class="m">One shape selected</span>${ib('trash','Delete this shape','data-a="delmap"','dng')}${ib('x','Deselect','data-a="desel"')}</div>`:''}
-<div class="m">${S.tool=='poly'?'Tap points around the item, then the tick to finish.':S.tool=='rect'?'Drag a box around the item.':S.tool=='edit'?'Tap a shape to select it, then drag it or its dots. Delete it with the bin.':'Drag to move the photo, pinch to zoom.'}</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
+function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];
+ /* The tools live in their own strip: a vertical rail beside the canvas on a
+    desktop, a horizontal row above it on a phone. Separating them from the
+    options bar is what lets one be laid out without disturbing the other. */
+ $('#erail').innerHTML=`${[['pan','Pan and zoom'],['rect','Draw a rectangle'],['poly','Draw a polygon'],['edit','Select and move']].map(([t,l])=>`<button class="ib ${S.tool==t?'on':''}" title="${l}" aria-label="${l}" aria-pressed="${S.tool==t}" data-a="tool" data-v="${t}">${ic(t)}</button>`).join('')}<span class="rsep"></span>${ib('undo','Undo','data-a="undo"')}${ib('redo','Redo','data-a="redo"')}`;
+
+ $('#eb').innerHTML=`<div class="grp"><select class="gr" data-c="erack" aria-label="Rack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select>${ib('plus','Add a rack','data-a="newrack"')}</div>
+<div class="grp"><select class="gr" data-c="eph" aria-label="Shelf photo">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select>${ib('photo','Add a shelf photo','data-a="addph" data-v="0"')}${ib('stack','Add several photos','data-a="addmany"')}${ib('cam','Take a photo now','data-a="addph" data-v="1"')}</div>
+${S.draft.length?`<div class="grp ctx"><span class="m">${S.draft.length} of 3 points${S.draft.length>=3?' — ready':''}</span><button class="ib ok" title="${S.draft.length>=3?'Finish the polygon':'Place at least 3 points'}" aria-label="Finish the polygon" data-a="fin" ${S.draft.length>=3?'':'disabled'}>${ic('check')}</button>${ib('back','Undo the last point','data-a="undopt"')}${ib('x','Cancel this shape','data-a="cancel"','dng')}</div>`:''}
+${S.ms?`<div class="grp ctx"><span class="m">1 shape selected</span>${ib('trash','Delete this shape','data-a="delmap"','dng')}${ib('x','Deselect','data-a="desel"')}</div>`:''}
+<div class="hint">${S.tool=='poly'?'Tap points around the item, then the tick to finish.':S.tool=='rect'?'Drag a box around the item.':S.tool=='edit'?'Tap a shape to select it, then drag it or its dots.':'Drag to move the photo, pinch to zoom.'}</div>`;
+ status(ms.length)}
+
+/* The strip along the foot of the workspace: what is open, how much of it is
+   mapped, and how far in you are. A desktop tool is expected to tell you
+   where you stand without being asked. */
+function status(count){const ph=cur(),sb=$('#esb');if(!sb)return;
+ const n=count!=null?count:(ph?db.maps.filter(m=>m.versionId==ph.active).length:0),
+  z=EV&&EV.view?Math.round(EV.view.k*100):100;
+ sb.innerHTML=`<span>${ph?esc(rack(ph.rackId)?.name)+' · '+esc(ph.name):'No photo'}</span>
+<span class="dot">·</span><span>${n} mapped</span>
+<span class="sp"></span>
+<span class="zm">${z}%</span>${ib('fit','Fit to screen','data-a="fit"')}`}
+
 function drawEd(light){const ph=cur();if(!ph||!EV.svg)return;let s='';db.maps.filter(m=>m.versionId==ph.active).forEach(m=>{const on=m.id==S.ms;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.18)':m.productId?'rgba(139,92,246,.2)':'rgba(251,146,60,.25)'}" stroke="${on?'#39ff14':m.productId?'#8b5cf6':'#fb923c'}" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:pointer"/>`;if(on&&S.tool=='edit')hpts(m).forEach((p,i)=>s+=`<path data-h="${i}" d="M${p[0]} ${p[1]}h.00001" stroke="${i>3&&isR(m)?'#39ff14':'#fff'}" stroke-opacity=".9" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`)});
 if(S.rc){const{a,b}=S.rc;s+=`<path d="${pd([[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]])}" fill="none" stroke="#fff" data-s="dash" stroke-dasharray="6" vector-effect="non-scaling-stroke"/>`}
 if(S.draft.length)s+=`<path data-s="line" d="M${S.draft.map(p=>p.join(' ')).join('L')}" fill="none" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`+S.draft.map(p=>`<path data-s="dot" d="M${p[0]} ${p[1]}h.00001" stroke="#fff" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('');
@@ -339,12 +432,12 @@ EV.svg.innerHTML=s;EV.tool=S.tool;
    light redraw, which is what a drag uses. */
 if(!light){bar();panel()}}
 function panel(){const ph=cur(),m=db.maps.find(x=>x.id==S.ms);if(!$('#es'))return;
-let h='';if(m)h+=`<h3 style="margin:0">Selected mapping</h3><div class="row"><select data-c="mprod"><option value="">– unassigned –</option>${db.products.map(p=>`<option value="${p.id}" ${p.id==m.productId?'selected':''}>${esc(p.name)} (${esc(p.sku)})</option>`).join('')}</select><button data-a="newprodmap">+ New</button></div><div class="row"><input data-c="mrow" type="number" placeholder="Row" value="${esc(m.row)}"><input data-c="mslot" type="number" placeholder="Slot" value="${esc(m.slot)}"></div>${nudge(m)}<button class="dng" data-a="delmap">Delete mapping</button><hr>`;
-if(ph){h+=`<b>Photo versions</b>`+ph.versions.slice().reverse().map((v,i)=>`<div class="item" style="cursor:default"><div>${new Date(v.at).toLocaleString()}<div class="m">${db.maps.filter(x=>x.versionId==v.id).length} mappings${v.id==ph.active?' · ACTIVE':''}</div></div>${v.id==ph.active?'':`<button data-a="restore" data-v="${v.id}">Restore</button>`}</div>`).join('')+`<div class="row"><button data-a="newver" data-v="0">Replace photo</button><button data-a="newver" data-v="1">📷 Camera</button></div><label class="m"><input type="checkbox" id="cp" checked style="width:auto"> Copy current mappings to the new version (adjust afterwards)</label><p class="m">Old versions and their mappings are kept; restoring one makes it the one searches use.</p>`}
+let h='';if(m)h+=`<h3 class="ph">Selected shape</h3><div class="row"><select data-c="mprod"><option value="">– unassigned –</option>${db.products.map(p=>`<option value="${p.id}" ${p.id==m.productId?'selected':''}>${esc(p.name)} (${esc(p.sku)})</option>`).join('')}</select><button data-a="newprodmap">+ New</button></div><div class="row"><input data-c="mrow" type="number" placeholder="Row" value="${esc(m.row)}"><input data-c="mslot" type="number" placeholder="Slot" value="${esc(m.slot)}"></div>${nudge(m)}<button class="dng" data-a="delmap">Delete mapping</button><hr>`;
+if(ph){h+=`<div class="ph">Photo versions</div>`+ph.versions.slice().reverse().map((v,i)=>`<div class="item" style="cursor:default"><div>${new Date(v.at).toLocaleString()}<div class="m">${db.maps.filter(x=>x.versionId==v.id).length} mappings${v.id==ph.active?' · ACTIVE':''}</div></div>${v.id==ph.active?'':`<button data-a="restore" data-v="${v.id}">Restore</button>`}</div>`).join('')+`<div class="row"><button data-a="newver" data-v="0">Replace photo</button><button class="ib" data-a="newver" data-v="1" title="Take a photo now" aria-label="Take a photo now">${ic('cam')}</button></div><label class="m"><input type="checkbox" id="cp" checked style="width:auto"> Copy current mappings to the new version (adjust afterwards)</label><p class="m">Old versions and their mappings are kept; restoring one makes it the one searches use.</p>`}
 $('#es').innerHTML=h||'<p class="m">Create a rack and add a shelf photo.</p>'}
 function changeMap(f){const m=db.maps.find(x=>x.id==S.ms);if(!m)return;pushU();f(m);save();drawEd()}
 /* ---------- actions ---------- */
-const A={tab:v=>{S.tab=v;render()},pick:v=>{S.sel=v;S.li=0;showProd();scrollTo({top:0,behavior:'smooth'})},loc:v=>{S.li=+v;showProd()},foc:()=>{const l=S.L?.[S.li];l&&FV.focus(l.m.poly)},fit:()=>FV.fit(1),close:()=>$('#dlg').close(),
+const A={tab:v=>{S.tab=v;render()},pick:v=>{S.sel=v;S.li=0;showProd();scrollTo({top:0,behavior:'smooth'})},loc:v=>{S.li=+v;showProd()},foc:()=>{const l=S.L?.[S.li];l&&FV.focus(l.m.poly)},close:()=>$('#dlg').close(),
 newp:()=>pform(),editp:v=>pform(v),savep:v=>savep(v),exp:exportCsv,imp:importCsv,seed,
 delp:v=>{const n=db.maps.filter(m=>m.productId==v).length;if(confirm(`Delete this product?${n?` Its ${n} photo mapping(s) will become unassigned.`:''}`)){db.maps.forEach(m=>{if(m.productId==v)m.productId=''});db.products=db.products.filter(p=>p.id!=v);save();render()}},
 adj:(v,e)=>{const p=prod(v);p.qty=Math.max(0,p.qty+ +e.dataset.d);p.updated=new Date().toISOString();save();render()},
@@ -379,6 +472,7 @@ undo:()=>{if(S.draft.length){S.draft.pop();render();return}if(S.undo.length){S.r
 delmap:()=>{if(confirm('Delete this shape? The product itself is kept.')){pushU();db.maps=db.maps.filter(m=>m.id!=S.ms);S.ms=null;save();render()}},
 desel:()=>{S.ms=null;refresh()},
 cleardemo:()=>clearDemo(),
+fit:()=>{if(S.tab=='ed'&&EV)EV.fit(1);else FV.fit(1)},
 /* Drop the last point of a polygon still being drawn. Undo works on saved
    shapes, so before this there was no way back from a mis-tap except
    starting the shape again. */
