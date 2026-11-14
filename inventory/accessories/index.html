@@ -1,0 +1,181 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Smart Accessories Finder</title>
+<style>
+:root{--bg:#0e0c14;--p:#1a1626;--p2:#292240;--ac:#8b5cf6;--g:#39ff14;--t:#ece9f5;--m:#9a93b0;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+nav{display:flex;gap:6px;padding:10px;background:var(--p);overflow-x:auto;position:sticky;top:0;z-index:5}
+nav b{color:var(--ac);padding:8px 6px;white-space:nowrap}
+button,select,input,textarea{font:inherit;color:var(--t);background:var(--p2);border:1px solid #3a3150;border-radius:10px;padding:8px 10px;min-width:0}
+button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var(--ac)}button.dng{border-color:#a33}
+.pn{background:var(--p);border-radius:14px;padding:12px;margin:8px}
+.g3{display:grid;grid-template-columns:300px 1fr 280px;gap:0;height:calc(100vh - 56px)}
+.col{overflow:auto}.vw{position:relative;overflow:hidden;background:#000;touch-action:none;border-radius:14px;margin:8px;height:calc(100vh - 170px);min-height:300px}.ge{grid-template-columns:1fr 320px}
+.st{position:absolute;left:0;top:0;transform-origin:0 0}.st img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}.st svg{position:absolute;inset:0;width:100%;height:100%}
+.cap{position:absolute;left:10px;top:10px;background:rgba(14,12,20,.85);border:1px solid var(--g);color:var(--g);padding:4px 10px;border-radius:10px;font-weight:600;display:none}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}.row>input,.row>select{flex:1}
+.item{padding:8px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}.item:hover,.item.on{background:var(--p2)}
+.m{color:var(--m);font-size:12px}.bd{padding:1px 8px;border-radius:9px;background:#14532d;font-size:12px}.bd.lo{background:#7f1d1d}
+table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c2540;text-align:left}.tw{overflow-x:auto}
+.warn{background:#5a3b05;border-radius:10px;padding:8px;margin:6px 0}
+dialog{background:var(--p);color:var(--t);border:1px solid var(--ac);border-radius:14px;width:min(440px,94vw)}dialog label{display:block;margin:6px 0}dialog input{width:100%}
+@media(max-width:900px){nav{position:fixed;top:auto;bottom:0;left:0;right:0;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid #3a3150}nav b{display:none}nav button{flex:1;padding:12px 4px}main{display:block;padding-bottom:84px}.g3{display:flex;flex-direction:column;height:auto}.ge{display:block}#fs{display:contents}#q{order:0;margin:8px;width:calc(100% - 16px)!important}#fm{order:1}#fd{order:2}#fl{order:3;margin:8px}.vw{height:52vh}button,select,input{min-height:42px}}
+</style></head><body>
+<nav><b>Smart Accessories Finder</b><button data-a="tab" data-v="find">Find</button><button data-a="tab" data-v="inv">Inventory</button><button data-a="tab" data-v="ed">Store Editor</button></nav>
+<main id="app"></main><dialog id="dlg"></dialog>
+<script>
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let db={products:[],racks:[],photos:[],maps:[]};const S={tab:'find',sel:null,q:'',ph:null,ms:null,tool:'pan',draft:[],undo:[],redo:[]},LOW=5;
+const idb=new Promise(r=>{try{const q=indexedDB.open('saf',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
+async function load(){const d=await idb;if(!d)return;return new Promise(r=>{const g=d.transaction('k').objectStore('k').get('db');g.onsuccess=()=>{if(g.result)db=g.result;r()};g.onerror=()=>r()})}
+async function save(){const d=await idb;if(d)d.transaction('k','readwrite').objectStore('k').put(db,'db')}
+const pd=p=>'M'+p.map(a=>a[0].toFixed(4)+' '+a[1].toFixed(4)).join('L')+'Z',prod=id=>db.products.find(p=>p.id==id),rack=id=>db.racks.find(r=>r.id==id);
+const phOf=vid=>db.photos.find(p=>p.versions.some(v=>v.id==vid)),src=ph=>ph.versions.find(v=>v.id==ph.active).src;
+function locs(pid){return db.maps.filter(m=>m.productId==pid).map(m=>{const ph=phOf(m.versionId);return ph&&ph.active==m.versionId?{m,ph}:null}).filter(Boolean)}
+const lbl=l=>`${rack(l.ph.rackId)?.name||'?'} · Row ${l.m.row||'?'} · Slot ${l.m.slot||'?'}`;
+function toks(s){return s.toLowerCase().split(/\s+/).filter(Boolean)}
+function fz(h,t){if(h.includes(t))return 1;if(t.length<4)return 0;let i=0;for(const c of h)if(c==t[i])i++;return i==t.length}
+function search(q){const t=toks(q);if(!t.length)return db.products.slice(0,60);return db.products.filter(p=>{const h=[p.name,p.sku,p.barcode,p.category,p.models,p.supplier].join(' ').toLowerCase();return t.every(x=>fz(h,x))}).slice(0,60)}
+/* viewer: pan/zoom stage; overlay svg uses normalized 0..1 coords */
+function Viewer(el){el.classList.add('vw');el.innerHTML='<div class="st"><img alt=""><svg viewBox="0 0 1 1" preserveAspectRatio="none"></svg></div><div class="cap"></div>';
+const st=el.children[0],img=st.children[0],svg=st.children[1],cap=el.children[1];let k=1,x=0,y=0,ar=1,P=new Map(),d0=0;
+const ap=()=>st.style.transform=`translate(${x}px,${y}px) scale(${k})`,A=()=>[...P.values()],dist=()=>Math.hypot(A()[0][0]-A()[1][0],A()[0][1]-A()[1][1]);
+const zoom=(f,cx,cy)=>{const r=el.getBoundingClientRect(),px=cx-r.left,py=cy-r.top,n=Math.min(14,Math.max(.5,k*f));x=px-(px-x)*n/k;y=py-(py-y)*n/k;k=n;ap()};
+const v={el,svg,cap,tool:'pan',down:null,move:null,up:null,
+set(s,cb){const go=()=>{ar=img.naturalHeight/img.naturalWidth;v.fit();cb&&cb()};if(img.getAttribute('src')==s&&img.complete)go();else{img.onload=go;img.src=s}},
+fit(){const w=el.clientWidth,h=el.clientHeight;let a=w,b=w*ar;if(b>h){b=h;a=h/ar}st.style.width=a+'px';st.style.height=b+'px';k=1;x=(w-a)/2;y=(h-b)/2;ap()},
+focus(p){const X=p.map(a=>a[0]),Y=p.map(a=>a[1]),bw=Math.max(...X)-Math.min(...X),bh=Math.max(...Y)-Math.min(...Y),cx=(Math.max(...X)+Math.min(...X))/2,cy=(Math.max(...Y)+Math.min(...Y))/2,sw=st.offsetWidth,sh=st.offsetHeight;
+k=Math.min(10,Math.max(1,Math.min(.5*el.clientWidth/(bw*sw||1),.5*el.clientHeight/(bh*sh||1))));x=el.clientWidth/2-k*cx*sw;y=el.clientHeight/2-k*cy*sh;ap()},
+n(e){const r=svg.getBoundingClientRect();return[Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]}};
+el.onwheel=e=>{e.preventDefault();zoom(e.deltaY<0?1.15:.87,e.clientX,e.clientY)};
+el.onpointerdown=e=>{P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size==2){d0=dist();v.cancel&&v.cancel()}else if(v.tool!='pan'&&v.down)v.down(e)};
+el.onpointermove=e=>{const p=P.get(e.pointerId);if(!p)return;if(P.size==2){p[0]=e.clientX;p[1]=e.clientY;const d=dist();zoom(d/d0,(A()[0][0]+A()[1][0])/2,(A()[0][1]+A()[1][1])/2);d0=d;return}
+if(v.tool=='pan'||v.tool=='edit'){x+=e.clientX-p[0];y+=e.clientY-p[1];ap()}else v.move&&v.move(e);p[0]=e.clientX;p[1]=e.clientY};
+el.onpointerup=el.onpointercancel=e=>{P.delete(e.pointerId);v.up&&v.up(e)};return v}
+const pick=(cam,cb)=>{const i=document.createElement('input');i.type='file';i.accept='image/*';if(cam)i.capture='environment';i.onchange=()=>{const f=i.files[0];if(!f)return;const im=new Image();im.onload=()=>{const s=Math.min(1,1800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.85))};im.src=URL.createObjectURL(f)};i.click()};
+
+function pickMany(cb){
+ const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
+ i.onchange=async()=>{
+  const files=[...i.files].filter(f=>f.type.startsWith('image/'));if(!files.length)return;
+  const items=[];
+  for(const f of files){
+   try{
+    const data=await new Promise((resolve,reject)=>{
+     const im=new Image(),url=URL.createObjectURL(f);
+     im.onload=()=>{
+      const scale=Math.min(1,1800/Math.max(im.width,im.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(im.width*scale);c.height=Math.round(im.height*scale);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',.85));
+     };
+     im.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not read '+f.name))};
+     im.src=url;
+    });
+    items.push({name:f.name.replace(/\.[^.]+$/,'')||'Shelf photo',src:data});
+   }catch(err){console.warn(err)}
+  }
+  if(items.length)cb(items);
+ };
+ i.click();
+}
+
+/* ---------- FIND ---------- */
+let FV;
+function viewFind(){$('#app').innerHTML=`<div class="g3"><div id="fs" class="col pn" style="margin:8px"><input id="q" placeholder="Search name, model, SKU, barcode" style="width:100%" value="${esc(S.q)}"><div id="fl"></div></div><div id="fm"><div class="row" style="margin:8px 8px 0"><select id="rk"><option value="">Browse a rack photo…</option>${db.photos.map(p=>`<option value="${p.id}">${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="foc">Focus on Item</button><button data-a="fit">Reset view</button></div><div id="fv"></div></div><div class="col pn" id="fd"></div></div>`;
+FV=Viewer($('#fv'));FV.svg.onclick=e=>{const m=db.maps.find(m=>m.id==e.target.dataset.id);if(m&&m.productId){S.sel=m.productId;showProd()}};
+$('#q').oninput=e=>{S.q=e.target.value;list()};$('#rk').onchange=e=>{const ph=db.photos.find(p=>p.id==e.target.value);if(ph)showPhoto(ph)};list();showProd(true)}
+function list(){const r=search(S.q);$('#fl').innerHTML=r.map(p=>{const l=locs(p.id)[0];return`<div class="item ${p.id==S.sel?'on':''}" data-a="pick" data-v="${p.id}"><div><b>${esc(p.name)}</b><div class="m">${esc(p.sku)} · ₹${esc(p.sell)}</div><div class="m">${l?lbl(l):'No mapped location'}</div></div><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></div>`}).join('')||'<p class="m">No products found. Add some in Inventory.</p>'}
+function shapesF(ph,hi){const ms=db.maps.filter(m=>m.versionId==ph.active);let s='';if(hi)s+=`<path d="M0 0H1V1H0Z${pd(hi.poly)}" fill="#000" fill-opacity=".62" fill-rule="evenodd"/>`;
+ms.forEach(m=>{const on=hi&&m.id==hi.id;if(hi&&!on)return;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.12)':'rgba(139,92,246,.15)'}" stroke="${on?'#39ff14':'#8b5cf6'}" stroke-width="${on?4:2}" vector-effect="non-scaling-stroke" ${on?'style="filter:drop-shadow(0 0 6px #39ff14)"':''}/>`});FV.svg.innerHTML=s}
+function showPhoto(ph,hi,cb){S.ph=ph;FV.set(src(ph),()=>{shapesF(ph,hi);cb&&cb()});FV.cap.style.display='none'}
+function showProd(init){const p=prod(S.sel),d=$('#fd');if(!p){d.innerHTML='<p class="m">Select a product to see its location on the shop photo.</p>';return}
+const L=locs(p.id);S.L=L;S.li=S.li||0;if(S.li>=L.length)S.li=0;list();
+d.innerHTML=`<h3 style="margin:0">${esc(p.name)}</h3><div class="m">SKU ${esc(p.sku)}${p.barcode?' · '+esc(p.barcode):''}</div><p>₹${esc(p.sell)} · <span class="bd ${p.qty<=LOW?'lo':''}">${p.qty} in stock${p.qty<=LOW?' (low)':''}</span></p><div class="m">${esc(p.category)} · ${esc(p.models)}</div><p>${esc(p.description)}</p>
+<b>Locations</b>${L.map((l,i)=>`<div class="row"><button class="${i==S.li?'on':''}" data-a="loc" data-v="${i}">${esc(lbl(l))}</button></div>`).join('')||'<div class="warn">Not mapped on any published photo yet.</div>'}
+<div class="row"><button data-a="editp" data-v="${p.id}">Edit product</button><button data-a="toed" data-v="${p.id}">Open in editor</button></div>`;
+if(L[S.li]){const l=L[S.li];showPhoto(l.ph,l.m,()=>{FV.focus(l.m.poly);FV.cap.textContent=lbl(l);FV.cap.style.display='block'})}}
+/* ---------- INVENTORY ---------- */
+const F=[['name','Name'],['sku','SKU'],['barcode','Barcode'],['category','Category'],['models','Compatible models'],['buy','Purchase price',1],['sell','Selling price',1],['qty','Quantity',1],['supplier','Supplier'],['description','Description']];
+function viewInv(){const low=db.products.filter(p=>p.qty<=LOW).length;$('#app').innerHTML=`<div class="pn"><div class="row"><button class="pri" data-a="newp">+ Add product</button><button data-a="imp">Import CSV</button><button data-a="exp">Export CSV</button><button data-a="seed">Load demo data</button><span class="m">${db.products.length} products · ${low} low stock (≤${LOW})</span></div><div class="tw"><table><tr><th>Name</th><th>SKU</th><th>Category</th><th>₹ Sell</th><th>Qty</th><th>Location</th><th></th></tr>${db.products.map(p=>{const l=locs(p.id)[0];return`<tr><td>${esc(p.name)}${p.demo?' <span class="m">(demo)</span>':''}</td><td>${esc(p.sku)}</td><td>${esc(p.category)}</td><td>${esc(p.sell)}</td><td><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></td><td class="m">${l?lbl(l):'–'}</td><td style="white-space:nowrap"><button data-a="adj" data-v="${p.id}" data-d="-1">−</button> <button data-a="adj" data-v="${p.id}" data-d="1">+</button> <button data-a="editp" data-v="${p.id}">Edit</button> <button class="dng" data-a="delp" data-v="${p.id}">Delete</button></td></tr>`}).join('')}</table></div></div>`}
+function pform(id){const p=prod(id)||{};const d=$('#dlg');d.innerHTML=`<h3>${id?'Edit':'Add'} product</h3>${F.map(f=>`<label>${f[1]}<input name="${f[0]}" ${f[2]?'type="number" min="0" step="any"':''} value="${esc(p[f[0]]??'')}"></label>`).join('')}<div id="er" class="warn" style="display:none"></div><div class="row"><button class="pri" data-a="savep" data-v="${id||''}">Save</button><button data-a="close">Cancel</button></div>`;d.showModal()}
+function savep(id){const o={};$('#dlg').querySelectorAll('input').forEach(i=>o[i.name]=i.value.trim());const er=m=>{const e=$('#er');e.textContent=m;e.style.display='block'};
+if(!o.name||!o.sku)return er('Name and SKU are required.');if(db.products.some(p=>p.sku.toLowerCase()==o.sku.toLowerCase()&&p.id!=id))return er('Duplicate SKU.');
+['buy','sell','qty'].forEach(k=>o[k]=Number(o[k])||0);const now=new Date().toISOString();if(id)Object.assign(prod(id),o,{updated:now});else{const n={id:uid(),created:now,updated:now,...o};db.products.push(n);S.newId=n.id}save();$('#dlg').close();render()}
+function exportCsv(){const k=F.map(f=>f[0]),q=v=>`"${String(v??'').replace(/"/g,'""')}"`;const t=[k.join(',')].concat(db.products.map(p=>k.map(c=>q(p[c])).join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='products.csv';a.click()}
+function csv(t){const r=[];let row=[],c='',q=0;for(let i=0;i<t.length;i++){const h=t[i];if(q){if(h=='"'){if(t[i+1]=='"'){c+='"';i++}else q=0}else c+=h}else if(h=='"')q=1;else if(h==','){row.push(c);c=''}else if(h=='\n'){row.push(c);r.push(row);row=[];c=''}else if(h!='\r')c+=h}if(c||row.length){row.push(c);r.push(row)}return r}
+function importCsv(){const i=document.createElement('input');i.type='file';i.accept='.csv';i.onchange=async()=>{const r=csv(await i.files[0].text()),h=r.shift().map(x=>x.trim().toLowerCase());let a=0,s=0;r.forEach(c=>{const o={};h.forEach((k,j)=>o[k]=(c[j]||'').trim());if(!o.name||!o.sku||db.products.some(p=>p.sku.toLowerCase()==o.sku.toLowerCase())){s++;return}['buy','sell','qty'].forEach(k=>o[k]=Number(o[k])||0);F.forEach(f=>o[f[0]]=o[f[0]]??'');db.products.push({id:uid(),created:new Date().toISOString(),updated:new Date().toISOString(),...Object.fromEntries(F.map(f=>[f[0],o[f[0]]]))});a++});save();alert(`Imported ${a}, skipped ${s} (missing or duplicate SKU).`);render()};i.click()}
+function seed(){if(db.products.length&&!confirm('Add demo products alongside existing ones? They are marked “demo”.'))return;[['iPhone 13 Pro Max Magnetic Case','CASE-001','Cases','iPhone 13 Pro Max',499,12],['Galaxy S23 Silicone Case','CASE-002','Cases','Galaxy S23',299,4],['USB-C Fast Cable 1m','CBL-001','Cables','Universal',199,30]].forEach((a,i)=>{if(!db.products.some(p=>p.sku==a[1]))db.products.push({id:uid(),demo:1,name:a[0],sku:a[1],barcode:'890000'+i,category:a[2],models:a[3],buy:a[4]*.6,sell:a[4],qty:a[5],supplier:'',description:'',created:new Date().toISOString(),updated:new Date().toISOString()})});save();render()}
+/* ---------- EDITOR ---------- */
+let EV;const cur=()=>db.photos.find(p=>p.id==S.edPh)||db.photos.find(p=>p.id==S.ph?.id);
+const pushU=()=>{S.undo.push(JSON.stringify(db.maps));S.redo=[]};
+function viewEd(){if(!S.edPh||!db.photos.some(p=>p.id==S.edPh))S.edPh=db.photos[0]?.id;
+$('#app').innerHTML=`<div class="g3 ge"><div><div class="pn" id="eb" style="margin-bottom:0"></div><div id="ev"></div></div><div class="col pn" id="es"></div></div>`;EV=Viewer($('#ev'));EV.tool=S.tool;EV.cancel=()=>{S.rc=null;drawEd(true)};
+EV.svg.onpointerdown=e=>{const t=e.target,m=db.maps.find(m=>m.id==(t.dataset.id||S.ms));if(S.tool!='edit'||!m||!(t.dataset.id||t.dataset.h))return;e.stopPropagation();S.ms=m.id;pushU();S.dr={rect:isR(m),m,vi:t.dataset.h!=null?+t.dataset.h:-1,o:EV.n(e),p0:JSON.parse(JSON.stringify(m.poly))};drawEd(true)};
+EV.down=e=>{const n=EV.n(e);if(S.tool=='rect')S.rc={a:n,b:n};else if(S.tool=='poly'){S.draft.push(n)}drawEd()};
+EV.move=e=>{if(S.rc){S.rc.b=EV.n(e);drawEd()}};EV.up=()=>{if(S.rc){const{a,b}=S.rc;S.rc=null;if(Math.abs(a[0]-b[0])>.005&&Math.abs(a[1]-b[1])>.005)addMap(rp(a[0],a[1],b[0],b[1]));else drawEd()}};
+onpointermove=e=>{const d=S.dr;if(!d)return;const n=EV.n(e);if(d.vi>=0&&d.rect)rectDrag(d,n);else if(d.vi>=0)d.m.poly[d.vi]=n;else d.m.poly=d.p0.map(p=>[Math.min(1,Math.max(0,p[0]+n[0]-d.o[0])),Math.min(1,Math.max(0,p[1]+n[1]-d.o[1]))]);drawEd(true)};
+onpointerup=()=>{if(S.dr){S.dr=null;save();drawEd()}};bar();loadImg()}
+function loadImg(){const ph=cur();if(ph)EV.set(src(ph),drawEd);else EV.el.innerHTML='<p class="m" style="padding:16px">Add a rack and a shelf photo to start mapping.</p>'}
+const cl=v=>Math.min(1,Math.max(0,v)),rp=(a,b,c,d)=>[[Math.min(a,c),Math.min(b,d)],[Math.max(a,c),Math.min(b,d)],[Math.max(a,c),Math.max(b,d)],[Math.min(a,c),Math.max(b,d)]],bb=p=>{const X=p.map(a=>a[0]),Y=p.map(a=>a[1]);return[Math.min(...X),Math.min(...Y),Math.max(...X),Math.max(...Y)]},isR=m=>{const p=m.poly;return p.length==4&&p[0][1]==p[1][1]&&p[1][0]==p[2][0]&&p[2][1]==p[3][1]&&p[3][0]==p[0][0]};
+function setRect(m,a,b,c,d){let x0=cl(Math.min(a,c)),x1=cl(Math.max(a,c)),y0=cl(Math.min(b,d)),y1=cl(Math.max(b,d));if(x1-x0<.01)x1=Math.min(1,x0+.01);if(y1-y0<.01)y1=Math.min(1,y0+.01);m.poly=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}
+const hpts=m=>{if(!isR(m))return m.poly;const[a,b,c,d]=bb(m.poly),mx=(a+c)/2,my=(b+d)/2;return[...m.poly,[mx,b],[c,my],[mx,d],[a,my]]};
+function rectDrag(d,n){let[x0,y0,x1,y1]=bb(d.p0);const i=d.vi;if(i==0||i==3||i==7)x0=n[0];if(i==1||i==2||i==5)x1=n[0];if(i==0||i==1||i==4)y0=n[1];if(i==2||i==3||i==6)y1=n[1];setRect(d.m,x0,y0,x1,y1)}
+const nudge=m=>`<div class="m">Fine tune</div><div class="row">${[['◀','-1,0'],['▲','0,-1'],['▼','0,1'],['▶','1,0']].map(a=>`<button data-a="mv" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`+(isR(m)?`<div class="row">${[['Bigger','1,1'],['Smaller','-1,-1'],['Wider','1,0'],['Narrower','-1,0'],['Taller','0,1'],['Shorter','0,-1']].map(a=>`<button data-a="rs" data-v="${a[1]}">${a[0]}</button>`).join('')}</div>`:'');
+function addMap(poly){pushU();const m={id:uid(),productId:'',versionId:cur().active,row:'',slot:'',poly,status:'published'};db.maps.push(m);S.ms=m.id;S.draft=[];S.tool='edit';save();render()}
+function bar(){const ph=cur(),ms=ph?db.maps.filter(m=>m.versionId==ph.active):[];$('#eb').innerHTML=`<div class="row"><select data-c="erack"><option value="">All racks</option>${db.racks.map(r=>`<option value="${r.id}" ${r.id==S.er?'selected':''}>${esc(r.name)}</option>`).join('')}</select><button data-a="newrack">+ Rack</button><select data-c="eph">${db.photos.filter(p=>!S.er||p.rackId==S.er).map(p=>`<option value="${p.id}" ${p.id==S.edPh?'selected':''}>${esc(rack(p.rackId)?.name)} – ${esc(p.name)}</option>`).join('')}</select><button data-a="addph" data-v="0">+ Photo</button><button data-a="addmany">＋ Add multiple photos</button><button data-a="addph" data-v="1">📷 Camera</button></div>
+<div class="row">${['pan','rect','poly','edit'].map(t=>`<button class="${S.tool==t?'on':''}" data-a="tool" data-v="${t}">${{pan:'Pan/Zoom',rect:'Rectangle',poly:'Polygon',edit:'Select/Move'}[t]}</button>`).join('')}<button data-a="fin">Finish polygon</button><button data-a="undo">Undo</button><button data-a="redo">Redo</button></div><div class="m">Draw a rectangle, then drag the dots to resize it. In Select/Move you can drag the box or pan the photo.</div>${ph&&!ms.length?'<div class="warn">This photo version has no mappings yet, so searches won’t highlight anything on it.</div>':''}`}
+function drawEd(light){const ph=cur();if(!ph||!EV.svg)return;let s='';db.maps.filter(m=>m.versionId==ph.active).forEach(m=>{const on=m.id==S.ms;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.18)':m.productId?'rgba(139,92,246,.2)':'rgba(251,146,60,.25)'}" stroke="${on?'#39ff14':m.productId?'#8b5cf6':'#fb923c'}" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:pointer"/>`;if(on&&S.tool=='edit')hpts(m).forEach((p,i)=>s+=`<path data-h="${i}" d="M${p[0]} ${p[1]}h.00001" stroke="${i>3&&isR(m)?'#39ff14':'#fff'}" stroke-opacity=".9" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`)});
+if(S.rc){const{a,b}=S.rc;s+=`<path d="${pd([[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]])}" fill="none" stroke="#fff" stroke-dasharray="6" vector-effect="non-scaling-stroke"/>`}
+if(S.draft.length)s+=`<path d="M${S.draft.map(p=>p.join(' ')).join('L')}" fill="none" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`+S.draft.map(p=>`<path d="M${p[0]} ${p[1]}h.00001" stroke="#fff" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('');
+EV.svg.innerHTML=s;EV.tool=S.tool;if(!light)panel()}
+function panel(){const ph=cur(),m=db.maps.find(x=>x.id==S.ms);if(!$('#es'))return;
+let h='';if(m)h+=`<h3 style="margin:0">Selected mapping</h3><div class="row"><select data-c="mprod"><option value="">– unassigned –</option>${db.products.map(p=>`<option value="${p.id}" ${p.id==m.productId?'selected':''}>${esc(p.name)} (${esc(p.sku)})</option>`).join('')}</select><button data-a="newprodmap">+ New</button></div><div class="row"><input data-c="mrow" type="number" placeholder="Row" value="${esc(m.row)}"><input data-c="mslot" type="number" placeholder="Slot" value="${esc(m.slot)}"></div>${nudge(m)}<button class="dng" data-a="delmap">Delete mapping</button><hr>`;
+if(ph){h+=`<b>Photo versions</b>`+ph.versions.slice().reverse().map((v,i)=>`<div class="item" style="cursor:default"><div>${new Date(v.at).toLocaleString()}<div class="m">${db.maps.filter(x=>x.versionId==v.id).length} mappings${v.id==ph.active?' · ACTIVE':''}</div></div>${v.id==ph.active?'':`<button data-a="restore" data-v="${v.id}">Restore</button>`}</div>`).join('')+`<div class="row"><button data-a="newver" data-v="0">Replace photo</button><button data-a="newver" data-v="1">📷 Camera</button></div><label class="m"><input type="checkbox" id="cp" checked style="width:auto"> Copy current mappings to the new version (adjust afterwards)</label><p class="m">Old versions and their mappings are kept; restoring one makes it the one searches use.</p>`}
+$('#es').innerHTML=h||'<p class="m">Create a rack and add a shelf photo.</p>'}
+function changeMap(f){const m=db.maps.find(x=>x.id==S.ms);if(!m)return;pushU();f(m);save();drawEd()}
+/* ---------- actions ---------- */
+const A={tab:v=>{S.tab=v;render()},pick:v=>{S.sel=v;S.li=0;showProd();scrollTo({top:0,behavior:'smooth'})},loc:v=>{S.li=+v;showProd()},foc:()=>{const l=S.L?.[S.li];l&&FV.focus(l.m.poly)},fit:()=>FV.fit(),close:()=>$('#dlg').close(),
+newp:()=>pform(),editp:v=>pform(v),savep:v=>savep(v),exp:exportCsv,imp:importCsv,seed,
+delp:v=>{const n=db.maps.filter(m=>m.productId==v).length;if(confirm(`Delete this product?${n?` Its ${n} photo mapping(s) will become unassigned.`:''}`)){db.maps.forEach(m=>{if(m.productId==v)m.productId=''});db.products=db.products.filter(p=>p.id!=v);save();render()}},
+adj:(v,e)=>{const p=prod(v);p.qty=Math.max(0,p.qty+ +e.dataset.d);p.updated=new Date().toISOString();save();render()},
+toed:v=>{const l=locs(v)[S.li||0];if(l){S.edPh=l.ph.id;S.ms=l.m.id}S.tool='edit';S.tab='ed';render()},
+newrack:()=>{const n=prompt('Rack name (e.g. Rack A)');if(n){db.racks.push({id:uid(),name:n.trim()});save();render()}},
+addmany:()=>{
+ if(!db.racks.length)return alert('Add a rack first.');
+ let rid=S.er;
+ if(!rid){
+  if(db.racks.length===1)rid=db.racks[0].id;
+  else{
+   const rn=prompt('Rack name for these photos:\n'+db.racks.map(r=>r.name).join(', '));
+   rid=db.racks.find(r=>r.name==rn)?.id;if(!rid)return;
+  }
+ }
+ pickMany(items=>{
+  const created=[];
+  items.forEach(item=>{
+   const vid=uid(),id=uid();
+   db.photos.push({id,rackId:rid,name:item.name,active:vid,versions:[{id:vid,src:item.src,at:Date.now()}]});
+   created.push(id);
+  });
+  S.er=rid;S.edPh=created[0]||S.edPh;S.ms=null;S.draft=[];
+  save();render();
+  alert(`Added ${created.length} photo(s) to ${rack(rid)?.name||'the rack'}.`);
+ });
+},
+
+addph:v=>{if(!db.racks.length)return alert('Add a rack first.');let rid=S.er;if(!rid){if(db.racks.length==1)rid=db.racks[0].id;else{const rn=prompt('Rack name for this photo:\n'+db.racks.map(r=>r.name).join(', '));rid=db.racks.find(r=>r.name==rn)?.id;if(!rid)return}}const name=prompt('Photo/angle name','Front view');if(!name)return;pick(v=='1',s=>{const vid=uid(),id=uid();db.photos.push({id,rackId:rid,name,active:vid,versions:[{id:vid,src:s,at:Date.now()}]});S.edPh=id;save();render()})},
+tool:v=>{S.tool=v;S.draft=[];render()},fin:()=>{if(S.draft.length>=3)addMap(S.draft);else alert('Click at least 3 points on the photo first.')},
+undo:()=>{if(S.undo.length){S.redo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.undo.pop());save();drawEd()}},redo:()=>{if(S.redo.length){S.undo.push(JSON.stringify(db.maps));db.maps=JSON.parse(S.redo.pop());save();drawEd()}},
+delmap:()=>{if(confirm('Delete this mapping? The product itself is kept.')){pushU();db.maps=db.maps.filter(m=>m.id!=S.ms);S.ms=null;save();render()}},
+newprodmap:()=>{S.after=1;pform()},mv:v=>{const[a,b]=v.split(',').map(Number);changeMap(m=>m.poly=m.poly.map(p=>[cl(p[0]+a*.004),cl(p[1]+b*.004)]))},rs:v=>{const[a,b]=v.split(',').map(Number);changeMap(m=>{const[x0,y0,x1,y1]=bb(m.poly);setRect(m,x0-a*.003,y0-b*.003,x1+a*.003,y1+b*.003)})},
+restore:v=>{const ph=cur();ph.active=v;S.ms=null;save();render();loadImg()},
+newver:v=>{const ph=cur(),cp=$('#cp').checked;pick(v=='1',s=>{const vid=uid(),old=ph.active;ph.versions.push({id:vid,src:s,at:Date.now()});if(cp)db.maps.filter(m=>m.versionId==old).forEach(m=>db.maps.push({...JSON.parse(JSON.stringify(m)),id:uid(),versionId:vid}));ph.active=vid;S.ms=null;save();render();loadImg()})}};
+document.onclick=e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.v,b)};
+document.onchange=e=>{const c=e.target.dataset.c;if(!c)return;const v=e.target.value;
+if(c=='erack'){S.er=v;S.edPh=db.photos.find(p=>!v||p.rackId==v)?.id;render()}else if(c=='eph'){S.edPh=v;S.ms=null;render()}
+else if(c=='mprod')changeMap(m=>m.productId=v);else if(c=='mrow')changeMap(m=>m.row=v);else if(c=='mslot')changeMap(m=>m.slot=v)};
+const _sp=savep;savep=function(id){_sp(id);if(S.after&&S.newId){const nid=S.newId;S.after=0;S.newId=null;if($('#es'))changeMap(m=>m.productId=nid)}};
+function render(){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==S.tab));({find:viewFind,inv:viewInv,ed:viewEd})[S.tab]()}
+load().then(render);
+</script></body></html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parts Inventory</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#14171f;--mut:#6b7280;--bd:#e5e7eb;--pri:#2563eb;--prit:#fff;--ok:#15803d;--okb:#dcfce7;--low:#b45309;--lowb:#fef3c7;--out:#b91c1c;--outb:#fee2e2;--inp:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#181b22;--tx:#eef0f4;--mut:#98a0ae;--bd:#2a2f3a;--pri:#4f8cff;--prit:#06101f;--ok:#4ade80;--okb:#12301d;--low:#fbbf24;--lowb:#3a2c0b;--out:#f87171;--outb:#3b1515;--inp:#0f1115;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#181b22;--tx:#eef0f4;--mut:#98a0ae;--bd:#2a2f3a;--pri:#4f8cff;--prit:#06101f;--ok:#4ade80;--okb:#12301d;--low:#fbbf24;--lowb:#3a2c0b;--out:#f87171;--outb:#3b1515;--inp:#0f1115;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:720px;margin:0 auto;padding:14px 14px 96px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+h1 small{display:block;font-size:12px;font-weight:400;color:var(--mut)}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px}
+.btn.p{background:var(--pri);color:var(--prit);border-color:var(--pri);font-weight:600}
+.btn.d{color:var(--out)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+@media(min-width:520px){.stats{grid-template-columns:repeat(4,1fr)}}
+.st{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.st b{display:block;font-size:19px}
+.st span{font-size:12px;color:var(--mut)}
+.st.w b{color:var(--low)}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--inp);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-offset:-1px}
+.search{margin-bottom:8px}
+.filters{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+@media(min-width:520px){.filters{grid-template-columns:repeat(3,1fr)}}
+.filters select{padding:8px 10px;font-size:13px}
+.count{font-size:12px;color:var(--mut);margin:0 2px 8px}
+.item{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.cat{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);font-weight:700}
+.nm{font-weight:600;font-size:16px;margin:1px 0}
+.sub{font-size:12px;color:var(--mut)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--mut);letter-spacing:.06em;margin-left:6px;text-transform:none;font-weight:600}
+.pr{font-weight:700;font-size:16px;white-space:nowrap}
+.bot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px;flex-wrap:wrap}
+.q{display:flex;align-items:center;gap:6px}
+.q button{width:34px;height:34px;border-radius:9px;border:1px solid var(--bd);background:var(--bg);font-size:18px;line-height:1}
+.q b{min-width:34px;text-align:center;font-size:16px}
+.bdg{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
+.ok{background:var(--okb);color:var(--ok)}.low{background:var(--lowb);color:var(--low)}.out{background:var(--outb);color:var(--out)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:var(--pri);color:var(--prit);font-size:30px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.ov.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+@media(min-width:600px){.ov{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{margin:0 0 12px;font-size:18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+.f{margin-bottom:10px}
+.acts{display:flex;gap:8px;margin-top:6px}
+.acts .btn{flex:1;padding:11px}
+.chip{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.chip span small{color:var(--mut);margin-left:6px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:99px;font-size:13px;display:none;z-index:30}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Parts Inventory<small>Mobile service centre</small></h1>
+    <div style="display:flex;gap:6px"><button class="btn" id="bCat">Categories</button><button class="btn" id="bBox">Boxes</button><button class="btn" id="bData">Data</button></div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <input class="search" id="q" type="search" placeholder="Search part, brand, model, code…">
+  <div class="filters">
+    <select id="fCat"></select><select id="fBrand"></select><select id="fBox"></select>
+    <select id="fStat"><option value="">All stock</option><option value="ok">In stock</option><option value="low">Low stock</option><option value="out">Out of stock</option></select>
+    <select id="fSort"><option value="new">Newest</option><option value="name">Name A–Z</option><option value="qtyA">Qty low→high</option><option value="qtyD">Qty high→low</option><option value="priceA">Price low→high</option><option value="priceD">Price high→low</option></select>
+  </div>
+  <p class="count" id="cnt"></p>
+  <div id="list"></div>
+</div>
+<button class="fab" id="fab" aria-label="Add item">+</button>
+
+<div class="ov" id="ovItem"><div class="sheet">
+  <h2 id="fTitle">Add item</h2>
+  <div class="sub" id="iCode" style="margin:-6px 0 10px"></div>
+  <div class="f"><label>Category / part type</label><select id="iCat"></select></div>
+  <div class="g2">
+    <div class="f"><label>Brand</label><input id="iBrand" list="brands" placeholder="Samsung"></div>
+    <div class="f"><label>Model</label><input id="iModel" placeholder="J6"></div>
+  </div>
+  <datalist id="brands"></datalist><datalist id="cols"></datalist>
+  <div class="g2">
+    <div class="f"><label>Colour (optional)</label><input id="iCol" list="cols" placeholder="Black"></div>
+    <div class="f"><label>Storage / size / other</label><input id="iSpec" placeholder="64GB, OLED, A-grade"></div>
+  </div>
+  <div class="g2">
+    <div class="f"><label>Price (₹)</label><input id="iPrice" type="number" inputmode="decimal" min="0" placeholder="599"></div>
+    <div class="f"><label>Quantity</label><input id="iQty" type="number" inputmode="numeric" min="0" placeholder="10"></div>
+  </div>
+  <div class="g2">
+    <div class="f"><label>Low-stock alert at</label><input id="iMin" type="number" inputmode="numeric" min="0" placeholder="3"></div>
+    <div class="f"><label>Box / position</label><select id="iLoc"></select></div>
+  </div>
+  <div class="f"><label>Notes</label><textarea id="iNote" rows="2" placeholder="Quality grade, compatibility…"></textarea></div>
+  <div class="acts"><button class="btn" id="iCancel">Cancel</button><button class="btn d" id="iDel" style="display:none">Delete</button><button class="btn p" id="iSave">Save</button></div>
+</div></div>
+
+<div class="ov" id="ovCat"><div class="sheet">
+  <h2 id="mTitle">Categories</h2>
+  <div id="catList"></div>
+  <div class="g2" style="grid-template-columns:1fr auto;margin-top:10px"><input id="newCat" placeholder="New category, e.g. Display"><button class="btn p" id="addCat">Add</button></div>
+  <div class="acts"><button class="btn" id="catClose">Done</button></div>
+</div></div>
+<div class="ov" id="ovData"><div class="sheet">
+  <h2>Backup &amp; restore</h2>
+  <p class="sub" style="margin:0 0 10px">Your data is stored in this browser only. Copy a backup now and then, and paste it here to restore it or move it to another phone.</p>
+  <div class="acts" style="margin:0 0 10px"><button class="btn p" id="bExp">Copy full backup</button><button class="btn" id="bCsv">Copy CSV</button></div>
+  <div class="f"><label>Backup text (paste here to import)</label><textarea id="dText" rows="5" placeholder="Paste backup here…"></textarea></div>
+  <div class="f"><label>Or choose a backup file</label><input type="file" id="dFile" accept=".json,.txt,application/json,text/plain"></div>
+  <div class="f"><label>Import mode</label><select id="dMode"><option value="merge">Merge: add new items, keep existing</option><option value="replace">Replace everything</option></select></div>
+  <div class="acts"><button class="btn" id="dClose">Close</button><button class="btn p" id="dImp">Import</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="svc_inventory_v1";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr=n=>"₹"+Number(n||0).toLocaleString("en-IN");
+let S={cats:["Speaker","CC Board","Display","Battery","Back Cover","Camera"],boxes:["B01","C-001","A02"],items:[
+{id:1,cat:"Speaker",brand:"Samsung",model:"J6",price:599,qty:10,min:3,loc:"B01",note:"",t:5},
+{id:2,cat:"CC Board",brand:"Poco",model:"F11",price:799,qty:3,min:3,loc:"C-001",note:"",t:4},
+{id:3,cat:"Display",brand:"Redmi",model:"Note 9",price:2150,qty:0,min:2,loc:"A02",note:"OLED",t:3},
+{id:4,cat:"Battery",brand:"Vivo",model:"Y20",price:650,qty:14,min:4,loc:"",note:"",t:2}]};
+try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&p.items&&p.cats)S=p}}catch(e){}
+if(!Array.isArray(S.boxes))S.boxes=[...new Set(S.items.map(i=>i.loc).filter(Boolean))];
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+function ensureMeta(name){
+  S.cmeta=S.cmeta||{};
+  if(S.cmeta[name])return S.cmeta[name];
+  const ms=Object.values(S.cmeta),taken=new Set(ms.map(m=>m.p));
+  const L=name.toUpperCase().replace(/[^A-Z]/g,"").padEnd(2,"X");
+  const cand=[L.slice(0,2)];for(let i=1;i<L.length;i++)cand.push(L[0]+L[i]);
+  for(const ch of "ABCDEFGHIJKLMNOPQRSTUVWXYZ")cand.push(L[0]+ch);
+  const p=cand.find(x=>!taken.has(x))||"ZZ";
+  const n=String(ms.reduce((a,m)=>Math.max(a,+m.n),0)+1).padStart(2,"0");
+  return S.cmeta[name]={p,n,c:0};
+}
+function genCode(cat,commit=true){
+  const m=ensureMeta(cat),used=new Set(S.items.map(i=>i.code));
+  let n=m.c||0,c;
+  do{n++;c=m.p+"-"+m.n+"-"+String(n).padStart(3,"0")}while(used.has(c));
+  if(commit)m.c=n;
+  return c;
+}
+function fixCodes(){const ok=/^[A-Z]{2}-\d{2,}-\d{3,}$/;
+ S.cats.forEach(c=>ensureMeta(c));
+ S.items.forEach(i=>{if(i.code&&ok.test(i.code)){const m=ensureMeta(i.cat),k=+i.code.split("-").pop();if(k>m.c)m.c=k}});
+ S.items.filter(i=>!(i.code&&ok.test(i.code))).sort((a,b)=>a.t-b.t).forEach(i=>{i.code=genCode(i.cat)});
+ save();}
+fixCodes();
+let editId=null,delArm=false;
+const status=i=>i.qty<=0?"out":i.qty<=i.min?"low":"ok";
+const label={ok:"In stock",low:"Low stock",out:"Out of stock"};
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",1800)}
+
+function fillFilters(){
+  const c=$("fCat").value,b=$("fBrand").value,bx=$("fBox").value;
+  $("fCat").innerHTML='<option value="">All categories</option>'+S.cats.map(x=>`<option>${esc(x)}</option>`).join("");
+  const brands=[...new Set(S.items.map(i=>i.brand).filter(Boolean))].sort();
+  $("fBrand").innerHTML='<option value="">All brands</option>'+brands.map(x=>`<option>${esc(x)}</option>`).join("");
+  $("brands").innerHTML=brands.map(x=>`<option value="${esc(x)}">`).join("");
+  $("cols").innerHTML=[...new Set(S.items.map(i=>i.col).filter(Boolean))].sort().map(x=>`<option value="${esc(x)}">`).join("");
+  $("fCat").value=S.cats.includes(c)?c:"";$("fBrand").value=brands.includes(b)?b:"";
+  $("fBox").innerHTML='<option value="">All boxes</option>'+S.boxes.map(x=>`<option>${esc(x)}</option>`).join("");$("fBox").value=S.boxes.includes(bx)?bx:"";
+}
+function render(){
+  const q=$("q").value.trim().toLowerCase(),fc=$("fCat").value,fb=$("fBrand").value,fs=$("fStat").value,so=$("fSort").value,fx=$("fBox").value;
+  let a=S.items.filter(i=>(!fc||i.cat===fc)&&(!fb||i.brand===fb)&&(!fx||i.loc===fx)&&(!fs||status(i)===fs)&&(!q||[i.code,i.cat,i.brand,i.model,i.col,i.spec,i.note,i.loc].join(" ").toLowerCase().includes(q)));
+  const nm=i=>(i.cat+" "+i.brand+" "+i.model).toLowerCase();
+  const sorts={new:(x,y)=>y.t-x.t,name:(x,y)=>nm(x).localeCompare(nm(y)),qtyA:(x,y)=>x.qty-y.qty,qtyD:(x,y)=>y.qty-x.qty,priceA:(x,y)=>x.price-y.price,priceD:(x,y)=>y.price-x.price};
+  a.sort(sorts[so]);
+  const units=S.items.reduce((s,i)=>s+i.qty,0),val=S.items.reduce((s,i)=>s+i.qty*i.price,0);
+  const low=S.items.filter(i=>status(i)!=="ok").length;
+  $("stats").innerHTML=`<div class="st"><b>${S.items.length}</b><span>Items</span></div><div class="st"><b>${units}</b><span>Total units</span></div><div class="st"><b>${inr(val)}</b><span>Stock value</span></div><div class="st ${low?"w":""}"><b>${low}</b><span>Low / out</span></div>`;
+  $("cnt").textContent=`${a.length} of ${S.items.length} items`;
+  $("list").innerHTML=a.length?a.map(i=>{const s=status(i);return `<div class="item" data-id="${i.id}">
+  <div class="row"><div><div class="cat">${esc(i.cat)}<span class="code">#${esc(i.code)}</span></div><div class="nm">${esc(i.brand)} ${esc(i.model)}</div>${i.col||i.spec?`<div class="sub" style="color:var(--tx)">${esc([i.col,i.spec].filter(Boolean).join(" · "))}</div>`:""}${i.loc||i.note?`<div class="sub">${esc([i.loc?"📍 "+i.loc:"",i.note].filter(Boolean).join(" · "))}</div>`:""}</div><div class="pr">${inr(i.price)}</div></div>
+  <div class="bot"><div class="q"><button data-a="m" aria-label="Decrease">−</button><b>${i.qty}</b><button data-a="p" aria-label="Increase">+</button><span class="bdg ${s}" style="margin-left:6px">${label[s]}</span></div><button class="btn" data-a="e">Edit</button></div></div>`}).join(""):'<div class="empty">No items match. Tap + to add one.</div>';
+}
+function refresh(){fillFilters();render()}
+
+$("list").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const it=S.items.find(i=>i.id==b.closest(".item").dataset.id);if(!it)return;
+  const a=b.dataset.a;
+  if(a==="p"){it.qty++;save();render()}
+  else if(a==="m"){it.qty=Math.max(0,it.qty-1);save();render()}
+  else openForm(it);
+});
+["q","fCat","fBrand","fBox","fStat","fSort"].forEach(id=>$(id).addEventListener("input",render));
+
+function openForm(it){
+  editId=it?it.id:null;delArm=false;$("iDel").textContent="Delete";
+  $("fTitle").textContent=it?"Edit item":"Add item";
+  $("iCat").innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  $("iCat").value=it?it.cat:($("fCat").value||S.cats[0]||"");setCodeHint();
+  $("iBrand").value=it?it.brand:"";$("iModel").value=it?it.model:"";$("iCol").value=it?it.col||"":"";$("iSpec").value=it?it.spec||"":"";
+  $("iPrice").value=it?it.price:"";$("iQty").value=it?it.qty:"";$("iMin").value=it?it.min:"";
+  $("iLoc").innerHTML='<option value="">No box</option>'+S.boxes.map(c=>`<option>${esc(c)}</option>`).join("");$("iLoc").value=it?it.loc:"";$("iNote").value=it?it.note:"";
+  $("iDel").style.display=it?"block":"none";
+  $("ovItem").classList.add("on");
+}
+$("fab").onclick=()=>{if(!S.cats.length){toast("Add a category first");openMgr("cats");return}openForm(null)};
+function setCodeHint(){const it=editId&&S.items.find(i=>i.id===editId);$("iCode").textContent=it?"Item code: "+it.code:($("iCat").value?"Code for this item: "+genCode($("iCat").value,false):"")}
+$("iCat").addEventListener("change",setCodeHint);
+$("iCancel").onclick=()=>$("ovItem").classList.remove("on");
+$("iSave").onclick=()=>{
+  const d={cat:$("iCat").value,brand:$("iBrand").value.trim(),model:$("iModel").value.trim(),price:Math.max(0,parseFloat($("iPrice").value)||0),qty:Math.max(0,parseInt($("iQty").value)||0),min:Math.max(0,parseInt($("iMin").value)||0),loc:$("iLoc").value.trim(),col:$("iCol").value.trim(),spec:$("iSpec").value.trim(),note:$("iNote").value.trim()};
+  if(!d.cat||(!d.brand&&!d.model)){toast("Enter category and brand or model");return}
+  if(editId){Object.assign(S.items.find(i=>i.id===editId),d)}
+  else S.items.push({id:Date.now(),t:Date.now(),code:genCode(d.cat),...d});
+  save();$("ovItem").classList.remove("on");refresh();toast("Saved");
+};
+$("iDel").onclick=()=>{
+  if(!delArm){delArm=true;$("iDel").textContent="Tap again to confirm";return}
+  S.items=S.items.filter(i=>i.id!==editId);save();$("ovItem").classList.remove("on");refresh();toast("Deleted");
+};
+
+let mgr="cats";
+const mList=()=>mgr==="cats"?S.cats:S.boxes,mKey=()=>mgr==="cats"?"cat":"loc";
+function renderCats(){
+  const k=mKey(),L=mList();
+  $("mTitle").textContent=mgr==="cats"?"Categories":"Boxes / positions";
+  $("newCat").placeholder=mgr==="cats"?"New category, e.g. Display":"New box, e.g. B01 or C-001";
+  $("catList").innerHTML=L.length?L.map(c=>{const n=S.items.filter(i=>i[k]===c).length;return `<div class="chip"><span>${esc(c)}<small>${k==="cat"&&S.cmeta[c]?S.cmeta[c].p+"-"+S.cmeta[c].n+" · ":""}${n} item${n===1?"":"s"}</small></span><button class="btn d" data-c="${esc(c)}">${n?"In use":"Remove"}</button></div>`}).join(""):'<div class="empty">None yet.</div>';
+}
+function openMgr(m){mgr=m;renderCats();$("ovCat").classList.add("on")}
+$("bCat").onclick=()=>openMgr("cats");
+$("bBox").onclick=()=>openMgr("boxes");
+$("catClose").onclick=()=>{$("ovCat").classList.remove("on");refresh()};
+$("addCat").onclick=()=>{
+  const v=$("newCat").value.trim();if(!v)return;
+  const L=mList();
+  if(L.some(c=>c.toLowerCase()===v.toLowerCase())){toast("Already exists");return}
+  L.push(v);if(mgr==="cats")ensureMeta(v);$("newCat").value="";save();renderCats();
+};
+$("catList").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-c]");if(!b)return;
+  const c=b.dataset.c;
+  if(S.items.some(i=>i[mKey()]===c)){toast("Move or delete its items first");return}
+  const L=mList();L.splice(L.indexOf(c),1);save();renderCats();
+});
+$("bCsv").onclick=async()=>{
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=[["Code","Category","Brand","Model","Colour","Spec","Price","Qty","Low alert","Box","Notes"],...S.items.map(i=>[i.code,i.cat,i.brand,i.model,i.col,i.spec,i.price,i.qty,i.min,i.loc,i.note])];
+  const csv=rows.map(r=>r.map(q).join(",")).join("\n");
+  try{await navigator.clipboard.writeText(csv);toast("CSV copied")}catch(e){toast("Copy not allowed here")}
+};
+let impArm=false;
+const resetImp=()=>{impArm=false;$("dImp").textContent="Import"};
+$("bData").onclick=()=>{resetImp();$("dText").value="";$("dFile").value="";$("ovData").classList.add("on")};
+$("dClose").onclick=()=>$("ovData").classList.remove("on");
+$("dMode").onchange=resetImp;
+$("dFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("dText").value=String(r.result)};r.readAsText(f)};
+$("bExp").onclick=async()=>{
+  const txt=JSON.stringify({app:"parts-inventory",v:1,exported:new Date().toISOString(),cats:S.cats,boxes:S.boxes,cmeta:S.cmeta,items:S.items});
+  $("dText").value=txt;
+  try{await navigator.clipboard.writeText(txt);toast("Backup copied – paste it somewhere safe")}catch(e){$("dText").focus();$("dText").select();toast("Select the text below and copy it")}
+};
+const clean=o=>({id:0,t:+o.t||Date.now(),code:String(o.code||""),cat:String(o.cat||"").trim(),brand:String(o.brand||"").trim(),model:String(o.model||"").trim(),col:String(o.col||"").trim(),spec:String(o.spec||"").trim(),price:Math.max(0,+o.price||0),qty:Math.max(0,parseInt(o.qty)||0),min:Math.max(0,parseInt(o.min)||0),loc:String(o.loc||"").trim(),note:String(o.note||"").trim()});
+$("dImp").onclick=()=>{
+  let d;try{d=JSON.parse($("dText").value.trim())}catch(e){d=null}
+  if(!d||!Array.isArray(d.items)){toast("That isn’t a valid backup");return}
+  const replace=$("dMode").value==="replace";
+  if(replace&&!impArm){impArm=true;$("dImp").textContent="Tap again to replace all";return}
+  resetImp();
+  const inc=d.items.filter(o=>o&&typeof o==="object").map(clean).filter(i=>i.cat&&(i.brand||i.model));
+  if(replace)S={cats:[],boxes:[],cmeta:{},items:[]};
+  S.boxes=S.boxes||[];S.cmeta=S.cmeta||{};
+  const add=(L,v)=>{if(v&&!L.some(x=>x.toLowerCase()===v.toLowerCase()))L.push(v)};
+  const canon=(L,v)=>L.find(x=>x.toLowerCase()===v.toLowerCase())||v;
+  (Array.isArray(d.cats)?d.cats:[]).forEach(c=>add(S.cats,String(c).trim()));
+  (Array.isArray(d.boxes)?d.boxes:[]).forEach(b=>add(S.boxes,String(b).trim()));
+  if(d.cmeta&&typeof d.cmeta==="object")Object.keys(d.cmeta).forEach(k=>{const m=d.cmeta[k];
+    if(m&&!S.cmeta[k]&&/^[A-Z]{2}$/.test(m.p)&&/^\d{2,}$/.test(String(m.n))&&!Object.values(S.cmeta).some(x=>x.p===m.p||x.n===String(m.n)))S.cmeta[k]={p:m.p,n:String(m.n),c:+m.c||0}});
+  const used=new Set(S.items.map(i=>i.code));let added=0,skipped=0;
+  inc.forEach((i,k)=>{
+    i.cat=canon(S.cats,i.cat);add(S.cats,i.cat);
+    if(i.loc){i.loc=canon(S.boxes,i.loc);add(S.boxes,i.loc)}
+    if(i.code&&used.has(i.code)){skipped++;return}
+    i.id=Date.now()+k;S.items.push(i);if(i.code)used.add(i.code);added++;
+  });
+  fixCodes();refresh();$("ovData").classList.remove("on");
+  toast(`Imported ${added} item${added===1?"":"s"}`+(skipped?`, skipped ${skipped} duplicate${skipped===1?"":"s"}`:""));
+};
+document.querySelectorAll(".ov").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){o.classList.remove("on");refresh()}}));
+refresh();
+</script>
+</body>
+</html>
