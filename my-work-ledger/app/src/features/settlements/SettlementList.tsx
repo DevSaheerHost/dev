@@ -72,7 +72,7 @@ export function SettlementList({
     return (
       <Card>
         <EmptyState icon={<FileText size={26} />} title="No statements yet">
-          Settle a period to produce a statement you can show the shop.
+          Close off a month and you get a statement you can show the shop.
         </EmptyState>
       </Card>
     );
@@ -208,7 +208,7 @@ function StatementDetail({
       ) : null}
 
       {late.length > 0 ? (
-        <Banner tone="debit" title="Entries arrived after this was issued">
+        <Banner tone="debit" title="Something was added after this was made">
           <p className="flex gap-2">
             <TriangleAlert size={15} className="mt-0.5 shrink-0" />
             <span>

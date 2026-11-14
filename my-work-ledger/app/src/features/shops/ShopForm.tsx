@@ -10,7 +10,16 @@
 import { useState } from 'react';
 import { Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 
-import { Banner, Button, MoneyInput, Modal, Select, TextInput } from '@/components/ui';
+import {
+  Banner,
+  Button,
+  ChipGroup,
+  Disclosure,
+  MoneyInput,
+  Modal,
+  Select,
+  TextInput,
+} from '@/components/ui';
 import { today } from '@/lib/clock';
 import { normalisePhone } from '@/lib/contact';
 import { formatPaiseForInput, parseRupeesToPaise, paise, type Paise } from '@/lib/money';
@@ -84,14 +93,16 @@ const PAY_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => ({
   label: index + 1 === 31 ? '31st (last day in short months)' : `${index + 1}`,
 }));
 
+// Short enough to read on a chip, and in the words someone would use out loud.
+// These were a dropdown whose text ran off the edge of the phone.
 const MODE_OPTIONS: readonly { value: SettlementMode; label: string }[] = [
-  { value: 'accrual', label: 'Monthly salary — unpaid months build up as owed' },
-  { value: 'cashOnly', label: 'Daily wage — only record what is actually paid' },
+  { value: 'accrual', label: 'By the month' },
+  { value: 'cashOnly', label: 'By the day' },
 ];
 
 const DIRECTION_OPTIONS: readonly { value: Direction; label: string }[] = [
-  { value: 'owedToMe', label: 'The shop owes me' },
-  { value: 'owedByMe', label: 'I owe the shop' },
+  { value: 'owedToMe', label: 'They owe me' },
+  { value: 'owedByMe', label: 'I owe them' },
 ];
 
 export function ShopForm({
@@ -284,14 +295,23 @@ export function ShopForm({
           </Button>
           <Button tone="primary" type="submit" form="shop-form" disabled={busy} className="flex-1">
             {busy ? <Loader2 size={16} className="animate-spin" /> : null}
-            {busy ? 'Saving…' : shop ? 'Save changes' : 'Add shop'}
+            {busy ? 'Saving…' : shop ? 'Save changes' : 'Start tracking'}
           </Button>
         </>
       }
     >
       <form id="shop-form" onSubmit={submit} className="flex flex-col gap-4">
+        {/*
+          Three questions, and everything else folded away.
+
+          This form used to ask ten things, several of them in accounting
+          language, before a new user had seen the app do anything at all. The
+          rest still matter, but every one of them has a sensible default and
+          can be changed later, so none of them belongs in the way of getting
+          started.
+        */}
         <TextInput
-          label="Shop name"
+          label="Where do you work?"
           value={draft.name}
           onChange={(value) => set('name', value)}
           maxLength={60}
@@ -299,115 +319,115 @@ export function ShopForm({
           placeholder="Blue Mart"
         />
 
-        <TextInput
-          label="Note (optional)"
-          value={draft.description}
-          onChange={(value) => set('description', value)}
-          maxLength={240}
-          error={fieldErrors.description}
-          placeholder="Evening shift, owner Rafeeq"
-        />
+        {shop ? null : (
+          <MoneyInput
+            label="What do they pay you for a full month?"
+            value={draft.monthlySalary}
+            onChange={(value) => set('monthlySalary', value)}
+            error={salaryError}
+            hint="You enter this once. From here on it counts up on its own, a day at a time."
+          />
+        )}
 
         <TextInput
-          label="Owner's phone (optional)"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          value={draft.phone}
-          onChange={(value) => set('phone', value)}
-          maxLength={20}
-          error={fieldErrors.phone}
-          placeholder="+91 98765 43210"
-          hint="Used to call the shop, or to send the balance as a message. Nothing is sent without you tapping send."
-        />
-
-        <TextInput
-          label="Date you started here"
+          label="When did you start here?"
           type="date"
           value={draft.joiningDate}
           onChange={(value) => set('joiningDate', value)}
           error={fieldErrors.joiningDate}
+          hint="Your pay is counted from this day."
         />
 
-        <Select
-          label="How this shop pays"
-          value={draft.settlementMode}
-          onChange={(value) => set('settlementMode', value)}
-          options={MODE_OPTIONS}
-          hint={
-            draft.settlementMode === 'accrual'
-              ? 'Salary is earned each month whether or not it is paid.'
-              : 'Nothing accrues; an unpaid day is not counted as owed.'
-          }
-        />
-
-        <Select
-          label="Salary day of the month"
-          value={draft.salaryPayDay}
-          onChange={(value) => set('salaryPayDay', value)}
-          options={PAY_DAY_OPTIONS}
-          error={fieldErrors.salaryPayDay}
-          hint="Used to offer the month's salary entry for confirmation. Nothing is ever posted on its own."
-        />
-
-        <div className="rounded-xl border border-line bg-surface-2 p-4">
-          <p className="mb-3 text-sm font-semibold text-ink">Starting balance</p>
-          <p className="mb-3 text-sm text-ink-2">
-            What was already outstanding before you started using this app? Leave it blank if the
-            two of you were square.
-          </p>
-          <div className="flex flex-col gap-4">
+        <Disclosure
+          title="Anything else?"
+          description="Food money, pay day, a balance they already owe you — all optional"
+        >
+          {shop ? null : (
             <MoneyInput
-              label="Amount"
-              value={draft.openingAmount}
-              onChange={(value) => set('openingAmount', value)}
-              error={amountError ?? fieldErrors.openingBalance}
+              label="Food money for each day you work"
+              value={draft.dailyFood}
+              onChange={(value) => set('dailyFood', value)}
+              error={foodError}
+              hint="Leave empty if you do not get it. You can tick off the days you were actually given it."
             />
-            <Select
-              label="Direction"
-              value={draft.openingDirection}
-              onChange={(value) => set('openingDirection', value)}
-              options={DIRECTION_OPTIONS}
-            />
-            <TextInput
-              label="Balance applies from"
-              type="date"
-              value={draft.openingBalanceAsOf}
-              onChange={(value) => {
-                setBalanceDateTouched(true);
-                set('openingBalanceAsOf', value);
-              }}
-              error={fieldErrors.openingBalanceAsOf}
-              hint="Entries and salary before this day are not counted, so the opening figure is never double-counted. It follows the joining date unless you change it."
-            />
-          </div>
-        </div>
+          )}
 
-        {shop ? null : (
+          <Select
+            label="Which day do they usually pay you?"
+            value={draft.salaryPayDay}
+            onChange={(value) => set('salaryPayDay', value)}
+            options={PAY_DAY_OPTIONS}
+            error={fieldErrors.salaryPayDay}
+            hint="Only used to remind you a few days before. Nothing is ever recorded without you."
+          />
+
+          <ChipGroup
+            label="How do they pay you?"
+            value={draft.settlementMode}
+            onChange={(value) => set('settlementMode', value)}
+            options={MODE_OPTIONS}
+            hint={
+              draft.settlementMode === 'accrual'
+                ? 'A month you have worked counts as owed to you, paid or not.'
+                : 'Only money actually handed over is counted. A day that was not paid is not treated as owed.'
+            }
+          />
+
+          <TextInput
+            label="Owner's phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={draft.phone}
+            onChange={(value) => set('phone', value)}
+            maxLength={20}
+            error={fieldErrors.phone}
+            placeholder="+91 98765 43210"
+            hint="So you can call them, or send them the balance. Nothing is ever sent for you."
+          />
+
+          <TextInput
+            label="A note for yourself"
+            value={draft.description}
+            onChange={(value) => set('description', value)}
+            maxLength={240}
+            error={fieldErrors.description}
+            placeholder="Evening shift, owner Rafeeq"
+          />
+
           <div className="rounded-xl border border-line bg-surface-2 p-4">
-            <p className="mb-1 text-sm font-semibold text-ink">What this shop pays you</p>
-            <p className="mb-3 text-sm text-ink-2">
-              The salary builds up day by day from the date you joined, so you can see what you
-              are owed at any point in the month.
+            <p className="text-sm font-semibold text-ink">Did they already owe you something?</p>
+            <p className="mt-1 mb-3 text-sm text-ink-2">
+              Only if money was already outstanding between you before you started using this
+              app. Leave it empty if you were square.
             </p>
             <div className="flex flex-col gap-4">
               <MoneyInput
-                label="Monthly salary"
-                value={draft.monthlySalary}
-                onChange={(value) => set('monthlySalary', value)}
-                error={salaryError}
-                hint="Leave blank if this shop pays you by the day instead."
+                label="How much"
+                value={draft.openingAmount}
+                onChange={(value) => set('openingAmount', value)}
+                error={amountError ?? fieldErrors.openingBalance}
               />
-              <MoneyInput
-                label="Food money per day (optional)"
-                value={draft.dailyFood}
-                onChange={(value) => set('dailyFood', value)}
-                error={foodError}
-                hint="Owed for every day you work. Tick off the days you were actually given it."
+              <ChipGroup
+                label="Which way"
+                value={draft.openingDirection}
+                onChange={(value) => set('openingDirection', value)}
+                options={DIRECTION_OPTIONS}
+              />
+              <TextInput
+                label="As of which day"
+                type="date"
+                value={draft.openingBalanceAsOf}
+                onChange={(value) => {
+                  setBalanceDateTouched(true);
+                  set('openingBalanceAsOf', value);
+                }}
+                error={fieldErrors.openingBalanceAsOf}
+                hint="Nothing before this day is counted, so the amount above is not added twice. It follows the day you started unless you change it."
               />
             </div>
           </div>
-        )}
+        </Disclosure>
 
         {formError ? <Banner tone="danger">{formError}</Banner> : null}
       </form>

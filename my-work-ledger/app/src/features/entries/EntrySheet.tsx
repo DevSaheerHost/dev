@@ -187,14 +187,14 @@ export function EntrySheet({
         {isGave ? (
           <>
             <ChipGroup
-              label="What for"
+              label="What was it for?"
               value={category}
               onChange={setCategory}
               options={EXPENSE_CATEGORIES.map((value) => ({ value, label: value }))}
             />
 
             <Toggle
-              label="Comes back to me"
+              label="Do they owe me this back?"
               description={
                 comesBack
                   ? 'The shop owes you this back, so it is added to your balance.'
@@ -205,7 +205,7 @@ export function EntrySheet({
             />
 
             <ChipGroup
-              label="Whose money"
+              label="Whose money was it?"
               value={fundedFrom}
               onChange={setFundedFrom}
               options={FUNDING}
@@ -218,7 +218,7 @@ export function EntrySheet({
           </>
         ) : (
           <ChipGroup
-            label="What was it"
+            label="What was it for?"
             value={kind}
             onChange={setKind}
             options={RECEIVED_KINDS.map((entry) => ({ value: entry.value, label: entry.label }))}

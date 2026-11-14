@@ -144,6 +144,19 @@ export function formatPaise(value: Paise, options: FormatOptions = {}): string {
   return text;
 }
 
+/**
+ * To the nearest whole rupee.
+ *
+ * For display only, and only where the exact paise are noise rather than
+ * information. What one more worked day adds is the case this exists for: the
+ * true figure alternates between ₹666.66 and ₹666.67 as the month's rounding
+ * lands, which is correct but reads as a bug on a headline that is meant to
+ * say "roughly this much a day". Balances are never passed through this.
+ */
+export function roundToRupee(value: Paise): Paise {
+  return paise(Math.round(value / 100) * 100);
+}
+
 /** The plain editable form of an amount, for putting back into an input. */
 export function formatPaiseForInput(value: Paise): string {
   const magnitude = Math.abs(value);
