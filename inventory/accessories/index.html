@@ -10,7 +10,17 @@ button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var
 .pn{background:var(--p);border-radius:14px;padding:12px;margin:8px}
 .g3{display:grid;grid-template-columns:300px 1fr 280px;gap:0;height:calc(100vh - 56px)}
 .col{overflow:auto}.vw{position:relative;overflow:hidden;background:#000;touch-action:none;border-radius:14px;margin:8px;height:calc(100vh - 170px);min-height:300px}.ge{grid-template-columns:1fr 320px}
-.st{position:absolute;left:0;top:0;transform-origin:0 0}.st img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}.st svg{position:absolute;inset:0;width:100%;height:100%}
+.st{position:absolute;left:0;top:0;transform-origin:0 0}
+/* The camera move when you pick an item. Opt-in with .gl so a finger
+   dragging the photo still tracks it exactly — a transition on every
+   frame of a pan makes the photo lag behind the thumb. */
+.st.gl{transition:transform .5s cubic-bezier(.22,.61,.36,1)}
+.st svg [data-id].hit{animation:hit .6s ease-out}
+@keyframes hit{0%{stroke-opacity:0;fill-opacity:0}
+  35%{stroke-opacity:1;fill-opacity:.55}
+  100%{stroke-opacity:1}}
+@media(prefers-reduced-motion:reduce){.st.gl{transition:none}
+  .st svg [data-id].hit,.st svg .dim{animation:none}}.st img{width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}.st svg{position:absolute;inset:0;width:100%;height:100%}
 /* Overlay strokes stay the same size on screen at any zoom.
    The stage is zoomed with a CSS transform, so a stroke that is constant
    inside the SVG is still multiplied by that transform on the way to the
@@ -21,6 +31,9 @@ button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var
    zoomed out as well as sane when zoomed in. */
 .st svg [data-h]{stroke-width:calc(var(--hs,18px)/var(--k,1))}
 .st svg [data-id]{stroke-width:calc(2.5px/var(--k,1))}
+.st svg [data-id].on{stroke-width:calc(4px/var(--k,1))}
+.st svg .dim{animation:dim .45s ease-out}
+@keyframes dim{from{fill-opacity:0}}
 .st svg [data-s="dot"]{stroke-width:calc(var(--ds,10px)/var(--k,1))}
 .st svg [data-s="line"]{stroke-width:calc(2px/var(--k,1))}
 .st svg [data-s="dash"]{stroke-width:calc(1.5px/var(--k,1));stroke-dasharray:calc(6px/var(--k,1))}
@@ -52,16 +65,23 @@ function search(q){const t=toks(q);if(!t.length)return db.products.slice(0,60);r
 /* viewer: pan/zoom stage; overlay svg uses normalized 0..1 coords */
 function Viewer(el){el.classList.add('vw');el.innerHTML='<div class="st"><img alt=""><svg viewBox="0 0 1 1" preserveAspectRatio="none"></svg></div><div class="cap"></div>';
 const st=el.children[0],img=st.children[0],svg=st.children[1],cap=el.children[1];let k=1,x=0,y=0,ar=1,P=new Map(),d0=0;
-const ap=()=>{st.style.transform=`translate(${x}px,${y}px) scale(${k})`;st.style.setProperty('--k',k)},A=()=>[...P.values()],dist=()=>Math.hypot(A()[0][0]-A()[1][0],A()[0][1]-A()[1][1]);
+let gt=0;
+const ap=()=>{st.style.transform=`translate(${x}px,${y}px) scale(${k})`;st.style.setProperty('--k',k)},
+/* Move there over half a second instead of teleporting. The class comes
+   off at the end so the next pinch is immediate; a pointer landing
+   mid-flight takes it off early and the photo follows the finger. */
+glide=()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches){ap();return}
+ st.classList.add('gl');ap();clearTimeout(gt);gt=setTimeout(()=>st.classList.remove('gl'),520)},
+stop=()=>{clearTimeout(gt);st.classList.remove('gl')},A=()=>[...P.values()],dist=()=>Math.hypot(A()[0][0]-A()[1][0],A()[0][1]-A()[1][1]);
 const zoom=(f,cx,cy)=>{const r=el.getBoundingClientRect(),px=cx-r.left,py=cy-r.top,n=Math.min(14,Math.max(.5,k*f));x=px-(px-x)*n/k;y=py-(py-y)*n/k;k=n;ap()};
 const v={el,svg,cap,tool:'pan',down:null,move:null,up:null,
 set(s,cb){const go=()=>{ar=img.naturalHeight/img.naturalWidth;v.fit();cb&&cb()};if(img.getAttribute('src')==s&&img.complete)go();else{img.onload=go;img.src=s}},
-fit(){const w=el.clientWidth,h=el.clientHeight;let a=w,b=w*ar;if(b>h){b=h;a=h/ar}st.style.width=a+'px';st.style.height=b+'px';k=1;x=(w-a)/2;y=(h-b)/2;ap()},
+fit(soft){const w=el.clientWidth,h=el.clientHeight;let a=w,b=w*ar;if(b>h){b=h;a=h/ar}st.style.width=a+'px';st.style.height=b+'px';k=1;x=(w-a)/2;y=(h-b)/2;soft?glide():ap()},
 focus(p){const X=p.map(a=>a[0]),Y=p.map(a=>a[1]),bw=Math.max(...X)-Math.min(...X),bh=Math.max(...Y)-Math.min(...Y),cx=(Math.max(...X)+Math.min(...X))/2,cy=(Math.max(...Y)+Math.min(...Y))/2,sw=st.offsetWidth,sh=st.offsetHeight;
-k=Math.min(10,Math.max(1,Math.min(.5*el.clientWidth/(bw*sw||1),.5*el.clientHeight/(bh*sh||1))));x=el.clientWidth/2-k*cx*sw;y=el.clientHeight/2-k*cy*sh;ap()},
+k=Math.min(10,Math.max(1,Math.min(.5*el.clientWidth/(bw*sw||1),.5*el.clientHeight/(bh*sh||1))));x=el.clientWidth/2-k*cx*sw;y=el.clientHeight/2-k*cy*sh;glide()},
 n(e){const r=svg.getBoundingClientRect();return[Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]}};
 el.onwheel=e=>{e.preventDefault();zoom(e.deltaY<0?1.15:.87,e.clientX,e.clientY)};
-el.onpointerdown=e=>{P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size==2){d0=dist();v.cancel&&v.cancel()}else if(v.tool!='pan'&&v.down)v.down(e)};
+el.onpointerdown=e=>{stop();P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size==2){d0=dist();v.cancel&&v.cancel()}else if(v.tool!='pan'&&v.down)v.down(e)};
 el.onpointermove=e=>{const p=P.get(e.pointerId);if(!p)return;if(P.size==2){p[0]=e.clientX;p[1]=e.clientY;const d=dist();zoom(d/d0,(A()[0][0]+A()[1][0])/2,(A()[0][1]+A()[1][1])/2);d0=d;return}
 if(v.tool=='pan'||v.tool=='edit'){x+=e.clientX-p[0];y+=e.clientY-p[1];ap()}else v.move&&v.move(e);p[0]=e.clientX;p[1]=e.clientY};
 el.onpointerup=el.onpointercancel=e=>{P.delete(e.pointerId);v.up&&v.up(e)};return v}
@@ -100,8 +120,8 @@ function viewFind(){$('#app').innerHTML=`<div class="g3"><div id="fs" class="col
 FV=Viewer($('#fv'));FV.svg.onclick=e=>{const m=db.maps.find(m=>m.id==e.target.dataset.id);if(m&&m.productId){S.sel=m.productId;showProd()}};
 $('#q').oninput=e=>{S.q=e.target.value;list()};$('#rk').onchange=e=>{const ph=db.photos.find(p=>p.id==e.target.value);if(ph)showPhoto(ph)};list();showProd(true)}
 function list(){const r=search(S.q);$('#fl').innerHTML=r.map(p=>{const l=locs(p.id)[0];return`<div class="item ${p.id==S.sel?'on':''}" data-a="pick" data-v="${p.id}"><div><b>${esc(p.name)}</b><div class="m">${esc(p.sku)} · ₹${esc(p.sell)}</div><div class="m">${l?lbl(l):'No mapped location'}</div></div><span class="bd ${p.qty<=LOW?'lo':''}">${p.qty}</span></div>`}).join('')||'<p class="m">No products found. Add some in Inventory.</p>'}
-function shapesF(ph,hi){const ms=db.maps.filter(m=>m.versionId==ph.active);let s='';if(hi)s+=`<path d="M0 0H1V1H0Z${pd(hi.poly)}" fill="#000" fill-opacity=".62" fill-rule="evenodd"/>`;
-ms.forEach(m=>{const on=hi&&m.id==hi.id;if(hi&&!on)return;s+=`<path data-id="${m.id}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.12)':'rgba(139,92,246,.15)'}" stroke="${on?'#39ff14':'#8b5cf6'}" stroke-width="${on?4:2}" vector-effect="non-scaling-stroke" ${on?'style="filter:drop-shadow(0 0 6px #39ff14)"':''}/>`});FV.svg.innerHTML=s}
+function shapesF(ph,hi){const ms=db.maps.filter(m=>m.versionId==ph.active);let s='';if(hi)s+=`<path class="dim" d="M0 0H1V1H0Z${pd(hi.poly)}" fill="#000" fill-opacity=".62" fill-rule="evenodd"/>`;
+ms.forEach(m=>{const on=hi&&m.id==hi.id;if(hi&&!on)return;s+=`<path data-id="${m.id}" class="${on?'on hit':''}" d="${pd(m.poly)}" fill="${on?'rgba(57,255,20,.12)':'rgba(139,92,246,.15)'}" stroke="${on?'#39ff14':'#8b5cf6'}" stroke-width="${on?4:2}" vector-effect="non-scaling-stroke" ${on?'style="filter:drop-shadow(0 0 6px #39ff14)"':''}/>`});FV.svg.innerHTML=s}
 function showPhoto(ph,hi,cb){S.ph=ph;FV.set(src(ph),()=>{shapesF(ph,hi);cb&&cb()});FV.cap.style.display='none'}
 function showProd(init){const p=prod(S.sel),d=$('#fd');if(!p){d.innerHTML='<p class="m">Select a product to see its location on the shop photo.</p>';return}
 const L=locs(p.id);S.L=L;S.li=S.li||0;if(S.li>=L.length)S.li=0;list();
@@ -149,7 +169,7 @@ if(ph){h+=`<b>Photo versions</b>`+ph.versions.slice().reverse().map((v,i)=>`<div
 $('#es').innerHTML=h||'<p class="m">Create a rack and add a shelf photo.</p>'}
 function changeMap(f){const m=db.maps.find(x=>x.id==S.ms);if(!m)return;pushU();f(m);save();drawEd()}
 /* ---------- actions ---------- */
-const A={tab:v=>{S.tab=v;render()},pick:v=>{S.sel=v;S.li=0;showProd();scrollTo({top:0,behavior:'smooth'})},loc:v=>{S.li=+v;showProd()},foc:()=>{const l=S.L?.[S.li];l&&FV.focus(l.m.poly)},fit:()=>FV.fit(),close:()=>$('#dlg').close(),
+const A={tab:v=>{S.tab=v;render()},pick:v=>{S.sel=v;S.li=0;showProd();scrollTo({top:0,behavior:'smooth'})},loc:v=>{S.li=+v;showProd()},foc:()=>{const l=S.L?.[S.li];l&&FV.focus(l.m.poly)},fit:()=>FV.fit(1),close:()=>$('#dlg').close(),
 newp:()=>pform(),editp:v=>pform(v),savep:v=>savep(v),exp:exportCsv,imp:importCsv,seed,
 delp:v=>{const n=db.maps.filter(m=>m.productId==v).length;if(confirm(`Delete this product?${n?` Its ${n} photo mapping(s) will become unassigned.`:''}`)){db.maps.forEach(m=>{if(m.productId==v)m.productId=''});db.products=db.products.filter(p=>p.id!=v);save();render()}},
 adj:(v,e)=>{const p=prod(v);p.qty=Math.max(0,p.qty+ +e.dataset.d);p.updated=new Date().toISOString();save();render()},
