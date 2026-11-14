@@ -14,7 +14,6 @@ import {
   FileText,
   Info,
   Loader2,
-  Store,
   TriangleAlert,
   Wallet,
 } from 'lucide-react';
@@ -23,9 +22,7 @@ import {
   Amount,
   Badge,
   Banner,
-  Button,
   Card,
-  EmptyState,
   SectionHeading,
   Spinner,
 } from '@/components/ui';
@@ -42,6 +39,7 @@ import { useAllLedgers } from '@/features/ledger/LedgerProvider';
 import { useReminderRuntime } from '@/features/reminders/ReminderRuntime';
 import { AskSheet } from '@/features/shops/AskSheet';
 import { ShopBalanceRow } from '@/features/shops/ShopBalanceRow';
+import { FirstRun } from '@/features/shops/FirstRun';
 import { ShopForm } from '@/features/shops/ShopForm';
 import { useShops } from '@/features/shops/ShopsProvider';
 
@@ -139,19 +137,7 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
     return (
       <div className="flex flex-col gap-5">
         {error ? <Banner tone="debit">{error}</Banner> : null}
-        <Card>
-          <EmptyState
-            icon={<Store size={28} />}
-            title="Add a shop to begin"
-            action={
-              <Button tone="primary" onClick={() => setAdding(true)}>
-                Add your first shop
-              </Button>
-            }
-          >
-            Tell it your monthly salary and it starts counting what you are owed from day one.
-          </EmptyState>
-        </Card>
+        <FirstRun onStart={() => setAdding(true)} />
         {form}
       </div>
     );
@@ -235,7 +221,7 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
       {needsYou.length > 0 ? (
         <section>
           <SectionHeading
-            title="Needs you"
+            title="Do this now"
             action={
               <span className="flex items-center gap-1 text-xs text-ink-3">
                 <Bell size={13} />
@@ -266,9 +252,8 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
           </Card>
         </section>
       ) : pending > 0 ? (
-        <Banner tone="accent" title={`${pending} entr${pending === 1 ? 'y' : 'ies'} ready to confirm`}>
-          A finished month is waiting to be added to the ledger. Open the shop to check the figures
-          and confirm.
+        <Banner tone="accent" title="A finished month is waiting for you">
+          Open the shop, check the figures are right, and confirm them.
         </Banner>
       ) : null}
 
@@ -311,8 +296,8 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
         <p className="flex gap-2">
           <Info size={15} className="mt-0.5 shrink-0" />
           <span>
-            Salary builds up day by day, so this figure climbs on its own. A month is added to the
-            ledger properly once you confirm it. Settlements and printed statements come next.
+            Your pay builds up day by day, so this figure climbs on its own. Nothing is ever
+            recorded without you confirming it first.
           </span>
         </p>
       </Banner>

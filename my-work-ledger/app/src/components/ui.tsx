@@ -10,8 +10,8 @@
  *    one-handed on a phone while standing in a shop.
  */
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { ChevronDown, X } from 'lucide-react';
 
 import { formatPaise, type Paise } from '@/lib/money';
 
@@ -454,6 +454,56 @@ export function Badge({
     >
       {children}
     </span>
+  );
+}
+
+/**
+ * A section that starts closed.
+ *
+ * Used to keep a form down to the few questions that have to be answered now,
+ * with the rest a tap away. Everything inside stays mounted and inside the
+ * form, so a value typed in here is still submitted if the section is closed
+ * again — hiding a field must never quietly discard what is in it.
+ */
+export function Disclosure({
+  title,
+  description,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const id = useId();
+
+  return (
+    <div className="rounded-xl border border-line-strong">
+      <button
+        type="button"
+        onClick={() => setOpen((previous) => !previous)}
+        aria-expanded={open}
+        aria-controls={id}
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-4 text-left hover:bg-surface-2"
+      >
+        <span className="min-w-0 py-2">
+          <span className="block text-sm font-semibold text-ink">{title}</span>
+          {description ? (
+            <span className="mt-0.5 block text-sm text-ink-3">{description}</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          size={18}
+          aria-hidden
+          className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <div id={id} hidden={!open} className="flex flex-col gap-4 border-t border-line px-4 py-4">
+        {children}
+      </div>
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   addPaise,
   formatPaise,
   formatPaiseForInput,
+  roundToRupee,
   isValidAmount,
   negatePaise,
   paise,
@@ -185,3 +186,25 @@ describe('splitProRata', () => {
     expect(() => splitProRata(paise(100), [-1])).toThrow(RangeError);
   });
 });
+
+describe('roundToRupee', () => {
+  it('rounds to the nearest whole rupee', () => {
+    expect(roundToRupee(paise(66666))).toBe(66700);
+    expect(roundToRupee(paise(66667))).toBe(66700);
+    expect(roundToRupee(paise(83334))).toBe(83300);
+  });
+
+  it('smooths the paisa that makes a daily figure twitch', () => {
+    // The two values a 20,000 month alternates between must display the same.
+    expect(formatPaise(roundToRupee(paise(66666)))).toBe(
+      formatPaise(roundToRupee(paise(66667))),
+    );
+  });
+
+  it('leaves a whole rupee alone, and handles zero and negatives', () => {
+    expect(roundToRupee(paise(50000))).toBe(50000);
+    expect(roundToRupee(paise(0))).toBe(0);
+    expect(roundToRupee(paise(-66666))).toBe(-66700);
+  });
+});
+

@@ -32,6 +32,7 @@ import {
   Plus,
   TrendingUp,
   TriangleAlert,
+  Wallet,
 } from 'lucide-react';
 
 import {
@@ -55,7 +56,7 @@ import {
   periodKeyOf,
   type PeriodKey,
 } from '@/lib/dates';
-import { formatPaise, paise } from '@/lib/money';
+import { formatPaise, paise, roundToRupee } from '@/lib/money';
 import { DayCalendar } from '@/features/attendance/DayCalendar';
 import { EntryList } from '@/features/entries/EntryList';
 import { EntrySheet, type SheetMode } from '@/features/entries/EntrySheet';
@@ -68,6 +69,7 @@ import { SettlementList } from '@/features/settlements/SettlementList';
 import { computeShopFigures } from '@/features/ledger/figures';
 import { useShopLedger } from '@/features/ledger/LedgerProvider';
 import { AskSheet } from '@/features/shops/AskSheet';
+import { PaySheet } from '@/features/shops/PaySheet';
 import { ShopForm } from '@/features/shops/ShopForm';
 import { useShops } from '@/features/shops/ShopsProvider';
 import { TRANSACTION_KINDS, type Shop, type TransactionKind } from '@/types/models';
@@ -171,6 +173,7 @@ export function ShopPage({
   const [settling, setSettling] = useState(false);
   const [asking, setAsking] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingPay, setEditingPay] = useState(false);
   const [posting, setPosting] = useState(false);
   const [building, setBuilding] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -327,11 +330,17 @@ export function ShopPage({
         </p>
 
         {/* The daily climb, stated rather than implied. */}
+        {/*
+          Rounded, and said as "about", on purpose. The exact step alternates
+          between ₹666.66 and ₹666.67 as the month's rounding lands — correct,
+          and in the ledger it stays exact, but on a headline meant to say
+          "roughly this much a day" a figure that twitches reads as a fault.
+        */}
         {figures.position.nextDayValue > 0 ? (
           <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-credit-strong">
             <TrendingUp size={15} className="shrink-0" />
-            {formatPaise(figures.position.nextDayValue, { paise: true })} more for each day you
-            work
+            about {formatPaise(roundToRupee(figures.position.nextDayValue))} more for every day
+            you work
           </p>
         ) : null}
 
@@ -342,7 +351,7 @@ export function ShopPage({
         */}
         {figures.unposted !== 0 ? (
           <p className="mt-1.5 text-sm text-ink-3">
-            counts {formatPaise(figures.unposted)} earned but not yet confirmed
+            {formatPaise(figures.unposted)} of this is pay you have earned but not confirmed yet
           </p>
         ) : null}
 
@@ -362,7 +371,7 @@ export function ShopPage({
                 <span className="min-w-0 truncate text-ink-2">
                   {line.label}
                   {line.isDailySettled ? (
-                    <span className="text-ink-3"> · {line.settledDayCount} days received</span>
+                    <span className="text-ink-3"> · given on {line.settledDayCount} days</span>
                   ) : null}
                 </span>
                 <span className="shrink-0">
@@ -372,6 +381,23 @@ export function ShopPage({
             ))}
           </ul>
         ) : null}
+
+        {/*
+          Pay was asked for once, when the shop was created, and could never be
+          changed afterwards — a typo in the salary made every later figure
+          wrong with no way back. This is the way back.
+        */}
+        <button
+          type="button"
+          onClick={() => setEditingPay(true)}
+          className="mt-4 flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-line-strong px-3 text-left text-sm font-semibold text-ink-2 hover:bg-surface-2"
+        >
+          <span className="flex items-center gap-2">
+            <Wallet size={15} aria-hidden />
+            Change what they pay you
+          </span>
+          <ChevronRight size={15} aria-hidden className="text-ink-3" />
+        </button>
       </Card>
 
       {/* Report, remind, message — the three things you do with a balance */}
@@ -391,7 +417,7 @@ export function ShopPage({
       {settleable ? (
         <Button tone="neutral" onClick={() => setSettling(true)} fullWidth>
           <Lock size={15} />
-          Settle up to {formatPeriod(periodKeyOf(settleable.to))}
+          Close off {formatPeriod(periodKeyOf(settleable.to))} and make a statement
         </Button>
       ) : null}
 
@@ -401,7 +427,7 @@ export function ShopPage({
           <div className="flex items-start gap-2">
             <CheckCheck size={17} className="mt-0.5 shrink-0 text-accent-ink" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink">Ready to add to your ledger</p>
+              <p className="text-sm font-semibold text-ink">A finished month is waiting for you</p>
               <ul className="mt-2 flex flex-col gap-1.5">
                 {figures.proposals.map((proposal) => (
                   <li key={proposal.id} className="flex items-baseline justify-between gap-3 text-sm">
@@ -426,7 +452,7 @@ export function ShopPage({
                 ))}
               </ul>
               <Button tone="primary" onClick={postAll} disabled={posting} className="mt-3">
-                {posting ? 'Adding…' : 'Add these entries'}
+                {posting ? 'Confirming…' : 'Yes, that is right'}
               </Button>
             </div>
           </div>
@@ -457,7 +483,7 @@ export function ShopPage({
       <section>
         <SectionHeading
           title="Days"
-          description="Tap a day to mark it off, or to tick the food money you were given."
+          description="Tap a day you did not work, or tick the food money you were handed."
           action={<Badge>{formatPeriod(period)}</Badge>}
         />
         <Card className="p-4">
@@ -475,7 +501,7 @@ export function ShopPage({
       <section>
         <SectionHeading
           title="Statements"
-          description="A settled period is frozen, so what you hand over stays true."
+          description="A closed month is frozen, so the paper you hand over stays true."
           action={
             <span className="flex items-center gap-1 text-xs text-ink-3">
               <FileText size={13} />
@@ -513,10 +539,9 @@ export function ShopPage({
       </section>
 
       {ledger.configs.length === 0 ? (
-        <Banner tone="debit" title="No income set up">
-          This shop has no salary or allowance recorded, so nothing accrues. Edit the shop to add
-          one.
-          <ChevronRight size={14} className="ml-1 inline" />
+        <Banner tone="debit" title="Nothing is being counted yet">
+          You have not said what this shop pays you, so the amount above will not move. Tap
+          &ldquo;Change what they pay you&rdquo; to set it.
         </Banner>
       ) : null}
 
@@ -565,6 +590,10 @@ export function ShopPage({
       ) : null}
 
       {editing ? <ShopForm open shop={shop} onClose={() => setEditing(false)} /> : null}
+
+      {editingPay ? (
+        <PaySheet shop={shop} configs={ledger.configs} onClose={() => setEditingPay(false)} />
+      ) : null}
 
       {settling ? (
         <SettleSheet
