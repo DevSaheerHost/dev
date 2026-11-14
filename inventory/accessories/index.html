@@ -4,6 +4,8 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 nav{display:flex;gap:6px;padding:10px;background:var(--p);overflow-x:auto;position:sticky;top:0;z-index:5}
+nav button{display:inline-flex;align-items:center;gap:7px}
+nav button svg{width:19px;height:19px;flex:0 0 auto}
 nav b{color:var(--ac);padding:8px 6px;white-space:nowrap}
 button,select,input,textarea{font:inherit;color:var(--t);background:var(--p2);border:1px solid #3a3150;border-radius:10px;padding:8px 10px;min-width:0}
 button{cursor:pointer}button.on,button.pri{background:var(--ac);border-color:var(--ac)}button.dng{border-color:#a33}
@@ -64,9 +66,11 @@ button:disabled{opacity:.42;cursor:not-allowed}
 table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c2540;text-align:left}.tw{overflow-x:auto}
 .warn{background:#5a3b05;border-radius:10px;padding:8px;margin:6px 0}
 dialog{background:var(--p);color:var(--t);border:1px solid var(--ac);border-radius:14px;width:min(440px,94vw)}dialog label{display:block;margin:6px 0}dialog input{width:100%}
-@media(max-width:900px){nav{position:fixed;top:auto;bottom:0;left:0;right:0;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid #3a3150}nav b{display:none}nav button{flex:1;padding:12px 4px}main{display:block;padding-bottom:84px}.g3{display:flex;flex-direction:column;height:auto}.ge{display:block}#fs{display:contents}#q{order:0;margin:8px;width:calc(100% - 16px)!important}#fm{order:1}#fd{order:2}#fl{order:3;margin:8px}.vw{height:52vh}button,select,input{min-height:42px}}
+@media(max-width:900px){nav{position:fixed;top:auto;bottom:0;left:0;right:0;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid #3a3150}nav b{display:none}nav button{flex:1;padding:7px 2px;flex-direction:column;gap:3px}
+ nav button span{font-size:11px;line-height:1.2}
+ nav button svg{width:21px;height:21px}main{display:block;padding-bottom:84px}.g3{display:flex;flex-direction:column;height:auto}.ge{display:block}#fs{display:contents}#q{order:0;margin:8px;width:calc(100% - 16px)!important}#fm{order:1}#fd{order:2}#fl{order:3;margin:8px}.vw{height:52vh}button,select,input{min-height:42px}}
 </style></head><body>
-<nav><b>Smart Accessories Finder</b><button data-a="tab" data-v="find">Find</button><button data-a="tab" data-v="inv">Inventory</button><button data-a="tab" data-v="ed">Store Editor</button></nav>
+<nav><b>Smart Accessories Finder</b><button data-a="tab" data-v="find" aria-label="Find"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/></svg><span>Find</span></button><button data-a="tab" data-v="inv" aria-label="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8.2 12 3.3 3 8.2v7.6l9 4.9 9-4.9z"/><path d="m3 8.2 9 4.9 9-4.9M12 13.1V21"/></svg><span>Inventory</span></button><button data-a="tab" data-v="ed" aria-label="Store Editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/><path d="m14.5 13.5 6.2-6.2a1.9 1.9 0 0 0-2.7-2.7l-6.2 6.2-.6 3.3z"/></svg><span>Store Editor</span></button></nav>
 <main id="app"></main><dialog id="dlg"></dialog>
 <script>
 const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
