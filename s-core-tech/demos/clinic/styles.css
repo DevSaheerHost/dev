@@ -1,0 +1,122 @@
+/* Pulse Clinic & Fitness — sample healthcare site.
+   The opposite register to the cafe on purpose: white, calm, generous
+   spacing, one teal accent, and the booking card doing the selling. */
+
+:root{
+  --bg:#f6f9f9;
+  --card:#fff;
+  --ink:#0f1f23;
+  --ink-2:#5d7479;
+  --line:#e1ebec;
+  --acc:#0d9488;
+  --acc-soft:#e6f6f4;
+  --warn:#f59e0b;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:800;line-height:1.15;letter-spacing:-.02em}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1120px,100% - 2.5rem);margin-inline:auto}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 90%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header nav{display:flex;align-items:center;gap:1rem;height:72px}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.1rem}
+.brand .thin{font-weight:500;color:var(--ink-2)}
+.mark{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;
+  background:var(--acc);color:#fff}
+.mark svg{width:20px;height:20px}
+.links{margin-left:auto;display:flex;align-items:center;gap:1.4rem;font-size:.93rem}
+.links a{color:var(--ink-2);font-weight:500}
+.links a:hover{color:var(--ink)}
+.pill{padding:.62rem 1.15rem;border-radius:999px;background:var(--acc);color:#fff!important;font-weight:600}
+
+/* ---------- hero ---------- */
+.hero{display:grid;gap:2.5rem;padding:3.5rem 0 3rem;align-items:start}
+.tag{display:inline-flex;align-items:center;gap:.5rem;margin:0;padding:.35rem .8rem;border-radius:999px;
+  background:var(--acc-soft);color:var(--acc);font-size:.82rem;font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--acc)}
+.hero h1{font-size:clamp(2.2rem,4.6vw,3.3rem);margin:1rem 0 0}
+.lede{color:var(--ink-2);max-width:46ch;margin:1rem 0 0}
+.cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.7rem}
+.btn{display:inline-block;padding:.85rem 1.4rem;border-radius:11px;background:var(--acc);color:#fff;
+  font-weight:600;font-size:.95rem;border:1px solid var(--acc)}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.wide{display:block;text-align:center;width:100%;margin-top:1.3rem}
+.facts{list-style:none;display:flex;flex-wrap:wrap;gap:2rem;margin:2.2rem 0 0;padding:1.5rem 0 0;
+  border-top:1px solid var(--line)}
+.facts b{display:block;font-size:1.35rem}
+.facts span{font-size:.82rem;color:var(--ink-2)}
+
+/* ---------- the booking card: the point of the whole page ---------- */
+.booker{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:1.5rem;
+  box-shadow:0 30px 60px -40px rgba(13,60,65,.45)}
+.booker h2{font-size:1.2rem;margin-bottom:1.2rem}
+.booker label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);margin:1.1rem 0 .55rem}
+.chips,.slots{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip,.slots span{padding:.5rem .85rem;border-radius:9px;border:1px solid var(--line);
+  font-size:.86rem;font-weight:500;background:#fff}
+.chip.on,.slots .on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.slots .off{color:#b9c7c9;text-decoration:line-through}
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.days span{display:grid;gap:.1rem;justify-items:center;padding:.6rem 0;border-radius:11px;
+  border:1px solid var(--line);background:#fff;font-size:.74rem;color:var(--ink-2)}
+.days b{font-size:1.05rem;color:var(--ink)}
+.days .on{background:var(--acc);border-color:var(--acc);color:#d7f2ee}
+.days .on b{color:#fff}
+.note{margin:.8rem 0 0;font-size:.8rem;color:var(--ink-2);text-align:center}
+
+/* ---------- services ---------- */
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:2.5rem 0 1.5rem}
+.head h2{font-size:clamp(1.6rem,3vw,2.1rem)}
+.head a{color:var(--acc);font-weight:600;font-size:.92rem}
+.grid{display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.4rem}
+.ico{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;margin-bottom:.9rem}
+.ico svg{width:21px;height:21px}
+.i1{background:var(--acc-soft);color:var(--acc)}
+.i2{background:#eef2ff;color:#4f46e5}
+.i3{background:#fff7ed;color:var(--warn)}
+.card h3{font-size:1.05rem;margin-bottom:.35rem}
+.card p{margin:0;font-size:.88rem;color:var(--ink-2)}
+
+/* ---------- timings + drawn map ---------- */
+.split{display:grid;gap:2rem;margin:3.5rem auto 4rem}
+.split h2{font-size:1.6rem;margin-bottom:1rem}
+.hours{width:100%;border-collapse:collapse;font-size:.93rem}
+.hours th{text-align:left;font-weight:500;color:var(--ink-2);padding:.8rem 0;border-bottom:1px solid var(--line)}
+.hours td{text-align:right;padding:.8rem 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+/* A drawn map, not an embed: no third-party script on a clinic's page. */
+.map{position:relative;min-height:260px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(160deg,#eaf4f2,#dceceb)}
+.road{position:absolute;background:#fff}
+.r1{left:0;right:0;top:46%;height:16px;transform:rotate(-4deg)}
+.r2{top:0;bottom:0;left:34%;width:12px}
+.r3{left:0;right:0;bottom:18%;height:9px;transform:rotate(3deg);background:#f3f9f8}
+.pin{position:absolute;left:34%;top:46%;transform:translate(-50%,-100%)}
+.pin span{display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  background:var(--acc);box-shadow:0 8px 18px -6px rgba(13,148,136,.8)}
+.maplabel{position:absolute;left:14px;bottom:14px;right:14px;background:#fff;border-radius:11px;
+  padding:.7rem .9rem;font-size:.85rem;color:var(--ink-2);box-shadow:0 14px 30px -22px rgba(0,0,0,.5)}
+.maplabel a{color:var(--acc);font-weight:600}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:1.5rem 0;font-size:.85rem;color:var(--ink-2)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between}
+.by a{color:var(--acc);font-weight:600}
+
+@media(min-width:900px){
+  .hero{grid-template-columns:1.1fr .9fr;gap:3.5rem}
+  .split{grid-template-columns:1fr 1.15fr;gap:3.5rem}
+}
+
+/* ---------- phones ---------- */
+@media(max-width:620px){
+  /* Three links plus the button do not fit beside the name, and pushed the
+     page sideways. The button is the one that earns its place. */
+  .links a:not(.pill){display:none}
+}

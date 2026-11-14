@@ -4,19 +4,11 @@
    ========================================================================= */
 
 /* -------------------------------------------------------------------------
-   YOUR WHATSAPP NUMBER — change this one line.
-
+   THE WHATSAPP NUMBER every booking button opens.
    International format, digits only, no "+" and no spaces.
-   India example: 919876543210  (91 + the ten-digit number)
-
-   Left as the placeholder deliberately rather than invented: a booking
-   button that opens a chat with a stranger is worse than one that tells you
-   it is not configured. While it is unset, the drawer says so instead of
-   sending people nowhere.
 ------------------------------------------------------------------------- */
-const WHATSAPP = '91XXXXXXXXXX';
+const WHATSAPP = '917592949476';
 
-const configured = /^\d{8,15}$/.test(WHATSAPP);
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const rupee = n => '₹' + n.toLocaleString('en-IN');
@@ -200,7 +192,6 @@ function openDrawer(mode, preselect) {
     buildBooking(mode || (core === 'hardware' ? 'repair' : 'website'), preselect);
   }
 
-  $('#waWarn').hidden = configured;
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -235,7 +226,6 @@ $$('[data-book]').forEach(b => b.addEventListener('click', () => {
 
 function openDrawerNoRebuild() {
   lastFocus = document.activeElement;
-  $('#waWarn').hidden = configured;
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -260,12 +250,6 @@ addEventListener('keydown', e => {
 
 /* ------------------------------------------------------- WHATSAPP OUT --- */
 $('#sendWa').addEventListener('click', () => {
-  if (!configured) {
-    $('#waWarn').hidden = false;
-    $('#waWarn').scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
-    return;
-  }
-
   const name  = $('#bName').value.trim();
   const place = $('#bPlace').value.trim();
   const note  = $('#bNote').value.trim();

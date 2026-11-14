@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Clinic &amp; Fitness — sample site by S-Core Tech</title>
+<meta name="description" content="Sample clinic site built by S-Core Tech: appointment requests, timings and directions that open in Maps.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <nav class="wrap">
+    <a class="brand" href="#">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
+      </span>
+      Pulse <span class="thin">Clinic &amp; Fitness</span>
+    </a>
+    <div class="links">
+      <a href="#services">Services</a>
+      <a href="#timings">Timings</a>
+      <a class="pill" href="#book">Book a slot</a>
+    </div>
+  </nav>
+</header>
+
+<section class="hero wrap">
+  <div>
+    <p class="tag"><span class="dot"></span>Accepting new patients this week</p>
+    <h1>Care that fits around your day.</h1>
+    <p class="lede">General medicine, physiotherapy and a supervised gym floor under one roof.
+      Walk in, or hold a slot in under a minute and skip the queue.</p>
+    <div class="cta">
+      <a class="btn" href="#book">Request an appointment</a>
+      <a class="btn ghost" href="#timings">Today's timings</a>
+    </div>
+    <ul class="facts">
+      <li><b>12 yrs</b><span>In practice</span></li>
+      <li><b>6</b><span>Specialists on rota</span></li>
+      <li><b>&lt;10 min</b><span>Average wait</span></li>
+    </ul>
+  </div>
+
+  <aside class="booker" aria-label="Appointment request">
+    <h2>Request an appointment</h2>
+    <label>What do you need?</label>
+    <div class="chips">
+      <span class="chip on">Consultation</span>
+      <span class="chip">Physiotherapy</span>
+      <span class="chip">Gym trial</span>
+    </div>
+    <label>Preferred day</label>
+    <div class="days">
+      <span>Mon<b>17</b></span>
+      <span class="on">Tue<b>18</b></span>
+      <span>Wed<b>19</b></span>
+      <span>Thu<b>20</b></span>
+    </div>
+    <label>Time</label>
+    <div class="slots">
+      <span>09:30</span><span class="on">11:00</span><span>16:15</span><span class="off">18:00</span>
+    </div>
+    <a class="btn wide" href="#">Send request on WhatsApp</a>
+    <p class="note">You'll get a confirmation message before you arrive.</p>
+  </aside>
+</section>
+
+<section id="services" class="wrap">
+  <div class="head">
+    <h2>What we treat</h2>
+    <a href="#book">All departments →</a>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <span class="ico i1" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v4a4 4 0 0 0 8 0V3"/><path d="M12 11v4a5 5 0 0 0 10 0v-2"/><circle cx="22" cy="11" r="1.6"/></svg>
+      </span>
+      <h3>General medicine</h3>
+      <p>Fever, diabetes review, blood pressure and everyday illness, same day.</p>
+    </article>
+    <article class="card">
+      <span class="ico i2" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"/><path d="M4 9 9 4l2 2-5 5z"/><path d="M15 13l5 5-2 2-5-5z"/></svg>
+      </span>
+      <h3>Physiotherapy</h3>
+      <p>Back, knee and post-surgery rehabilitation with a plan you take home.</p>
+    </article>
+    <article class="card">
+      <span class="ico i3" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8v8M20 8v8M7 6v12M17 6v12"/><path d="M7 12h10"/></svg>
+      </span>
+      <h3>Strength &amp; fitness</h3>
+      <p>Supervised floor, assessments every month, and a trainer who checks form.</p>
+    </article>
+  </div>
+</section>
+
+<section id="timings" class="wrap split">
+  <div>
+    <h2>Timings</h2>
+    <table class="hours">
+      <tr><th>Monday – Friday</th><td>08:00 – 20:00</td></tr>
+      <tr><th>Saturday</th><td>08:00 – 14:00</td></tr>
+      <tr><th>Sunday</th><td>Emergency only</td></tr>
+    </table>
+  </div>
+  <div class="map" aria-hidden="true">
+    <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+    <div class="pin"><span></span></div>
+    <div class="maplabel">Civil Station Road, Malappuram<br><a href="#">Open in Maps →</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© Pulse Clinic &amp; Fitness</span>
+    <span class="by">Sample site — built by <a href="../../">S-Core Tech</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

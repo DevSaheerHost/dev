@@ -290,13 +290,22 @@ html[data-core="software"] .card{backdrop-filter:blur(14px);-webkit-backdrop-fil
   background:var(--panel-2)}
 .shot-head i{width:8px;height:8px;border-radius:50%;background:var(--acc);display:block}
 .shot-head span{font-size:.72rem;color:var(--tx-3)}
-.shot-body{padding:1.1rem;min-height:180px;display:flex;flex-direction:column;gap:.7rem}
-.shot-hero{height:72px;border-radius:8px;background:linear-gradient(135deg,var(--acc-soft),transparent);
-  border:1px solid var(--line);display:grid;place-items:center;font-size:.8rem;color:var(--tx-2)}
-.shot-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
-.shot-row b{height:40px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line-soft)}
-.shot-line{height:8px;border-radius:99px;background:var(--line)}
-.shot-line.s{width:60%}
+/* A real screenshot of the demo behind it. The aspect ratio is declared so the
+   grid holds its shape before the image arrives and nothing jumps. */
+.shot-img{display:block;width:100%;height:auto;aspect-ratio:1180/820;
+  /* height:auto matters: the height="820" attribute is a presentational hint,
+     and without an author rule beating it the picture renders 820px tall. */
+ object-fit:cover;object-position:top center;
+  background:var(--panel-2);border-bottom:1px solid var(--line);
+  transition:transform .5s cubic-bezier(.2,.9,.3,1)}
+.shot:hover .shot-img{transform:scale(1.03)}
+.shot-body{padding:1.1rem;display:flex;flex-direction:column;gap:.5rem}
+.shot-hero{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600}
+.shot-body p{margin:0;font-size:.84rem;color:var(--tx-2);flex:1}
+.shot-open{display:inline-flex;align-items:center;gap:.35rem;margin-top:.35rem;
+  font-size:.83rem;font-weight:600;color:var(--acc)}
+.shot-open svg{width:14px;height:14px;transition:transform .25s}
+.shot:hover .shot-open svg{transform:translate(2px,-2px)}
 
 .steps{counter-reset:s;display:grid;gap:.9rem}
 .steps .card{display:flex;gap:1rem;align-items:flex-start;padding:1.15rem 1.25rem}
@@ -358,9 +367,6 @@ html[data-core="software"] .card{backdrop-filter:blur(14px);-webkit-backdrop-fil
 .seg button{padding:.7rem;border-radius:calc(var(--radius) - 3px);border:1px solid var(--line);
   background:var(--panel);cursor:pointer;font-size:.86rem;font-weight:600;color:var(--tx-2);transition:.2s}
 .seg button[aria-pressed="true"]{border-color:var(--acc);background:var(--acc-soft);color:var(--acc)}
-.warnbox{padding:.8rem .95rem;border-radius:8px;border:1px solid var(--acc-line);background:var(--acc-soft);
-  font-size:.8rem;color:var(--tx-2)}
-.warnbox b{color:var(--acc)}
 
 /* ---------- Mobile dock ------------------------------------------------- */
 .dock{position:fixed;z-index:70;left:50%;transform:translateX(-50%);bottom:calc(.9rem + env(safe-area-inset-bottom));
