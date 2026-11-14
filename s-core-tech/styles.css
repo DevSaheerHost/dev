@@ -452,3 +452,23 @@ html[data-core="software"] [data-panel="software"]{display:revert}
     transition-duration:.001ms!important;scroll-behavior:auto!important}
   .rv{opacity:1;transform:none}
 }
+
+/* ---------- Proof: before/after jobs, and what people said -------------- */
+.job{display:flex;flex-direction:column;gap:.6rem}
+.job-pair{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:-.4rem -.4rem .3rem}
+.job-pair figure{margin:0;position:relative}
+.job-pair img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
+  border-radius:10px;background:var(--panel-2)}
+.job-pair figcaption{position:absolute;left:8px;bottom:8px;padding:.18rem .5rem;border-radius:999px;
+  background:rgba(0,0,0,.66);backdrop-filter:blur(4px);
+  font-size:.64rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#fff}
+.job h4{margin:0;font-family:'Space Grotesk',sans-serif;font-size:1rem}
+.job p{margin:0;font-size:.86rem;color:var(--tx-2)}
+.job-price{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;color:var(--acc)}
+.words{display:grid;gap:1rem;margin-top:1.1rem}
+.word{margin:0;display:flex;flex-direction:column;gap:.8rem}
+.word blockquote{margin:0;font-size:1rem;line-height:1.6;color:var(--tx)}
+.word blockquote::before{content:"\201C";display:block;font-family:'Space Grotesk',sans-serif;
+  font-size:2.4rem;line-height:.6;color:var(--acc);margin-bottom:.4rem}
+.word figcaption{font-size:.82rem;color:var(--tx-3)}
+@media(min-width:760px){ .words{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))} }

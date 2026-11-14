@@ -9,10 +9,51 @@
 ------------------------------------------------------------------------- */
 const WHATSAPP = '917592949476';
 
+/* -------------------------------------------------------------------------
+   PROOF — the only part of this site a stranger has no reason to doubt.
+
+   Everything else on the page is a claim. These are the receipts. While both
+   lists are empty the whole Proof section stays off the page, because an
+   empty testimonial block is worse than none at all.
+
+   Photos go in s-core-tech/proof/ — before and after are optional; a job with
+   only a title and a note still earns its place. Full notes in proof/README.md.
+------------------------------------------------------------------------- */
+const PROOF_JOBS = [
+  // {
+  //   title: 'MacBook Pro 2017 — dead, no charge light',
+  //   note:  'Liquid damage across the board. Cleaned, two power rails rebuilt, '
+  //        + 'back with the owner the next evening.',
+  //   before: 'proof/macbook-before.jpg',   // optional
+  //   after:  'proof/macbook-after.jpg',    // optional
+  //   price:  '₹3,200',                     // optional
+  // },
+];
+
+const PROOF_WORDS = [
+  // { text: 'Took it to two shops before this. Fixed in a day and the price did not move.',
+  //   who: 'Rashid', where: 'Manjeri' },
+];
+
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const rupee = n => '₹' + n.toLocaleString('en-IN');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ------------------------------------------------------------- TRACKING -- */
+/* The three numbers worth knowing: which core people choose, how many open
+   the booking drawer, and how many actually reach WhatsApp. The gap between
+   the last two is the one that tells you something.
+
+   This only pushes onto dataLayer, which is a plain array. If the tag manager
+   loads, it forwards them; if it is blocked, or you swap it for something
+   else later, nothing here breaks and nothing is lost but the reporting.
+   No names, numbers or message text are ever sent — only what was picked. */
+function track(event, data) {
+  try {
+    (window.dataLayer = window.dataLayer || []).push({ event, ...data });
+  } catch (e) { /* analytics must never take the page down */ }
+}
 
 /* ---------------------------------------------------------------- CORE -- */
 /* One attribute drives the whole page; everything else is CSS reacting. */
@@ -42,6 +83,7 @@ function setCore(next, origin) {
     b.setAttribute('aria-pressed', String(b.dataset.coreBtn === next)));
 
   try { localStorage.setItem('score.core', next); } catch (e) {}
+  track('core_switch', { core: next });
 
   stagger();                          // bring the new content in
   buildBooking(next === 'hardware' ? 'repair' : 'website');
@@ -49,7 +91,6 @@ function setCore(next, origin) {
 
 /* The incoming panels animate in one after another rather than all at once. */
 function stagger() {
-  const vis = $$('[data-panel="' + core + '"] .rv, [data-panel="' + core + '"]');
   $$('.rv').forEach(el => el.classList.remove('in'));
   requestAnimationFrame(() => {
     $$('[data-panel="' + core + '"] .rv').forEach((el, i) => {
@@ -192,6 +233,7 @@ function openDrawer(mode, preselect) {
     buildBooking(mode || (core === 'hardware' ? 'repair' : 'website'), preselect);
   }
 
+  track('book_open', { core, mode: bookMode, picked: bookPicked.size });
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -226,6 +268,7 @@ $$('[data-book]').forEach(b => b.addEventListener('click', () => {
 
 function openDrawerNoRebuild() {
   lastFocus = document.activeElement;
+  track('book_open', { core, mode: bookMode, picked: bookPicked.size, from: 'estimator' });
   drawer.classList.add('on');
   scrim.classList.add('on');
   drawer.setAttribute('aria-hidden', 'false');
@@ -270,6 +313,15 @@ $('#sendWa').addEventListener('click', () => {
   if (note)  lines.push('Notes: ' + note);
   lines.push('');
   lines.push('Sent from s-core-tech');
+
+  track('wa_send', {
+    core,
+    mode: bookMode,
+    picked: items.length,
+    named: Boolean(name),          // whether they filled it in, never what they typed
+    area: Boolean(place),
+    noted: Boolean(note),
+  });
 
   location.href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(lines.join('\n'));
 });
@@ -372,4 +424,75 @@ try {
   if (saved === 'software') setCore('software');
 } catch (e) {}
 
+/* ---------------------------------------------------------------- PROOF -- */
+/* Built from the two lists at the top of this file. Nothing is invented here:
+   if you have put nothing in, nothing appears. Text goes in through
+   textContent, never innerHTML, so a stray < in a customer's words is a
+   character and not markup. */
+function renderProof() {
+  const section = $('#proof');
+  if (!section) return;
+  if (!PROOF_JOBS.length && !PROOF_WORDS.length) return;   // stays hidden
+
+  const jobs = $('#proofJobs');
+  PROOF_JOBS.forEach(job => {
+    const card = document.createElement('article');
+    card.className = 'card job rv';
+
+    if (job.before || job.after) {
+      const pair = document.createElement('div');
+      pair.className = 'job-pair';
+      [['before', job.before], ['after', job.after]].forEach(([label, src]) => {
+        if (!src) return;
+        const fig = document.createElement('figure');
+        const img = document.createElement('img');
+        img.src = src;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.alt = label + ': ' + job.title;
+        const cap = document.createElement('figcaption');
+        cap.textContent = label;
+        fig.append(img, cap);
+        pair.appendChild(fig);
+      });
+      card.appendChild(pair);
+    }
+
+    const h = document.createElement('h4');
+    h.textContent = job.title;
+    card.appendChild(h);
+
+    if (job.note) {
+      const p = document.createElement('p');
+      p.textContent = job.note;
+      card.appendChild(p);
+    }
+    if (job.price) {
+      const b = document.createElement('b');
+      b.className = 'job-price';
+      b.textContent = job.price;
+      card.appendChild(b);
+    }
+    jobs.appendChild(card);
+  });
+
+  const words = $('#proofWords');
+  PROOF_WORDS.forEach(w => {
+    const fig = document.createElement('figure');
+    fig.className = 'card word rv';
+    const q = document.createElement('blockquote');
+    q.textContent = w.text;
+    const cite = document.createElement('figcaption');
+    cite.textContent = [w.who, w.where].filter(Boolean).join(' · ');
+    fig.append(q, cite);
+    words.appendChild(fig);
+  });
+
+  section.hidden = false;
+  // The reveal observer was wired before these existed, so it has never seen
+  // them. Without this they stay at opacity 0 and the section looks empty.
+  $$('#proof .rv').forEach(el => io.observe(el));
+}
+
+renderProof();
 stagger();

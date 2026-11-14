@@ -10,6 +10,18 @@
 <meta property="og:description" content="Precision Hardware Engineering & Next-Gen Web Architecture.">
 <meta property="og:type" content="website">
 
+<!-- The same tag manager container as the rest of saheerlab, so S-Core's
+     numbers land beside everything else rather than in a second account.
+     app.js pushes core_switch, book_open and wa_send onto dataLayer whether
+     this loads or not, so a blocked tag manager costs reporting, not the
+     page. For the events to be recorded, the container needs a GA4 tag
+     listening for those three event names. -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MZF4R4ZN');</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -392,6 +404,24 @@
       </div>
     </div>
 
+  </div>
+</section>
+
+<!-- ==================================================== PROOF ==========
+     Hidden until PROOF_JOBS or PROOF_WORDS in app.js has something in it.
+     A testimonial section with nothing real in it is worse than none, so
+     this one does not appear at all until you fill it. See proof/README.md.
+     ===================================================================== -->
+<section id="proof" hidden>
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="dotled"></span>Proof</span>
+      <h2 class="h2">Jobs that left the bench.</h2>
+      <p class="lede">Devices that came in broken and went back working, and what the people
+        they belong to said afterwards.</p>
+    </div>
+    <div class="grid-3" id="proofJobs"></div>
+    <div class="words" id="proofWords"></div>
   </div>
 </section>
 
