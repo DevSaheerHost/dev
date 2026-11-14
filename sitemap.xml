@@ -61,4 +61,12 @@
     <loc>https://saheerlab.vercel.app/xyz-mixed/</loc>
   </url>
 
+  <url>
+    <loc>https://saheerlab.vercel.app/inventory/</loc>
+  </url>
+
+  <url>
+    <loc>https://saheerlab.vercel.app/inventory/accessories/</loc>
+  </url>
+
 </urlset>

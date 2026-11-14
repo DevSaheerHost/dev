@@ -132,6 +132,24 @@
         status: "soon",
         color: "#F2CB05",
         icon: "inventory"
+      },
+      {
+        title: "Parts Inventory",
+        description: "Stock room for a mobile service centre. Track parts by category, brand and model, see what each rack holds, and get warned before a line runs out.",
+        url: "./inventory/",
+        tags: ["Inventory", "Shop", "Offline"],
+        status: "live",
+        color: "#2563eb",
+        icon: "inventory"
+      },
+      {
+        title: "Accessories Finder",
+        description: "Find an accessory and see exactly where it sits. Pin products onto a photo of the rack, then search by name, model, SKU or barcode and have the spot shown to you.",
+        url: "./inventory/accessories/",
+        tags: ["Inventory", "Search", "Offline"],
+        status: "live",
+        color: "#8b5cf6",
+        icon: "search"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -154,6 +172,7 @@
       wallet: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a1 1 0 0 1 1 1v2"></path><rect x="3" y="7.5" width="18" height="12" rx="2"></rect><circle cx="16.5" cy="13.5" r="1.2"></circle>',
       server: '<rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><line x1="7" y1="7.5" x2="7.01" y2="7.5"></line><line x1="7" y1="16.5" x2="7.01" y2="16.5"></line>',
       inventory: '<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12.5 12 17l9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path>',
+      search: '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>',
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
