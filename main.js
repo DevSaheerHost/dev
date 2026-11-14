@@ -150,6 +150,15 @@
         status: "live",
         color: "#8b5cf6",
         icon: "search"
+      },
+      {
+        title: "S-Core Tech",
+        description: "Saheer's Core Technology — one site with two faces. Flip it between chip-level device repair and website building; price a job, then book it straight into WhatsApp.",
+        url: "./s-core-tech/",
+        tags: ["Business", "Repair", "Web"],
+        status: "live",
+        color: "#ff5500",
+        icon: "chip"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -173,6 +182,7 @@
       server: '<rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><line x1="7" y1="7.5" x2="7.01" y2="7.5"></line><line x1="7" y1="16.5" x2="7.01" y2="16.5"></line>',
       inventory: '<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12.5 12 17l9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path>',
       search: '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>',
+      chip: '<rect x="7" y="7" width="10" height="10" rx="1.5"></rect><path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3"></path>',
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',
       monitor: '<rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',

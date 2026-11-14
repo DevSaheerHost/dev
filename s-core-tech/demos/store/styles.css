@@ -1,0 +1,138 @@
+/* Moonlight Mobiles — sample retail site.
+   Dark and loud where the other two are light: a shop that wants prices read
+   from the far side of the room. Yellow does the shouting, nothing else. */
+
+:root{
+  --bg:#0c0c0f;
+  --panel:#141419;
+  --panel-2:#1b1b22;
+  --line:#26262f;
+  --ink:#f4f4f6;
+  --ink-2:#9b9bab;
+  --acc:#facc15;
+  --acc-ink:#1a1500;
+  --good:#4ade80;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Inter,system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:1.1;letter-spacing:-.025em}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1120px,100% - 2.5rem);margin-inline:auto}
+
+/* ---------- ticker + header ---------- */
+.ticker{background:var(--acc);color:var(--acc-ink);font-size:.8rem;font-weight:600;text-align:center;
+  padding:.45rem 1rem;overflow:hidden;white-space:nowrap}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header nav{display:flex;align-items:center;gap:1rem;height:70px}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:'Space Grotesk',sans-serif;
+  font-weight:500;font-size:1.1rem;color:var(--ink-2)}
+.brand b{color:var(--ink);font-weight:700}
+.mark{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
+  background:var(--acc);color:var(--acc-ink);font-weight:700}
+.links{margin-left:auto;display:flex;align-items:center;gap:1.4rem;font-size:.92rem}
+.links a{color:var(--ink-2)}
+.links a:hover{color:var(--ink)}
+.pill{padding:.6rem 1.15rem;border-radius:999px;background:var(--acc);color:var(--acc-ink)!important;font-weight:700}
+
+/* ---------- hero ---------- */
+.hero{display:grid;gap:2.5rem;padding:3.5rem 0 3rem;align-items:center}
+.tag{display:inline-block;margin:0;padding:.3rem .75rem;border-radius:999px;border:1px solid var(--line);
+  background:var(--panel);font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-2)}
+.tag.dark{background:rgba(0,0,0,.25);border-color:rgba(0,0,0,.2);color:var(--acc-ink)}
+.hero h1{font-size:clamp(2.2rem,5vw,3.5rem);margin:1.1rem 0 0}
+.hl{color:var(--acc)}
+.lede{color:var(--ink-2);max-width:46ch;margin:1.1rem 0 0}
+.cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.8rem}
+.btn{display:inline-block;padding:.85rem 1.4rem;border-radius:10px;background:var(--acc);
+  color:var(--acc-ink);font-weight:700;font-size:.95rem;border:1px solid var(--acc)}
+.btn.ghost{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.btn.wide{display:block;text-align:center;width:100%;margin-top:1.2rem}
+
+/* a drawn handset, so the page carries no stock photography */
+.stack{position:relative;justify-self:center;width:min(300px,100%);aspect-ratio:3/4}
+.ph{position:absolute;border-radius:26px;border:1px solid var(--line)}
+.ph-a{inset:4% 16% 4% 10%;background:linear-gradient(165deg,#2a2a35,#111118);
+  box-shadow:0 40px 70px -35px rgba(0,0,0,.9);padding:10px}
+.ph-b{inset:11% 4% 11% 26%;background:linear-gradient(165deg,#1b1b22,#0e0e13);transform:rotate(7deg)}
+.notch{width:52px;height:5px;border-radius:999px;background:#33333f;margin:2px auto 8px}
+.screen{height:calc(100% - 20px);border-radius:18px;
+  background:linear-gradient(160deg,#facc15 0%,#f97316 38%,#7c2d12 100%);opacity:.9}
+.badge{position:absolute;right:-4%;bottom:12%;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:.6rem .9rem;font-size:.74rem;color:var(--ink-2);
+  box-shadow:0 18px 36px -22px rgba(0,0,0,.9)}
+.badge b{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.15rem;color:var(--acc)}
+
+/* ---------- catalog ---------- */
+.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin:2.5rem 0 1.5rem}
+.head h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+.filters{display:flex;gap:.4rem}
+.filters span{padding:.42rem .85rem;border-radius:999px;border:1px solid var(--line);background:var(--panel);
+  font-size:.83rem;color:var(--ink-2)}
+.filters .on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:.9rem;
+  display:flex;flex-direction:column;gap:.35rem}
+.thumb{position:relative;height:130px;border-radius:11px;margin-bottom:.5rem}
+.flag{position:absolute;top:8px;left:8px;background:#000;color:var(--acc);font-size:.7rem;font-weight:700;
+  padding:.2rem .5rem;border-radius:6px}
+.t1{background:linear-gradient(150deg,#60a5fa,#1e3a8a)}
+.t2{background:linear-gradient(150deg,#f472b6,#701a75)}
+.t3{background:linear-gradient(150deg,#4ade80,#14532d)}
+.t4{background:linear-gradient(150deg,#fbbf24,#78350f)}
+.item h3{font-size:1rem}
+.meta{margin:0;font-size:.8rem;color:var(--ink-2)}
+.price{display:flex;align-items:baseline;gap:.5rem;margin-top:.2rem}
+.price b{font-family:'Space Grotesk',sans-serif;font-size:1.15rem}
+.price s{font-size:.82rem;color:var(--ink-2)}
+.buy{margin-top:.5rem;font-size:.85rem;font-weight:600;color:var(--acc)}
+
+/* ---------- exchange band ---------- */
+.band{display:grid;gap:2rem;align-items:center;margin:3.5rem auto;padding:2.2rem;border-radius:20px;
+  background:linear-gradient(135deg,#facc15,#f59e0b);color:var(--acc-ink)}
+.band h2{font-size:clamp(1.6rem,3vw,2.2rem);margin-top:1rem}
+.band .lede.dim{color:#4a3a00;max-width:44ch}
+.calc{background:#13130f;color:var(--ink);border-radius:15px;padding:1.3rem}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.6rem 0;
+  border-bottom:1px solid #26261d;font-size:.92rem;color:var(--ink-2)}
+.row b{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;color:var(--ink)}
+.minus{color:var(--good)!important}
+.total{border-bottom:0;padding-top:.9rem}
+.total b{font-size:1.5rem;color:var(--acc)}
+
+/* ---------- visit ---------- */
+.visit{display:grid;gap:2rem;margin-bottom:4rem}
+.visit h2{font-size:1.7rem;margin-bottom:.9rem}
+.addr{margin:0 0 .7rem;color:var(--ink-2)}
+.visit .btn{margin-top:.6rem}
+.note-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:1.4rem}
+.note-card h3{font-size:1.05rem;margin-bottom:.7rem}
+.note-card ul{margin:0;padding-left:1.1rem;color:var(--ink-2);font-size:.9rem}
+.note-card li{margin-bottom:.35rem}
+.small{margin:.9rem 0 0;font-size:.82rem;color:var(--ink-2)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:1.5rem 0;font-size:.85rem;color:var(--ink-2)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between}
+.by a{color:var(--acc);font-weight:600}
+
+@media(min-width:900px){
+  .hero{grid-template-columns:1.1fr .9fr;gap:3rem}
+  .band{grid-template-columns:1.1fr .9fr;gap:3rem}
+  .visit{grid-template-columns:1.1fr .9fr;gap:3.5rem}
+}
+
+/* ---------- phones ---------- */
+@media(max-width:620px){
+  /* Three links plus the button do not fit beside the name, and pushed the
+     page sideways. The button is the one that earns its place. */
+  .links a:not(.pill){display:none}
+}
+
+@media(max-width:620px){
+  /* The promo line is one long sentence; let it wrap rather than be cut off. */
+  .ticker{white-space:normal}
+}
