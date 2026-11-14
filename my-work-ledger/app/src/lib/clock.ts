@@ -6,11 +6,16 @@
  * makes the ledger engine testable and its results reproducible.
  */
 
-import { todayFrom, type CalendarDate } from './dates';
+import { timeFrom, todayFrom, type CalendarDate } from './dates';
 
 /** The calendar day the device is currently in. */
 export function today(): CalendarDate {
   return todayFrom(new Date());
+}
+
+/** The wall-clock time now, `HH:MM`, in the form reminder schedules use. */
+export function nowTime(): string {
+  return timeFrom(new Date());
 }
 
 /** Wall-clock milliseconds, used only for client-side ordering and sort keys. */

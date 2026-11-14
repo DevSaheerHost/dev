@@ -38,8 +38,8 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { TRANSACTION_KINDS, type TransactionKind } from '@/types/models';
 import { describeWarning } from '@/features/ledger/engine';
 import { combineFigures, computeShopFigures } from '@/features/ledger/figures';
-import { useAllLedgers, useReminders } from '@/features/ledger/LedgerProvider';
-import { deriveReminders, type DerivedKind, type ReminderPrefs } from '@/features/reminders/derived';
+import { useAllLedgers } from '@/features/ledger/LedgerProvider';
+import { useReminderRuntime } from '@/features/reminders/ReminderRuntime';
 import { AskSheet } from '@/features/shops/AskSheet';
 import { ShopBalanceRow } from '@/features/shops/ShopBalanceRow';
 import { ShopForm } from '@/features/shops/ShopForm';
@@ -49,7 +49,6 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   const { activeShops, loading, error } = useShops();
   const { ledgers, error: ledgerError } = useAllLedgers();
   const { displayName } = useAuth();
-  const storedReminders = useReminders();
   const [adding, setAdding] = useState(false);
   const [asking, setAsking] = useState<string | null>(null);
   const [building, setBuilding] = useState(false);
@@ -75,29 +74,8 @@ export function DashboardPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
   const combined = useMemo(() => combineFigures(figures), [figures]);
   const askingFigures = asking ? figures.find((entry) => entry.shop.id === asking) : undefined;
 
-  const needsYou = useMemo(() => {
-    const prefs: ReminderPrefs = new Map(
-      storedReminders
-        .filter((reminder) => reminder.kind !== 'custom')
-        .map((reminder) => [
-          reminder.kind as DerivedKind,
-          { enabled: reminder.enabled, time: reminder.time },
-        ]),
-    );
-    return deriveReminders({
-      shops: activeShops.map((shop) => {
-        const ledger = ledgers.get(shop.id);
-        return {
-          shop,
-          transactions: ledger?.transactions ?? [],
-          configs: ledger?.configs ?? [],
-          days: ledger?.days ?? [],
-        };
-      }),
-      prefs,
-      today,
-    });
-  }, [activeShops, ledgers, storedReminders, today]);
+  // The same list the Reminders screen shows, derived once above both.
+  const needsYou = useReminderRuntime().derived;
   const warnings = figures.flatMap((shop) =>
     shop.warnings.map((warning) => ({ shop: shop.shop.name, warning })),
   );

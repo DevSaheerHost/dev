@@ -42,15 +42,11 @@ import {
 import { today as todayFn } from '@/lib/clock';
 import { isCalendarDate, type CalendarDate } from '@/lib/dates';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { useAllLedgers, useReminders } from '@/features/ledger/LedgerProvider';
-import { useShops } from '@/features/shops/ShopsProvider';
-import {
-  deriveReminders,
-  type DerivedKind,
-  type DerivedReminder,
-  type ReminderPrefs,
-} from '@/features/reminders/derived';
-import { describeDelivery, useNotifier } from '@/features/reminders/notifier';
+import { useReminders } from '@/features/ledger/LedgerProvider';
+import type { DerivedKind, DerivedReminder } from '@/features/reminders/derived';
+import { describeDelivery } from '@/features/reminders/notifier';
+import { useReminderRuntime } from '@/features/reminders/ReminderRuntime';
+import { PLAN_HORIZON_DAYS } from '@/features/reminders/plan';
 import {
   DEFAULT_REMINDER_TIME,
   describeSchedule,
@@ -97,15 +93,12 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 
 export function RemindersPage({ onOpenShop }: { onOpenShop: (shopId: string) => void }) {
   const { uid } = useAuth();
-  const { activeShops } = useShops();
-  const { ledgers } = useAllLedgers();
   const [editing, setEditing] = useState<Reminder | null | undefined>(undefined);
-
-  const today = todayFn();
 
   const stored = useReminders();
 
-  const prefs = useMemo<ReminderPrefs>(() => {
+  /** The stored schedule for each automatic kind, for the switches below. */
+  const prefs = useMemo(() => {
     const map = new Map<DerivedKind, { enabled: boolean; time: string }>();
     for (const reminder of stored) {
       if (reminder.kind === 'custom') continue;
@@ -117,25 +110,10 @@ export function RemindersPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
     return map;
   }, [stored]);
 
-  const derived = useMemo(
-    () =>
-      deriveReminders({
-        shops: activeShops.map((shop) => {
-          const ledger = ledgers.get(shop.id);
-          return {
-            shop,
-            transactions: ledger?.transactions ?? [],
-            configs: ledger?.configs ?? [],
-            days: ledger?.days ?? [],
-          };
-        }),
-        prefs,
-        today,
-      }),
-    [activeShops, ledgers, prefs, today],
-  );
-
-  const notifier = useNotifier(derived);
+  // Derived once, above the screens, so this page and the dashboard cannot
+  // disagree about what needs doing.
+  const runtime = useReminderRuntime();
+  const derived = runtime.derived;
   const custom = stored.filter((reminder) => reminder.kind === 'custom');
 
   function setAuto(kind: DerivedKind, enabled: boolean, time: string) {
@@ -169,7 +147,7 @@ export function RemindersPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
         <SectionHeading
           title="Notifications"
           action={
-            notifier.permission === 'granted' ? (
+            runtime.permission === 'granted' ? (
               <Badge tone="credit">
                 <BellRing size={11} />
                 on
@@ -183,25 +161,58 @@ export function RemindersPage({ onOpenShop }: { onOpenShop: (shopId: string) => 
           }
         />
         <Card className="p-4">
-          <p className="text-sm text-ink-2">{describeDelivery(notifier.permission)}</p>
-          {notifier.permission === 'default' ? (
+          <p className="text-sm text-ink-2">
+            {describeDelivery(runtime.permission, runtime.native)}
+          </p>
+          {runtime.permission === 'default' ? (
             <Button
               tone="primary"
-              onClick={() => void notifier.request()}
+              onClick={() => void runtime.requestPermission()}
               className="mt-3"
             >
               <Bell size={15} />
               Turn notifications on
             </Button>
           ) : null}
-          {notifier.permission === 'granted' ? (
+
+          {runtime.native && runtime.permission === 'granted' ? (
+            <div className="mt-3 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm">
+              <p className="font-semibold text-ink">
+                {runtime.sync?.scheduled ?? 0} reminder
+                {(runtime.sync?.scheduled ?? 0) === 1 ? '' : 's'} set on this phone
+              </p>
+              <p className="mt-0.5 text-ink-2">
+                Covering the next {PLAN_HORIZON_DAYS} days. The list is rebuilt every time you
+                open the app, so a reminder for something you have already dealt with is taken
+                back before it can go off.
+              </p>
+              {runtime.sync?.error ? (
+                <p className="mt-2 text-danger">{runtime.sync.error}</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!runtime.native && runtime.permission === 'granted' ? (
             <Banner tone="neutral" title="While the app is open">
               <p className="flex gap-2">
                 <Info size={15} className="mt-0.5 shrink-0" />
                 <span>
-                  A web page cannot wake itself once you close it. These reminders are reliable
-                  on the Android build, which is the next thing being made. Until then, open the
-                  app and this page tells you what is waiting.
+                  A web page cannot wake itself once you close it, so these are a prompt for
+                  when you look rather than an alarm. The Android build sets them with the
+                  phone instead, and they arrive with the app closed.
+                </span>
+              </p>
+            </Banner>
+          ) : null}
+
+          {runtime.native && runtime.permission === 'granted' ? (
+            <Banner tone="neutral" title="What a set reminder can say">
+              <p className="flex gap-2">
+                <Info size={15} className="mt-0.5 shrink-0" />
+                <span>
+                  A reminder's wording is fixed when it is set, so the ones Android holds ask a
+                  question rather than quote a figure. The amounts are always here, in the app,
+                  worked out fresh.
                 </span>
               </p>
             </Banner>

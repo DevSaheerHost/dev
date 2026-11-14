@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wl_bg">#0A0D13</color>
+    <color name="wl_surface">#141922</color>
+    <color name="wl_accent">#9AA4FF</color>
+</resources>

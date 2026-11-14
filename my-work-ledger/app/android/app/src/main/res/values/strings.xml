@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">My Work Ledger</string>
+    <string name="title_activity_main">My Work Ledger</string>
+    <string name="package_name">com.saheerlab.myworkledger</string>
+    <string name="custom_url_scheme">com.saheerlab.myworkledger</string>
+</resources>

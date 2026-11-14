@@ -7,6 +7,7 @@ import {
   addDays,
   addMonths,
   asCalendarDate,
+  atLocalTime,
   clampDayToMonth,
   compareDates,
   dateOfMs,
@@ -27,6 +28,7 @@ import {
   periodKeyOf,
   periodStart,
   splitDate,
+  timeFrom,
   toDayNumber,
   todayFrom,
   weekdayName,
@@ -224,6 +226,41 @@ describe('dateOfMs and formatClockTime', () => {
     expect(dateOfMs(Number.NaN)).toBeNull();
     expect(formatClockTime(0)).toBeNull();
     expect(formatClockTime(Number.NaN)).toBeNull();
+  });
+});
+
+describe('atLocalTime', () => {
+  it('turns a date and a wall time into that local instant', () => {
+    const at = atLocalTime(date('2025-11-04'), '20:00');
+    expect(at?.getFullYear()).toBe(2025);
+    expect(at?.getMonth()).toBe(10);
+    expect(at?.getDate()).toBe(4);
+    expect(at?.getHours()).toBe(20);
+    expect(at?.getMinutes()).toBe(0);
+    expect(at?.getSeconds()).toBe(0);
+  });
+
+  it('round-trips through todayFrom and timeFrom', () => {
+    const at = atLocalTime(date('2026-02-28'), '07:05');
+    expect(at && todayFrom(at)).toBe('2026-02-28');
+    expect(at && timeFrom(at)).toBe('07:05');
+  });
+
+  it('refuses anything it cannot read, rather than returning the epoch', () => {
+    // An Invalid Date here would schedule an alarm for 1970, which fires the
+    // instant it is registered.
+    expect(atLocalTime(date('2025-11-04'), '24:00')).toBeNull();
+    expect(atLocalTime(date('2025-11-04'), '7:5')).toBeNull();
+    expect(atLocalTime(date('2025-11-04'), '')).toBeNull();
+    expect(atLocalTime('04-11-2025' as never, '20:00')).toBeNull();
+  });
+});
+
+describe('timeFrom', () => {
+  it('pads to HH:MM', () => {
+    expect(timeFrom(new Date(2025, 10, 4, 7, 5))).toBe('07:05');
+    expect(timeFrom(new Date(2025, 10, 4, 23, 59))).toBe('23:59');
+    expect(timeFrom(new Date(2025, 10, 4, 0, 0))).toBe('00:00');
   });
 });
 
