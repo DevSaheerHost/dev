@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* StockPilot design tokens. Light is the default; dark follows the system
+   unless the user picks a theme (stored as data-theme on <html>). */
+:root {
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --surface-muted: #f1f3f7;
+  --border: #e2e5eb;
+  --border-strong: #cdd2db;
+  --foreground: #0f172a;
+  --muted: #576175;
+  --primary: #3b35a6;
+  --primary-hover: #312c8c;
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef0ff;
+  --primary-soft-foreground: #3b35a6;
+  --success: #157a3c;
+  --success-soft: #e8f6ee;
+  --warning: #a35a06;
+  --warning-soft: #fff4e2;
+  --critical: #b42323;
+  --critical-soft: #fdeceb;
+  --ring: #6366f1;
+  /* Chart series (validated: lightness, chroma, CVD, contrast on #ffffff) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --grid: #e9ecf1;
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 30px -10px rgb(15 23 42 / 0.25);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #0b0d12;
+    --surface: #12161f;
+    --surface-muted: #191e29;
+    --border: #252b38;
+    --border-strong: #343b4b;
+    --foreground: #e8ebf1;
+    --muted: #9aa3b4;
+    --primary: #8f8cff;
+    --primary-hover: #a6a4ff;
+    --primary-foreground: #0b0d12;
+    --primary-soft: #1d1d3c;
+    --primary-soft-foreground: #b9b7ff;
+    --success: #4ade80;
+    --success-soft: #0f2a1a;
+    --warning: #fbbf24;
+    --warning-soft: #2c2109;
+    --critical: #f87171;
+    --critical-soft: #2f1214;
+    --ring: #8f8cff;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --grid: #222837;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #0b0d12;
+  --surface: #12161f;
+  --surface-muted: #191e29;
+  --border: #252b38;
+  --border-strong: #343b4b;
+  --foreground: #e8ebf1;
+  --muted: #9aa3b4;
+  --primary: #8f8cff;
+  --primary-hover: #a6a4ff;
+  --primary-foreground: #0b0d12;
+  --primary-soft: #1d1d3c;
+  --primary-soft-foreground: #b9b7ff;
+  --success: #4ade80;
+  --success-soft: #0f2a1a;
+  --warning: #fbbf24;
+  --warning-soft: #2c2109;
+  --critical: #f87171;
+  --critical-soft: #2f1214;
+  --ring: #8f8cff;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --grid: #222837;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-ring: var(--ring);
+  --shadow-card: var(--shadow);
+  --shadow-pop: var(--shadow-lg);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius-card: 0.875rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recording pulse — the only decorative animation, and it respects reduced motion. */
+@keyframes sp-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--critical) 45%, transparent); }
+  100% { box-shadow: 0 0 0 22px transparent; }
+}
+.sp-recording {
+  animation: sp-pulse 1.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp-recording { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
