@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ADAPTERS } from "@/lib/integrations";
 import { PROVIDERS } from "@/lib/integrations/types";
 import { formatDateTime, relativeTime } from "@/lib/utils";
+import { biz } from "@/lib/data/refs";
 
 export const metadata = { title: "Integrations" };
 
@@ -20,11 +21,15 @@ const DESCRIPTIONS = {
 export default async function IntegrationsPage({ searchParams }: PageProps<"/integrations">) {
   const ctx = await requireRole("manager");
   const sp = await searchParams;
-  const [{ data: integrations }, { data: logs }, { data: unmapped }] = await Promise.all([
-    ctx.supabase.from("integrations").select("*").eq("business_id", ctx.business.id),
-    ctx.supabase.from("integration_sync_logs").select("id, integration_id, direction, status, items_processed, conflicts, error, details, created_at").eq("business_id", ctx.business.id).order("created_at", { ascending: false }).limit(25),
-    ctx.supabase.from("integration_product_mappings").select("id, integration_id, external_name, external_sku").eq("business_id", ctx.business.id).is("product_id", null).limit(50),
+  const ref = biz(ctx.business.id);
+  const [integrationSnap, logSnap, unmappedSnaps] = await Promise.all([
+    ref.integrations.get(),
+    ref.syncLogs.orderBy("createdAt", "desc").limit(25).get(),
+    Promise.all(PROVIDERS.map((p) => ref.mappings(p).where("productId", "==", null).limit(50).get().then((s) => s.docs.map((d) => ({ id: d.id, provider: p, ...d.data() }))))),
   ]);
+  const integrations = integrationSnap.docs.map((d) => d.data());
+  const logs = logSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const unmapped = unmappedSnaps.flat().slice(0, 50);
   const owner = ctx.role === "owner";
 
   return (
@@ -37,7 +42,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps<"/int
       <div className="grid gap-4 lg:grid-cols-3">
         {PROVIDERS.map((provider) => {
           const adapter = ADAPTERS[provider];
-          const row = (integrations ?? []).find((i) => i.provider === provider);
+          const row = integrations.find((i) => i.provider === provider);
           const connected = row?.status === "connected" || row?.status === "error";
           const configured = adapter.configured();
           return (
@@ -53,10 +58,10 @@ export default async function IntegrationsPage({ searchParams }: PageProps<"/int
                     : configured ? <Badge tone="neutral"><CircleDashed /> Not connected</Badge>
                     : <Badge tone="neutral">Not configured</Badge>}
                 </div>
-                {row?.last_error && <Alert tone="critical">{row.last_error}</Alert>}
+                {row?.lastError && <Alert tone="critical">{row.lastError}</Alert>}
                 {connected && (
                   <p className="text-xs text-muted">
-                    {row.shop_domain ?? row.external_account_id} · last synced {row.last_synced_at ? relativeTime(row.last_synced_at) : "never"}
+                    {row.shopDomain ?? row.externalAccountId} · last synced {row.lastSyncedAt ? relativeTime(row.lastSyncedAt) : "never"}
                   </p>
                 )}
                 {!configured && !connected && <p className="text-xs text-muted">The server admin needs to add {provider.toUpperCase()} app credentials (see setup guide) before this can be connected.</p>}
@@ -70,25 +75,25 @@ export default async function IntegrationsPage({ searchParams }: PageProps<"/int
                     owner && configured && <ConnectButton provider={provider} label={adapter.label} needsShop={provider === "shopify"} />
                   )}
                 </div>
-                {connected && owner && <div className="border-t border-border pt-4"><IntegrationSettings id={row.id} policy={row.conflict_policy} enabled={row.sync_enabled} /></div>}
+                {connected && owner && <div className="border-t border-border pt-4"><IntegrationSettings provider={provider} policy={row.conflictPolicy} enabled={row.syncEnabled} /></div>}
               </CardBody>
             </Card>
           );
         })}
       </div>
 
-      {(unmapped ?? []).length > 0 && (
+      {unmapped.length > 0 && (
         <Card className="mt-6">
           <CardHeader title="Unmapped POS items" description="These weren't matched by SKU or barcode. Map them so their stock syncs." />
           <DataTable>
             <thead><tr><th>POS item</th><th>SKU</th><th>Provider</th><th /></tr></thead>
             <tbody>
-              {unmapped!.map((m) => (
+              {unmapped.map((m) => (
                 <tr key={m.id}>
-                  <td className="font-medium">{m.external_name}</td>
-                  <td className="text-muted">{m.external_sku ?? "—"}</td>
-                  <td className="capitalize text-muted">{(integrations ?? []).find((i) => i.id === m.integration_id)?.provider}</td>
-                  <td className="text-right"><MapProductButton mappingId={m.id} externalName={m.external_name ?? "item"} /></td>
+                  <td className="font-medium">{m.externalName}</td>
+                  <td className="text-muted">{m.externalSku ?? "—"}</td>
+                  <td className="capitalize text-muted">{m.provider}</td>
+                  <td className="text-right"><MapProductButton provider={m.provider} mappingId={m.id} externalName={m.externalName ?? "item"} /></td>
                 </tr>
               ))}
             </tbody>
@@ -98,19 +103,19 @@ export default async function IntegrationsPage({ searchParams }: PageProps<"/int
 
       <Card className="mt-6">
         <CardHeader title="Sync history" />
-        {(logs ?? []).length === 0 ? (
+        {logs.length === 0 ? (
           <CardBody><p className="text-sm text-muted">No syncs yet.</p></CardBody>
         ) : (
           <DataTable>
             <thead><tr><th>When</th><th>Provider</th><th>Type</th><th>Status</th><th className="text-right">Items</th><th className="text-right">Conflicts</th><th>Details</th></tr></thead>
             <tbody>
-              {logs!.map((l) => (
+              {logs.map((l) => (
                 <tr key={l.id}>
-                  <td className="whitespace-nowrap text-muted">{formatDateTime(l.created_at, ctx.business.timezone)}</td>
-                  <td className="capitalize">{(integrations ?? []).find((i) => i.id === l.integration_id)?.provider}</td>
+                  <td className="whitespace-nowrap text-muted">{formatDateTime(l.createdAt, ctx.business.timezone)}</td>
+                  <td className="capitalize">{l.provider}</td>
                   <td className="capitalize">{l.direction}</td>
                   <td><Badge tone={l.status === "success" ? "success" : l.status === "failed" ? "critical" : l.status === "running" ? "primary" : "warning"}>{l.status}</Badge></td>
-                  <td className="tabular text-right">{l.items_processed}</td>
+                  <td className="tabular text-right">{l.itemsProcessed}</td>
                   <td className="tabular text-right">{l.conflicts}</td>
                   <td className="max-w-80 truncate text-xs text-muted">{l.error ?? (l.details as { reason?: string; product?: string })?.reason ?? ""}</td>
                 </tr>
@@ -119,7 +124,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps<"/int
           </DataTable>
         )}
       </Card>
-      {!(integrations ?? []).length && <p className="mt-6 flex items-center gap-2 text-sm text-muted"><Plug className="size-4" /> Without a POS, record sales by voice or from the product page.</p>}
+      {!integrations.length && <p className="mt-6 flex items-center gap-2 text-sm text-muted"><Plug className="size-4" /> Without a POS, record sales by voice or from the product page.</p>}
     </>
   );
 }

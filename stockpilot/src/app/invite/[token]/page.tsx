@@ -26,6 +26,13 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
                 <Button asChild variant="outline" className="flex-1"><Link href={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link></Button>
               </div>
             </>
+          ) : !(ctx.status === "ok" ? ctx.context.emailVerified : ctx.emailVerified) ? (
+            <>
+              <p className="text-sm text-muted">
+                Verify your email address first: open the link we sent to {ctx.status === "ok" ? ctx.context.email : ctx.email}. Then sign in again and reopen this invitation.
+              </p>
+              <Button asChild variant="outline"><Link href={`/login?next=${encodeURIComponent(next)}`}>I&apos;ve verified — sign in again</Link></Button>
+            </>
           ) : (
             <>
               <p className="text-sm text-muted">Accept to join the team as {ctx.status === "ok" ? ctx.context.email : ctx.email}.</p>

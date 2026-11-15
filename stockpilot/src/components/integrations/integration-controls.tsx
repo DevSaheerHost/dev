@@ -62,7 +62,7 @@ export function DisconnectButton({ provider, label }: { provider: string; label:
   );
 }
 
-export function IntegrationSettings({ id, policy, enabled }: { id: string; policy: string; enabled: boolean }) {
+export function IntegrationSettings({ provider, policy, enabled }: { provider: string; policy: string; enabled: boolean }) {
   const [p, setP] = useState(policy);
   const [e, setE] = useState(enabled);
   const [pending, start] = useTransition();
@@ -80,7 +80,7 @@ export function IntegrationSettings({ id, policy, enabled }: { id: string; polic
       <label className="flex items-center gap-2 pb-2 text-sm"><input type="checkbox" checked={e} onChange={(ev) => setE(ev.target.checked)} className="size-4 accent-[var(--primary)]" /> Sync enabled</label>
       {(p !== policy || e !== enabled) && (
         <Button size="sm" loading={pending} onClick={() => start(async () => {
-          const r = await updateIntegrationSettings(id, p, e);
+          const r = await updateIntegrationSettings(provider, p, e);
           toast(r.ok ? { tone: "success", title: "Saved" } : { tone: "error", title: r.error });
         })}>Save</Button>
       )}
@@ -88,7 +88,7 @@ export function IntegrationSettings({ id, policy, enabled }: { id: string; polic
   );
 }
 
-export function MapProductButton({ mappingId, externalName }: { mappingId: string; externalName: string }) {
+export function MapProductButton({ provider, mappingId, externalName }: { provider: string; mappingId: string; externalName: string }) {
   const [open, setOpen] = useState(false);
   const toast = useToast();
   const router = useRouter();
@@ -97,7 +97,7 @@ export function MapProductButton({ mappingId, externalName }: { mappingId: strin
       <DialogTrigger asChild><Button size="sm" variant="outline">Map</Button></DialogTrigger>
       <DialogContent title="Map POS item" description={`Which StockPilot product is “${externalName}”?`}>
         <ProductSearch autoFocus onPick={async (p) => {
-          const r = await mapExternalProduct(mappingId, p.id);
+          const r = await mapExternalProduct(provider, mappingId, p.id);
           setOpen(false);
           toast(r.ok ? { tone: "success", title: "Mapped" } : { tone: "error", title: r.error });
           router.refresh();

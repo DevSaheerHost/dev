@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DropdownMenu } from "radix-ui";
 import { LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { signOut } from "@/app/actions/session";
 import { clearQueue, listOperations } from "@/lib/offline/queue";
 import type { MemberRole } from "@/lib/domain/types";
 
@@ -24,6 +24,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function UserMenu({ name, email, role }: { name: string; email: string | null; role: MemberRole }) {
+  const router = useRouter();
   const [theme, setTheme] = useState<Theme>("system");
   useEffect(() => {
     try {
@@ -41,7 +42,9 @@ export function UserMenu({ name, email, role }: { name: string; email: string | 
     } catch {
       // IndexedDB unavailable: nothing stored to clear.
     }
-    await signOut();
+    await fetch("/api/auth/session", { method: "DELETE" }).catch(() => {});
+    router.replace("/login");
+    router.refresh();
   }
 
   const initials = name.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "U";

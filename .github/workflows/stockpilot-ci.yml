@@ -15,14 +15,6 @@ jobs:
     defaults:
       run:
         working-directory: stockpilot
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,13 +22,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: stockpilot/package-lock.json
+      # The Firebase emulators need Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run test:db
-        env:
-          DATABASE_TEST_URL: postgres://postgres:postgres@localhost:5432/postgres
+      - run: npm run test:firebase
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"

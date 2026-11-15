@@ -1,8 +1,8 @@
 import "server-only";
 import { z } from "zod";
-import { fromDbError } from "@/lib/api/handler";
+import { AppError } from "@/lib/errors";
 
-export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string } | { ok: false; error: string; fieldErrors?: Record<string, string> };
+export type ActionResult<T = void> = { ok: true; data?: T; message?: string } | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 export type ActionFailure = { ok: false; error: string; fieldErrors?: Record<string, string> };
 
@@ -12,8 +12,21 @@ export function zodFailure(error: z.ZodError): ActionFailure {
   return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
 }
 
-export function dbFailure(error: { code?: string; message?: string } | null, fallback?: string): ActionFailure {
-  return { ok: false, error: fromDbError(error, fallback).message };
+/** Turn any thrown error into a safe action failure (AppErrors carry user-facing messages). */
+export function failure(e: unknown, fallback = "Something went wrong. Please try again."): ActionFailure {
+  if (e instanceof AppError) return { ok: false, error: e.message };
+  console.error("Action failed", e);
+  return { ok: false, error: fallback };
+}
+
+/** Run a mutation and map errors; returns `ok` with an optional message/data. */
+export async function attempt<T = undefined>(fn: () => Promise<T>, message?: string): Promise<ActionResult<T>> {
+  try {
+    const data = await fn();
+    return { ok: true, data, message };
+  } catch (e) {
+    return failure(e);
+  }
 }
 
 /** Text input: trims, empty → null. */

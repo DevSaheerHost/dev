@@ -1,1 +1,19 @@
-{"indexes":[],"fieldOverrides":[]}
+{
+  "indexes": [
+    { "collectionGroup": "members", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "role", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "invitations", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "businessId", "order": "ASCENDING" }, { "fieldPath": "acceptedAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "products", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "skuLower", "order": "ASCENDING" }, { "fieldPath": "archivedAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "products", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "barcode", "order": "ASCENDING" }, { "fieldPath": "archivedAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "movements", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "productId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "movements", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "type", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "movements", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "source", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "reviewItems", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "createdBy", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "aiExtractions", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "createdBy", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "notifications", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "readAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "notifications", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "syncLogs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "nextRetryAt", "order": "ASCENDING" }] }
+  ],
+  "fieldOverrides": [
+    { "collectionGroup": "rateLimits", "fieldPath": "expiresAt", "ttl": true, "indexes": [] }
+  ]
+}

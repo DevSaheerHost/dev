@@ -11,7 +11,10 @@ import { getStorage } from "firebase-admin/storage";
  * from the emulators (FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST).
  */
 let app: App | null = null;
-let firestore: Firestore | null = null;
+
+// Next.js may load this module once per server bundle, but Firestore settings
+// can only be applied once per process, so the instance lives on globalThis.
+const globalForFirestore = globalThis as unknown as { __stockpilotFirestore?: Firestore };
 
 function adminApp(): App {
   if (app) return app;
@@ -30,9 +33,14 @@ function adminApp(): App {
 }
 
 export function db(): Firestore {
-  if (firestore) return firestore;
-  firestore = getFirestore(adminApp());
-  firestore.settings({ ignoreUndefinedProperties: true });
+  if (globalForFirestore.__stockpilotFirestore) return globalForFirestore.__stockpilotFirestore;
+  const firestore = getFirestore(adminApp());
+  try {
+    firestore.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Already configured by another bundle in this process.
+  }
+  globalForFirestore.__stockpilotFirestore = firestore;
   return firestore;
 }
 

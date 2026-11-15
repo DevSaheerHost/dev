@@ -6,22 +6,18 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Alert, EmptyState } from "@/components/ui/feedback";
 import { DataTable, PageHeader } from "@/components/ui/page";
 import { requireRole } from "@/lib/auth/session";
-import { loadReorderPlan } from "@/lib/services/reorder";
+import { listPurchaseOrders, listSuppliers, loadReorderPlan } from "@/lib/data/purchasing";
 import { formatDate, formatMoney, formatNumber } from "@/lib/utils";
 
 export const metadata = { title: "Purchase orders" };
 
 export default async function PurchaseOrdersPage() {
   const ctx = await requireRole("manager");
-  const [plan, { data: orders }, { data: suppliers }] = await Promise.all([
-    loadReorderPlan(ctx),
-    ctx.supabase.from("purchase_orders").select("id, po_number, status, subtotal, created_at, generated_by_ai, suppliers(name), purchase_order_items(count)").eq("business_id", ctx.business.id).order("created_at", { ascending: false }).limit(100),
-    ctx.supabase.from("suppliers").select("id, name").eq("business_id", ctx.business.id).is("archived_at", null).order("name"),
-  ]);
+  const [plan, orders, suppliers] = await Promise.all([loadReorderPlan(ctx.business.id), listPurchaseOrders(ctx.business.id), listSuppliers(ctx.business.id)]);
 
   return (
     <>
-      <PageHeader title="Purchase orders" description="Orders are drafted automatically from low stock and sent only after the owner approves." actions={<NewOrderButton suppliers={suppliers ?? []} />} />
+      <PageHeader title="Purchase orders" description="Orders are drafted automatically from low stock and sent only after the owner approves." actions={<NewOrderButton suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))} />} />
 
       <Card className="mb-6">
         <CardHeader
@@ -59,21 +55,21 @@ export default async function PurchaseOrdersPage() {
         {plan.alreadyOnOrder > 0 && <CardBody className="border-t border-border py-3 text-xs text-muted"><AlertTriangle className="mr-1 inline size-3.5" />{plan.alreadyOnOrder} low-stock products are already on an open order and were left out.</CardBody>}
       </Card>
 
-      {(orders ?? []).length === 0 ? (
+      {orders.length === 0 ? (
         <Card><EmptyState icon={ClipboardList} title="No purchase orders yet" description="Create drafts from the suggestions above, or start a new order." /></Card>
       ) : (
         <Card>
           <DataTable>
             <thead><tr><th>Order</th><th>Supplier</th><th>Status</th><th className="text-right">Lines</th><th className="text-right">Total</th><th>Created</th></tr></thead>
             <tbody>
-              {orders!.map((o) => (
+              {orders.map((o) => (
                 <tr key={o.id}>
-                  <td><Link href={`/purchase-orders/${o.id}`} className="font-medium hover:underline">{o.po_number}</Link>{o.generated_by_ai && <span className="ml-2 text-xs text-muted">auto</span>}</td>
-                  <td>{(o.suppliers as unknown as { name: string } | null)?.name}</td>
-                  <td><PoStatusBadge status={o.status as "draft"} /></td>
-                  <td className="tabular text-right">{(o.purchase_order_items as unknown as { count: number }[])[0]?.count ?? 0}</td>
-                  <td className="tabular text-right">{formatMoney(Number(o.subtotal), ctx.business.currency)}</td>
-                  <td className="text-muted">{formatDate(o.created_at)}</td>
+                  <td><Link href={`/purchase-orders/${o.id}`} className="font-medium hover:underline">{o.poNumber}</Link>{o.generatedByAi && <span className="ml-2 text-xs text-muted">auto</span>}</td>
+                  <td>{o.supplierName}</td>
+                  <td><PoStatusBadge status={o.status} /></td>
+                  <td className="tabular text-right">{o.lines.length}</td>
+                  <td className="tabular text-right">{formatMoney(o.subtotal, ctx.business.currency)}</td>
+                  <td className="text-muted">{formatDate(o.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

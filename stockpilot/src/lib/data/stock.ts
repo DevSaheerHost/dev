@@ -49,11 +49,13 @@ export async function applyMovementTx(tx: Transaction, businessId: string, rules
   const movementRef = ref.movements.doc(hashId(input.idempotencyKey));
   const productRef = ref.products.doc(input.productId);
 
-  const [existing, productSnap, batchSnap] = await Promise.all([
+  const [existing, productSnap, batchSnap, destination] = await Promise.all([
     tx.get(movementRef),
     tx.get(productRef),
     tx.get(ref.batches.where("productId", "==", input.productId)),
+    input.type === "transfer" && input.toLocationId && /^[A-Za-z0-9_-]{8,64}$/.test(input.toLocationId) ? tx.get(ref.locations.doc(input.toLocationId)) : Promise.resolve(null),
   ]);
+  if (input.type === "transfer" && !destination?.exists) throw new AppError(400, "invalid_location", "Choose a location of this business.");
 
   if (existing.exists) {
     const m = existing.data()!;

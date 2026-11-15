@@ -1,6 +1,6 @@
 /**
  * Role capabilities, used for UI decisions and early server-side checks.
- * The database (RLS + RPC role checks) remains the source of truth.
+ * The server data layer (lib/data/*) re-checks roles on every mutation and is the source of truth.
  */
 import type { MemberRole } from "@/lib/domain/types";
 

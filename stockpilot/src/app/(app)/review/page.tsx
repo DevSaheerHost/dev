@@ -6,19 +6,18 @@ import { Card } from "@/components/ui/card";
 import { Alert, EmptyState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/page";
 import { hasRole, requireContext } from "@/lib/auth/session";
-import { loadOpenReviewItems } from "@/lib/services/review-queue";
+import { listOpenReviewItems } from "@/lib/data/review";
+import { signedUrl } from "@/lib/data/storage";
 
 export const metadata = { title: "AI Review" };
 
 export default async function ReviewPage() {
   const ctx = await requireContext();
-  const entries = await loadOpenReviewItems(ctx);
+  const entries = await listOpenReviewItems(ctx);
   const manager = hasRole(ctx.role, "manager");
-
   const paths = [...new Set(entries.map((e) => e.imagePath).filter((p): p is string => !!p))];
-  const signed = paths.length ? (await ctx.supabase.storage.from("inventory-media").createSignedUrls(paths, 900)).data ?? [] : [];
-  const urlByPath = new Map(signed.map((s) => [s.path, s.signedUrl]));
-  const imageUrls = Object.fromEntries(entries.map((e) => [e.item.id, e.imagePath ? urlByPath.get(e.imagePath) ?? null : null]));
+  const urls = new Map(await Promise.all(paths.map(async (p) => [p, await signedUrl(ctx.business.id, p)] as const)));
+  const imageUrls = Object.fromEntries(entries.map((e) => [e.item.id, e.imagePath ? urls.get(e.imagePath) ?? null : null]));
 
   return (
     <>

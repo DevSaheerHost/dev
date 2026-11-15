@@ -1,11 +1,13 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { hasRole, requireContext } from "@/lib/auth/session";
-import { dbFailure, optionalNumber, optionalText, zodFailure, type ActionResult } from "@/lib/actions";
+import { requireContext } from "@/lib/auth/session";
+import { attempt, optionalNumber, optionalText, zodFailure, type ActionResult } from "@/lib/actions";
+import * as purchasing from "@/lib/data/purchasing";
 
+const docId = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 const supplierSchema = z.object({
-  id: z.uuid().optional(),
+  id: docId.optional(),
   name: z.string().trim().min(1, "Name is required.").max(120),
   contactPerson: optionalText(120),
   email: optionalText(254).refine((v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), "Enter a valid email."),
@@ -16,46 +18,28 @@ const supplierSchema = z.object({
   notes: optionalText(2000),
 });
 
-async function managerContext() {
-  const ctx = await requireContext();
-  return hasRole(ctx.role, "manager") ? ctx : null;
-}
-
 export async function saveSupplier(_: ActionResult<{ id: string }> | null, formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const ctx = await managerContext();
-  if (!ctx) return { ok: false, error: "Only managers and owners can manage suppliers." };
+  const ctx = await requireContext();
   const parsed = supplierSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodFailure(parsed.error);
-  const s = parsed.data;
-  const row = {
-    name: s.name, contact_person: s.contactPerson, email: s.email?.toLowerCase() ?? null, phone: s.phone,
-    whatsapp_number: s.whatsappNumber ? s.whatsappNumber.replace(/[\s()-]/g, "") : null,
-    address: s.address, payment_terms: s.paymentTerms, notes: s.notes,
-  };
-  if (s.id) {
-    const { error } = await ctx.supabase.from("suppliers").update(row).eq("id", s.id).eq("business_id", ctx.business.id);
-    if (error) return dbFailure(error);
-    revalidatePath(`/suppliers/${s.id}`);
-    return { ok: true, data: { id: s.id }, message: "Supplier saved." };
-  }
-  const { data, error } = await ctx.supabase.from("suppliers").insert({ ...row, business_id: ctx.business.id }).select("id").single();
-  if (error || !data) return dbFailure(error);
+  const { id, ...s } = parsed.data;
+  const r = await attempt(async () => ({
+    id: await purchasing.saveSupplier(ctx, { ...s, email: s.email?.toLowerCase() ?? null, whatsappNumber: s.whatsappNumber?.replace(/[\s()-]/g, "") ?? null }, id),
+  }), id ? "Supplier saved." : "Supplier added.");
   revalidatePath("/suppliers");
-  return { ok: true, data: { id: data.id }, message: "Supplier added." };
+  return r;
 }
 
 export async function archiveSupplier(id: string): Promise<ActionResult> {
-  const ctx = await managerContext();
-  if (!ctx || !z.uuid().safeParse(id).success) return { ok: false, error: "Not allowed." };
-  const { error } = await ctx.supabase.from("suppliers").update({ archived_at: new Date().toISOString() }).eq("id", id).eq("business_id", ctx.business.id);
-  if (error) return dbFailure(error);
+  const ctx = await requireContext();
+  const r = await attempt(() => purchasing.archiveSupplier(ctx, id), "Supplier archived.");
   revalidatePath("/suppliers");
-  return { ok: true, message: "Supplier archived." };
+  return r;
 }
 
 const mappingSchema = z.object({
-  supplierId: z.uuid(),
-  productId: z.uuid({ message: "Choose a product." }),
+  supplierId: docId,
+  productId: docId,
   supplierSku: optionalText(64),
   unitCost: optionalNumber(0, 1_000_000),
   packSize: optionalNumber(0.001, 1_000_000),
@@ -64,32 +48,18 @@ const mappingSchema = z.object({
 });
 
 export async function saveSupplierProduct(_: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const ctx = await managerContext();
-  if (!ctx) return { ok: false, error: "Not allowed." };
+  const ctx = await requireContext();
   const parsed = mappingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodFailure(parsed.error);
   const m = parsed.data;
-  const { error } = await ctx.supabase.from("supplier_products").upsert(
-    {
-      business_id: ctx.business.id, supplier_id: m.supplierId, product_id: m.productId, supplier_sku: m.supplierSku,
-      unit_cost: m.unitCost ?? 0, pack_size: m.packSize ?? 1, lead_time_days: m.leadTimeDays === null ? null : Math.round(m.leadTimeDays),
-    },
-    { onConflict: "supplier_id,product_id" },
-  );
-  if (error) return dbFailure(error);
-  if (m.preferred) {
-    const { error: pErr } = await ctx.supabase.from("products").update({ preferred_supplier_id: m.supplierId }).eq("id", m.productId).eq("business_id", ctx.business.id);
-    if (pErr) return dbFailure(pErr);
-  }
+  const r = await attempt(() => purchasing.linkSupplierProduct(ctx, { ...m, unitCost: m.unitCost ?? 0, packSize: m.packSize ?? 1, leadTimeDays: m.leadTimeDays === null ? null : Math.round(m.leadTimeDays) }), "Product linked.");
   revalidatePath(`/suppliers/${m.supplierId}`);
-  return { ok: true, message: "Product linked." };
+  return r;
 }
 
 export async function removeSupplierProduct(id: string, supplierId: string): Promise<ActionResult> {
-  const ctx = await managerContext();
-  if (!ctx || !z.uuid().safeParse(id).success) return { ok: false, error: "Not allowed." };
-  const { error } = await ctx.supabase.from("supplier_products").delete().eq("id", id).eq("business_id", ctx.business.id);
-  if (error) return dbFailure(error);
+  const ctx = await requireContext();
+  const r = await attempt(() => purchasing.unlinkSupplierProduct(ctx, id));
   revalidatePath(`/suppliers/${supplierId}`);
-  return { ok: true };
+  return r;
 }
