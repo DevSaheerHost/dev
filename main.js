@@ -159,6 +159,15 @@
         status: "live",
         color: "#ff5500",
         icon: "chip"
+      },
+      {
+        title: "UNO Q CCTV System",
+        description: "A Linux CCTV recorder built on an Arduino UNO Q: USB camera, FFmpeg capture, dedicated USB storage and a systemd service, with a Flask dashboard and WebRTC live view. Build write-up with annotated source.",
+        url: "./uno-q-cctv/",
+        tags: ["Hardware", "Linux", "Showcase"],
+        status: "live",
+        color: "#51d6a0",
+        icon: "camera"
       }
       // ---- add future projects below, same shape ----
       // {
@@ -182,6 +191,7 @@
       server: '<rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><line x1="7" y1="7.5" x2="7.01" y2="7.5"></line><line x1="7" y1="16.5" x2="7.01" y2="16.5"></line>',
       inventory: '<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12.5 12 17l9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path>',
       search: '<circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>',
+      camera: '<path d="M3 8.5A2 2 0 0 1 5 6.5h2.2l1.2-2h7.2l1.2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="12" cy="12.5" r="3.4"></circle>',
       chip: '<rect x="7" y="7" width="10" height="10" rx="1.5"></rect><path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3"></path>',
       spark: '<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path>',
       meter: '<polyline points="2 13 6 13 8 7 11 19 13 13 15 13 16 10 18 13 22 13"></polyline>',

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1118">
+<meta name="description" content="A Linux CCTV recorder on an Arduino UNO Q: one FFmpeg process feeding H.264 segments, an MJPEG preview and a WebRTC live view, with a Flask control dashboard and three systemd services. Annotated source included.">
+<title>UNO Q CCTV System | Project Showcase</title>
+<link rel="canonical" href="https://saheerlab.vercel.app/uno-q-cctv/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Saheer's Lab">
+<meta property="og:title" content="Linux-Based CCTV Recording System">
+<meta property="og:description" content="A hands-on camera monitoring and recording setup built on an Arduino UNO Q running Debian Linux, with a USB UVC camera, FFmpeg and external USB storage.">
+<meta property="og:url" content="https://saheerlab.vercel.app/uno-q-cctv/">
+<meta property="og:image" content="https://saheerlab.vercel.app/uno-q-cctv/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.ico">
+<style>
+:root{color-scheme:dark;--bg:#0b1118;--panel:#121c27;--panel2:#172432;--text:#edf4fb;--muted:#a5b4c4;--line:#283849;--green:#51d6a0;--blue:#8bb7ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 75% 0%,#183044 0,transparent 38%),var(--bg);color:var(--text);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit}.wrap{width:min(1120px,calc(100% - 40px));margin:auto}
+header{padding:24px 0;border-bottom:1px solid var(--line)}.nav{display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{text-decoration:none;font-weight:800;letter-spacing:.08em;font-size:.9rem}.brand span{color:var(--green)}.nav a{font-size:.9rem;color:var(--muted);text-decoration:none}.nav a+a{margin-left:16px}
+.hero{padding:76px 0 54px}.eyebrow{color:var(--green);font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+h1{font-size:clamp(2.5rem,7vw,5.2rem);line-height:1.02;letter-spacing:-.055em;max-width:850px;margin:18px 0}
+.lead{max-width:760px;color:#bdcbd8;font-size:1.12rem}.pills{display:flex;flex-wrap:wrap;gap:9px;margin:26px 0}.pill{border:1px solid #345064;background:#142330;color:#d8e8f3;border-radius:999px;padding:7px 12px;font-size:.82rem}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:12px;padding:12px 17px;font-weight:750;border:1px solid var(--line);background:var(--panel2)}.btn.primary{background:var(--green);color:#062018;border-color:var(--green)}
+section{padding:42px 0}.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px}h2{font-size:clamp(1.55rem,4vw,2.25rem);letter-spacing:-.035em;margin:0}.sub{color:var(--muted);margin:7px 0 0}
+.overview{display:grid;grid-template-columns:1.3fr .7fr;gap:18px}.panel{background:linear-gradient(145deg,#152331,#101923);border:1px solid var(--line);border-radius:20px;padding:24px}.panel h3{margin:0 0 10px}.panel p{color:var(--muted);margin:0}.facts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fact{padding:15px;background:#0d1721;border:1px solid var(--line);border-radius:14px}.fact b{display:block;font-size:1.1rem}.fact span{font-size:.82rem;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}.num{color:var(--green);font-size:.8rem;font-weight:800;letter-spacing:.12em}.step h3{margin:8px 0}.step p{margin:0;color:var(--muted);font-size:.94rem}
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.screenshot-strip{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 14px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#526b80 #14202b;-webkit-overflow-scrolling:touch;margin-bottom:20px}
+.screenshot-strip .shot{flex:0 0 min(78%,340px);scroll-snap-align:start}
+.screenshot-strip .shot img{height:600px}
+.hardware-gallery{margin-top:0}
+.shot{padding:0;text-align:left;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:zoom-in;transition:transform .2s,border-color .2s}.shot:hover{transform:translateY(-3px);border-color:#5b8199}.shot img{display:block;width:100%;object-fit:contain;background:#090e14}
+.hardware-gallery .shot img{height:410px}.shot-copy{display:block;padding:15px 17px 17px}.shot-copy strong{display:block;font-size:1rem}.shot-copy small{display:block;color:var(--muted);font-size:.86rem;margin-top:4px}
+.note{border-left:3px solid var(--green);padding:4px 0 4px 16px;color:var(--muted)}.footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:.9rem}
+.viewer{position:fixed;inset:0;background:#03070beF;display:none;align-items:center;justify-content:center;padding:24px;z-index:5}.viewer.open{display:flex}.viewer img{max-width:min(1100px,94vw);max-height:86vh;object-fit:contain;border-radius:12px}.close{position:absolute;right:22px;top:18px;border:1px solid #526273;background:#172432;color:white;border-radius:999px;padding:9px 14px;font-size:1rem;cursor:pointer}
+@media(max-width:720px){.hero{padding:52px 0 32px}.overview{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.gallery{grid-template-columns:1fr}.hardware-gallery .shot img{height:300px}.screenshot-strip .shot{flex-basis:min(82%,300px)}.screenshot-strip .shot img{height:520px}.section-head{display:block}.wrap{width:min(100% - 28px,1120px)}}
+/* ---------- Under the hood: diagram + annotated source ----------------- */
+.diagram{overflow-x:auto;background:#0d1721;border:1px solid var(--line);border-radius:18px;
+  padding:18px;margin-bottom:22px;scrollbar-width:thin;scrollbar-color:#526b80 #14202b}
+.diagram svg{display:block;width:100%;min-width:620px;height:auto}
+.snips{display:grid;gap:16px}
+/* min-width:0 matters: a grid item defaults to min-width:auto, so the code
+   block refused to shrink and pushed the whole page sideways on a phone
+   instead of scrolling inside its own box. */
+.snip{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px}
+.snip-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px}
+.snip-head h3{margin:0;font-size:1.12rem;letter-spacing:-.02em}
+.snip-file{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem;color:var(--green);
+  background:#11261f;border:1px solid #255944;border-radius:7px;padding:3px 8px}
+.snip-why{color:var(--muted);margin:10px 0 16px;max-width:76ch}
+.snip-why code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;
+  background:#0d1721;border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#cfe0ee}
+.snip-code{position:relative;min-width:0}
+.snip-code pre{margin:0;overflow-x:auto;background:#0a111a;border:1px solid var(--line);
+  border-radius:12px;padding:16px 18px;scrollbar-width:thin;scrollbar-color:#526b80 #14202b}
+.snip-code code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem;
+  line-height:1.65;color:#d7e5f2;white-space:pre;tab-size:2}
+.snip-code .c{color:#6f8599;font-style:italic}
+.snip-code .s{color:#9fd7b4}
+.copy{position:absolute;top:9px;right:9px;z-index:1;border:1px solid var(--line);background:#16222e;
+  color:var(--muted);border-radius:8px;padding:5px 10px;font-size:.74rem;cursor:pointer;
+  opacity:0;transition:opacity .18s,color .18s,border-color .18s}
+.snip-code:hover .copy,.copy:focus-visible{opacity:1}
+.copy:hover{color:var(--text);border-color:#5b8199}
+.copy[data-done="1"]{color:var(--green);border-color:var(--green);opacity:1}
+@media(max-width:720px){.snip{padding:16px}.snip-code code{font-size:.76rem}.copy{opacity:1}}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="../">SAHEER<span> / LAB</span></a><a href="#how">Under the hood</a> <a href="#gallery">Gallery ↓</a></div></header>
+<main>
+<div class="wrap">
+<section class="hero">
+<div class="eyebrow">Hardware • Linux • Camera Systems</div>
+<h1>Linux-Based CCTV<br>Recording System</h1>
+<p class="lead">A hands-on camera monitoring and recording setup built around an Arduino UNO Q running Debian Linux, a USB UVC camera and external USB storage.</p>
+<div class="pills"><span class="pill">Arduino UNO Q</span><span class="pill">Debian Linux</span><span class="pill">FFmpeg</span><span class="pill">USB UVC Camera</span><span class="pill">systemd</span><span class="pill">Flask</span><span class="pill">WebRTC (aiortc)</span><span class="pill">V4L2</span></div>
+<div class="hero-actions"><a class="btn primary" href="#gallery">Explore project photos</a><a class="btn" href="#how">Read the code</a></div>
+</section>
+
+<section>
+<div class="section-head"><div><h2>Project overview</h2><p class="sub">A practical build combining camera hardware and Linux services.</p></div></div>
+<div class="overview">
+<div class="panel"><h3>What I built</h3><p>A CCTV recording workflow with a live monitoring interface, background recording service and dedicated USB storage. The system exposes camera and recorder status through a browser-based dashboard.</p></div>
+<div class="panel facts">
+<div class="fact"><b>1280 × 720</b><span>Recorded video resolution (tested)</span></div>
+<div class="fact"><b>30 FPS</b><span>Recorded frame rate (tested)</span></div>
+<div class="fact"><b>USB storage</b><span>Dedicated recording mount</span></div>
+<div class="fact"><b>Debian</b><span>Linux environment on UNO Q</span></div>
+</div>
+</div>
+</section>
+
+<section id="build">
+<div class="section-head"><div><h2>Build & implementation</h2><p class="sub">The main pieces of the system.</p></div></div>
+<div class="steps">
+<article class="step"><div class="num">01 / CAMERA</div><h3>Device setup</h3><p>Detected and configured the Lenovo USB UVC camera through Linux video devices and V4L2 tools.</p></article>
+<article class="step"><div class="num">02 / RECORDING</div><h3>Video pipeline</h3><p>Used FFmpeg to capture and encode camera footage, then checked output properties with ffprobe.</p></article>
+<article class="step"><div class="num">03 / RELIABILITY</div><h3>Storage & automation</h3><p>Mounted dedicated USB storage and configured a systemd service to run the recorder in the background.</p></article>
+</div>
+</section>
+
+<section id="how">
+<div class="section-head"><div><h2>Under the hood</h2><p class="sub">The decisions that actually shaped the build, in the code that makes them.</p></div></div>
+<div class="diagram" role="img" aria-label="Data flow: one USB camera feeds a single ffmpeg process, which writes H.264 segments to the USB drive, a preview JPEG to tmpfs, and an MPEG-TS stream over loopback to the web service.">
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="#51d6a0"/></marker></defs>
+<g font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13">
+<rect x="8" y="122" width="150" height="56" rx="10" fill="#142330" stroke="#345064"/>
+<text x="83" y="146" fill="#edf4fb" text-anchor="middle">USB UVC camera</text>
+<text x="83" y="164" fill="#a5b4c4" text-anchor="middle" font-size="11.5">/dev/video0</text>
+<path d="M158 150H214" stroke="#51d6a0" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="216" y="112" width="156" height="76" rx="10" fill="#17303f" stroke="#51d6a0"/>
+<text x="294" y="140" fill="#edf4fb" text-anchor="middle">one ffmpeg</text>
+<text x="294" y="158" fill="#a5b4c4" text-anchor="middle" font-size="11.5">opened once,</text>
+<text x="294" y="174" fill="#a5b4c4" text-anchor="middle" font-size="11.5">split three ways</text>
+<path d="M372 136C410 136 410 48 452 48" stroke="#51d6a0" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+<path d="M372 150H452" stroke="#51d6a0" stroke-width="1.6" marker-end="url(#a)"/>
+<path d="M372 164C410 164 410 252 452 252" stroke="#51d6a0" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+<rect x="454" y="22" width="200" height="52" rx="10" fill="#142330" stroke="#345064"/>
+<text x="554" y="44" fill="#edf4fb" text-anchor="middle" font-size="12">H.264, 10-min segments</text>
+<text x="554" y="62" fill="#a5b4c4" text-anchor="middle" font-size="11.5">USB drive, ring buffer</text>
+<rect x="454" y="124" width="200" height="52" rx="10" fill="#142330" stroke="#345064"/>
+<text x="554" y="146" fill="#edf4fb" text-anchor="middle" font-size="12">preview.jpg</text>
+<text x="554" y="164" fill="#a5b4c4" text-anchor="middle" font-size="11.5">tmpfs, rewritten in place</text>
+<rect x="454" y="226" width="200" height="52" rx="10" fill="#142330" stroke="#345064"/>
+<text x="554" y="248" fill="#edf4fb" text-anchor="middle" font-size="12">MPEG-TS, loopback</text>
+<text x="554" y="266" fill="#a5b4c4" text-anchor="middle" font-size="11.5">udp://127.0.0.1:12345</text>
+<path d="M654 150H712" stroke="#8bb7ff" stroke-width="1.6" marker-end="url(#a)" opacity=".85"/>
+<path d="M654 252C684 252 684 168 712 162" stroke="#8bb7ff" stroke-width="1.6" fill="none" marker-end="url(#a)" opacity=".85"/>
+<rect x="714" y="112" width="138" height="76" rx="10" fill="#142330" stroke="#8bb7ff"/>
+<text x="783" y="140" fill="#edf4fb" text-anchor="middle" font-size="12">Flask dashboard</text>
+<text x="783" y="158" fill="#a5b4c4" text-anchor="middle" font-size="11.5">MJPEG fallback</text>
+<text x="783" y="174" fill="#a5b4c4" text-anchor="middle" font-size="11.5">+ WebRTC</text>
+</g></svg></div>
+<div class="snips">
+<article class="snip">
+<div class="snip-head"><h3>One camera, three consumers</h3><code class="snip-file">cctv-recorder.sh</code></div>
+<p class="snip-why">A V4L2 device can only be opened once. Three processes wanting the same camera is the problem that shapes the whole system, so one <code>ffmpeg</code> reads <code>/dev/video0</code> and fans the frames out: ten-minute H.264 segments onto the USB drive, a single JPEG rewritten in place for the fallback view, and a low-latency MPEG-TS stream on loopback for WebRTC. Everything downstream is a reader of those three, never of the camera.</p>
+<div class="snip-code"><button class="copy" type="button">Copy</button><pre><code>    setpriv --reuid=arduino --regid=arduino --init-groups \
+        ffmpeg -y -nostdin -hide_banner -loglevel warning \
+        -f v4l2 \
+        -input_format mjpeg \
+        -video_size 1280x720 \
+        -framerate 30 \
+        -i <span class="s">&quot;$CAM&quot;</span> \
+        <span class="c"># ...</span>
+        -fps_mode vfr \
+        -f segment \
+        -segment_time 600 \
+        -reset_timestamps 1 \
+        -strftime 1 \
+        -segment_format mp4 \
+        -progress /tmp/cctv-progress.txt \
+        -stats_period 1 \
+        <span class="s">&quot;$OUT/cctv_%Y-%m-%d_%H-%M-%S.mp4&quot;</span> \
+        -map 0:v:0 \
+        -vf <span class="s">&quot;fps=7,scale=480:-2&quot;</span> \
+        -an -c:v mjpeg -q:v 8 \
+        -update 1 -f image2 /tmp/cctv-preview.jpg \
+        -map 0:v:0 -vf <span class="s">&quot;fps=12,scale=640:-2&quot;</span> \
+        -c:v libx264 -preset ultrafast -tune zerolatency \
+        -profile:v baseline -pix_fmt yuv420p -g 12 -b:v 500k \
+        <span class="s">&quot;${LIVE_AUDIO_MAP_ARGS[@]}&quot;</span> \
+        <span class="s">&quot;${LIVE_AUDIO_ENCODE_ARGS[@]}&quot;</span> \
+        -f mpegts <span class="s">&quot;udp://127.0.0.1:12345?pkt_size=1316&quot;</span> &amp;</code></pre></div>
+</article>
+<article class="snip">
+<div class="snip-head"><h3>Refusing to record onto the wrong drive</h3><code class="snip-file">cctv-recorder.sh</code></div>
+<p class="snip-why">A mountpoint being busy does not mean it is <em>your</em> disk. This checks the filesystem UUID and type of whatever is actually mounted and unmounts it if it is something else, so plugging in a phone or a stranger’s stick can never start filling it with footage. The read-write flag is checked too, and the caller then proves writability with a real file rather than trusting the flag.</p>
+<div class="snip-code"><button class="copy" type="button">Copy</button><pre><code>storage_ok() {
+    if ! mountpoint -q <span class="s">&quot;$MOUNT&quot;</span>; then
+        mount <span class="s">&quot;$MOUNT&quot;</span> &gt;/dev/null 2&gt;&amp;1 || return 1
+    fi
+
+    local src fs opts actual_uuid
+
+    src=$(findmnt -rn -M <span class="s">&quot;$MOUNT&quot;</span> -o SOURCE 2&gt;/dev/null)
+    fs=$(findmnt -rn -M <span class="s">&quot;$MOUNT&quot;</span> -o FSTYPE 2&gt;/dev/null)
+    opts=$(findmnt -rn -M <span class="s">&quot;$MOUNT&quot;</span> -o OPTIONS 2&gt;/dev/null)
+    actual_uuid=$(blkid -s UUID -o value <span class="s">&quot;$src&quot;</span> 2&gt;/dev/null)
+
+    if [[ <span class="s">&quot;$actual_uuid&quot;</span> != <span class="s">&quot;$UUID&quot;</span> || <span class="s">&quot;$fs&quot;</span> != <span class="s">&quot;vfat&quot;</span> ]]; then
+        umount <span class="s">&quot;$MOUNT&quot;</span> &gt;/dev/null 2&gt;&amp;1 || true
+        return 1
+    fi
+
+    case <span class="s">&quot;,$opts,&quot;</span> in
+        *,rw,*) ;;
+        *) return 1 ;;
+    esac
+
+    return 0
+}</code></pre></div>
+</article>
+<article class="snip">
+<div class="snip-head"><h3>A ring buffer that never eats the file being written</h3><code class="snip-file">cctv-recorder.sh</code></div>
+<p class="snip-why">Old footage is deleted to make room, but only above 80% and only down to 75% — hysteresis, so it is not deleting one file every few seconds at the boundary. Only <code>cctv_*.mp4</code> is ever touched, nothing else that happens to be on the drive, and while recording is live the newest file is protected because <code>ffmpeg</code> still has it open.</p>
+<div class="snip-code"><button class="copy" type="button">Copy</button><pre><code><span class="c"># Delete only cctv_*.mp4 recordings.</span>
+<span class="c"># When recording is active, protect the newest file.</span>
+prune_storage() {
+    local protect_latest=<span class="s">&quot;$1&quot;</span>
+    local usage latest name
+    local -a files
+
+    usage=$(usage_percent) || return 1
+    (( usage &lt; 80 )) &amp;&amp; return 0
+
+    mapfile -t files &lt; &lt;(
+        find <span class="s">&quot;$OUT&quot;</span> -maxdepth 1 -type f \
+            -name &#x27;cctv_*.mp4&#x27; -printf &#x27;%f\n&#x27; | sort
+    )
+
+    latest=<span class="s">&quot;&quot;</span>
+    if (( ${#files[@]} &gt; 0 )); then
+        latest=<span class="s">&quot;${files[${#files[@]}-1]}&quot;</span>
+    fi
+
+    for name in <span class="s">&quot;${files[@]}&quot;</span>; do
+        if [[ <span class="s">&quot;$protect_latest&quot;</span> == <span class="s">&quot;1&quot;</span> &amp;&amp; <span class="s">&quot;$name&quot;</span> == <span class="s">&quot;$latest&quot;</span> ]]; then
+            continue
+        fi
+
+        rm -f -- <span class="s">&quot;$OUT/$name&quot;</span>
+
+        usage=$(usage_percent) || return 1
+        (( usage &lt; 75 )) &amp;&amp; return 0
+    done
+
+    usage=$(usage_percent) || return 1
+    (( usage &lt; 80 ))
+}</code></pre></div>
+</article>
+<article class="snip">
+<div class="snip-head"><h3>Basic Auth alone would let any website stop the recorder</h3><code class="snip-file">cctv_web.py</code></div>
+<p class="snip-why">The browser attaches Basic-Auth credentials to <em>any</em> request to this host, including a form POST from a hostile page in another tab. That page could have stopped the recorder. Three cheap layers close it: a custom header that cannot be set cross-origin without a CORS preflight this app never answers, an <code>Origin</code> that must match, and <code>Sec-Fetch-Site</code> where the browser offers it.</p>
+<div class="snip-code"><button class="copy" type="button">Copy</button><pre><code>@app.before_request
+def api_csrf_guard():
+    if request.method in (<span class="s">&quot;GET&quot;</span>, <span class="s">&quot;HEAD&quot;</span>, <span class="s">&quot;OPTIONS&quot;</span>) or not request.path.startswith(_API_PREFIXES):
+        return None
+    if request.headers.get(<span class="s">&quot;X-CCTV-Request&quot;</span>) != <span class="s">&quot;1&quot;</span>:
+        return jsonify(error=<span class="s">&quot;Missing request header&quot;</span>), 403
+    origin = request.headers.get(<span class="s">&quot;Origin&quot;</span>)
+    if origin and origin != request.host_url.rstrip(<span class="s">&quot;/&quot;</span>):
+        return jsonify(error=<span class="s">&quot;Cross-origin request blocked&quot;</span>), 403
+    site = request.headers.get(<span class="s">&quot;Sec-Fetch-Site&quot;</span>)
+    if site and site not in (<span class="s">&quot;same-origin&quot;</span>, <span class="s">&quot;none&quot;</span>):
+        return jsonify(error=<span class="s">&quot;Cross-site request blocked&quot;</span>), 403
+    return None</code></pre></div>
+</article>
+<article class="snip">
+<div class="snip-head"><h3>Live view that does not re-open the camera</h3><code class="snip-file">cctv_web.py</code></div>
+<p class="snip-why">The WebRTC path could have opened <code>/dev/video0</code> itself and deadlocked against the recorder. Instead it reads the loopback MPEG-TS the recorder is already producing, and refuses a second viewer rather than quietly degrading for both.</p>
+<div class="snip-code"><button class="copy" type="button">Copy</button><pre><code>        if not Path(<span class="s">&quot;/tmp/cctv-preview.jpg&quot;</span>).exists():
+            raise RuntimeError(<span class="s">&quot;Recorder preview is not running. Start the recorder first.&quot;</span>)
+        with _live_lock:
+            if _live_peers:
+                raise RuntimeError(<span class="s">&quot;A live viewer is already connected.&quot;</span>)
+        <span class="c"># Read the recorder&#x27;s local stream. Do not open /dev/video0 or ALSA again.</span>
+        player = MediaPlayer(
+            &quot;udp://127.0.0.1:12345?overrun_nonfatal=1&amp;fifo_size=5000000&quot;,
+            format=<span class="s">&quot;mpegts&quot;</span>,
+            options={<span class="s">&quot;fflags&quot;</span>:<span class="s">&quot;nobuffer&quot;</span>, <span class="s">&quot;flags&quot;</span>:<span class="s">&quot;low_delay&quot;</span>}
+        )
+        if not player.video:
+            raise RuntimeError(<span class="s">&quot;No video track received from the recorder.&quot;</span>)
+        pc = RTCPeerConnection()
+        _live_peers.add(pc)
+        pc.addTrack(player.video)
+        if player.audio:</code></pre></div>
+</article>
+</div>
+<p class="note">Three systemd units keep it alive without anyone logged in: the recorder, the web control centre, and a scheduler that starts and stops recording on a weekly timetable and powers the board down gracefully — stopping the recorder first, so <code>ffmpeg</code> gets a chance to finish writing the MP4 rather than leaving an unplayable file.</p>
+</section>
+
+<section id="gallery">
+<div class="section-head"><div><h2>Project gallery</h2><p class="sub">Screenshots and real hardware photos from the build. Tap any image to enlarge.</p></div></div>
+<div class="screenshot-strip" aria-label="Scrollable screenshots">
+<button class="shot" type="button" data-full="img/1-live-feed.webp" aria-label="Open Live camera feed">
+        <img width="448" height="1000" src="img/1-live-feed-thumb.webp" alt="Live camera feed" loading="lazy">
+        <span class="shot-copy"><strong>Live camera feed</strong><small>Live camera view showing the workbench, stream status and recording indicator.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/2-camera-connection.webp" aria-label="Open Camera connection">
+        <img width="448" height="1000" src="img/2-camera-connection-thumb.webp" alt="Camera connection" loading="lazy">
+        <span class="shot-copy"><strong>Camera connection</strong><small>The live-view interface while connecting to the camera.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/3-recorder-status.webp" aria-label="Open Recorder and storage status">
+        <img width="448" height="1000" src="img/3-recorder-status-thumb.webp" alt="Recorder and storage status" loading="lazy">
+        <span class="shot-copy"><strong>Recorder and storage status</strong><small>Device dashboard showing the active recording file, writer process and USB storage health.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/4-live-controls.webp" aria-label="Open Live-view controls">
+        <img width="448" height="1000" src="img/4-live-controls-thumb.webp" alt="Live-view controls" loading="lazy">
+        <span class="shot-copy"><strong>Live-view controls</strong><small>Live-view controls with recording continuing independently.</small></span>
+      </button>
+</div>
+<div class="gallery hardware-gallery" aria-label="Hardware photos">
+<button class="shot" type="button" data-full="img/5-controller-board.webp" aria-label="Open Power and controller board">
+        <img width="1000" height="850" src="img/5-controller-board-thumb.webp" alt="Power and controller board" loading="lazy">
+        <span class="shot-copy"><strong>Power and controller board</strong><small>Controller and power setup used during the project.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/6-camera-module.webp" aria-label="Open Camera module setup">
+        <img width="750" height="1000" src="img/6-camera-module-thumb.webp" alt="Camera module setup" loading="lazy">
+        <span class="shot-copy"><strong>Camera module setup</strong><small>Camera hardware mounted for testing.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/7-usb-hub.webp" aria-label="Open USB connectivity">
+        <img width="750" height="1000" src="img/7-usb-hub-thumb.webp" alt="USB connectivity" loading="lazy">
+        <span class="shot-copy"><strong>USB connectivity</strong><small>USB hub and connected hardware used in the setup.</small></span>
+      </button>
+<button class="shot" type="button" data-full="img/8-recording-hardware.webp" aria-label="Open Recording hardware">
+        <img width="750" height="1000" src="img/8-recording-hardware-thumb.webp" alt="Recording hardware" loading="lazy">
+        <span class="shot-copy"><strong>Recording hardware</strong><small>Additional hardware arrangement used in the recording setup.</small></span>
+      </button>
+</div>
+</section>
+<section>
+<div class="panel"><h2>What this project demonstrates</h2><p class="note">Linux device troubleshooting at the V4L2 and ALSA level, a video pipeline that has to serve three consumers from one device, storage that fills up and has to be managed without losing the file being written, service automation that survives reboots and power cuts, and a web interface that is safe to expose on a network. Built end to end as a personal project; the code above is from it, unedited.</p></div>
+</section>
+</div>
+</main>
+<footer class="footer"><div class="wrap">Built by <strong>Saheer Babu</strong> · Project showcase · <a href="https://saheerlab.vercel.app">Saheer's Lab</a></div></footer>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Image preview"><button class="close" id="close" type="button">Close ✕</button><img id="viewerImg" alt="Expanded project image"></div>
+<script>
+const viewer = document.getElementById('viewer');
+const viewerImg = document.getElementById('viewerImg');
+const closeBtn = document.getElementById('close');
+let opener = null;
+
+document.querySelectorAll('.shot').forEach(card => card.addEventListener('click', () => {
+  opener = card;
+  /* The full-size file is only fetched now, when someone actually asks to see
+     it. Carry the thumbnail's alt text across so the enlarged picture is not
+     announced as "Expanded project image" eight times over. */
+  viewerImg.alt = card.querySelector('img').alt;
+  viewerImg.src = card.dataset.full;
+  viewer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeBtn.focus();
+}));
+
+function closeViewer() {
+  if (!viewer.classList.contains('open')) return;
+  viewer.classList.remove('open');
+  viewerImg.src = '';
+  document.body.style.overflow = '';
+  /* Put the keyboard back where it was, not at the top of the document. */
+  if (opener) { opener.focus(); opener = null; }
+}
+
+closeBtn.addEventListener('click', closeViewer);
+viewer.addEventListener('click', e => { if (e.target === viewer) closeViewer(); });
+document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', async () => {
+  const code = btn.parentElement.querySelector('code').textContent;
+  try {
+    await navigator.clipboard.writeText(code);
+    btn.textContent = 'Copied';
+  } catch (e) {
+    /* clipboard is blocked outside https, and on a file:// open. Say so rather
+       than flashing "Copied" at someone whose clipboard is still empty. */
+    btn.textContent = 'Select it instead';
+  }
+  btn.dataset.done = '1';
+  setTimeout(() => { btn.textContent = 'Copy'; delete btn.dataset.done; }, 1800);
+}));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeViewer();
+  /* Only the close button is reachable while the dialog is up, so Tab has
+     nowhere else to go. */
+  if (e.key === 'Tab' && viewer.classList.contains('open')) {
+    e.preventDefault();
+    closeBtn.focus();
+  }
+});
+</script>
+</body></html>
