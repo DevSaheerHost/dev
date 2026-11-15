@@ -25,6 +25,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!saved || saved.provider !== provider || saved.user_id !== ctx.context.userId || Date.parse(saved.expires_at) < Date.now()) {
     return back("error=This+connection+link+expired.+Please+try+again.");
   }
+  // Re-check authority at completion time, not just when the flow started.
+  if (!ctx.context.memberships.some((m) => m.businessId === saved.business_id && m.role === "owner")) {
+    return back("error=Only+an+owner+can+connect+integrations.");
+  }
   const shop = provider === "shopify" ? sp.get("shop") ?? undefined : undefined;
   if (provider === "shopify" && saved.shop_domain && shop !== saved.shop_domain) return back("error=Shop+mismatch");
 
