@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { removeSupplierProduct, saveSupplier, saveSupplierProduct } from "@/app/(app)/suppliers/actions";
 import { ProductSearch, type PickedProduct } from "@/components/review/product-picker";
@@ -19,16 +19,17 @@ export function SupplierFormDialog({ values = {}, trigger }: { values?: Supplier
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const toast = useToast();
-  const [state, action, pending] = useActionState(saveSupplier, null);
-  const fe = state && !state.ok ? state.fieldErrors ?? {} : {};
-  useEffect(() => {
-    if (state?.ok) {
+  const [state, action, pending] = useActionState(async (prev: Awaited<ReturnType<typeof saveSupplier>> | null, fd: FormData) => {
+    const r = await saveSupplier(prev, fd);
+    if (r.ok) {
       setOpen(false);
-      toast({ tone: "success", title: state.message ?? "Saved" });
-      if (!values.id && state.data) router.push(`/suppliers/${state.data.id}`);
+      toast({ tone: "success", title: r.message ?? "Saved" });
+      if (!values.id && r.data) router.push(`/suppliers/${r.data.id}`);
       else router.refresh();
     }
-  }, [state, router, toast, values.id]);
+    return r;
+  }, null);
+  const fe = state && !state.ok ? state.fieldErrors ?? {} : {};
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -56,15 +57,16 @@ export function LinkProductDialog({ supplierId, currency }: { supplierId: string
   const [open, setOpen] = useState(false);
   const [product, setProduct] = useState<PickedProduct | null>(null);
   const router = useRouter();
-  const [state, action, pending] = useActionState(saveSupplierProduct, null);
-  const fe = state && !state.ok ? state.fieldErrors ?? {} : {};
-  useEffect(() => {
-    if (state?.ok) {
+  const [state, action, pending] = useActionState(async (prev: Awaited<ReturnType<typeof saveSupplierProduct>> | null, fd: FormData) => {
+    const r = await saveSupplierProduct(prev, fd);
+    if (r.ok) {
       setOpen(false);
       setProduct(null);
       router.refresh();
     }
-  }, [state, router]);
+    return r;
+  }, null);
+  const fe = state && !state.ok ? state.fieldErrors ?? {} : {};
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button size="sm" variant="outline"><Plus /> Link product</Button></DialogTrigger>

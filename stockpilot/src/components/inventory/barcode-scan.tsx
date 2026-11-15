@@ -20,13 +20,8 @@ export function BarcodeScanButton() {
   const video = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const Ctor = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector;
-    if (!Ctor || !navigator.mediaDevices?.getUserMedia) {
-      setSupported(false);
-      return;
-    }
-    setSupported(true);
+    if (!open || !supported) return;
+    const Ctor = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector!;
     let stream: MediaStream | null = null;
     let raf = 0;
     let stopped = false;
@@ -59,11 +54,17 @@ export function BarcodeScanButton() {
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [open, router]);
+  }, [open, supported, router]);
+
+  const openScanner = () => {
+    const hasDetector = "BarcodeDetector" in window && !!navigator.mediaDevices?.getUserMedia;
+    setSupported(hasDetector);
+    setOpen(true);
+  };
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}><ScanBarcode /> Scan</Button>
+      <Button variant="outline" onClick={openScanner}><ScanBarcode /> Scan</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent title="Scan a barcode" description="Point the camera at the product barcode.">
           {supported === false ? (

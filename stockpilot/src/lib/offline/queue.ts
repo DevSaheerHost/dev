@@ -61,7 +61,26 @@ export async function enqueue(op: Omit<OfflineOperation, "createdAt" | "attempts
   if (blob) await tx.objectStore("blobs").put({ id: op.id, blob, type: blob.type });
   await tx.done;
   notifyChange();
+  requestBackgroundSync();
   return true;
+}
+
+/** Ask the browser to wake the service worker when connectivity returns (Chromium only). */
+function requestBackgroundSync() {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready
+    .then((reg) => (reg as ServiceWorkerRegistration & { sync?: { register(tag: string): Promise<void> } }).sync?.register("sp-sync"))
+    .catch(() => {});
+}
+
+/** Remove every queued operation (used on sign-out so another user can never replay them). */
+export async function clearQueue(): Promise<void> {
+  const database = await db();
+  const tx = database.transaction(["operations", "blobs"], "readwrite");
+  await tx.objectStore("operations").clear();
+  await tx.objectStore("blobs").clear();
+  await tx.done;
+  notifyChange();
 }
 
 export async function listOperations(businessId?: string): Promise<OfflineOperation[]> {

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "Your Inventory. Just a Conversation Away. Voice and photo inventory management for independent stores.",
   applicationName: "StockPilot AI",
   appleWebApp: { capable: true, title: "StockPilot", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
   robots: { index: false, follow: false },
 };
 

@@ -13,7 +13,6 @@ export interface OrderMessageInput {
 
 /** Strip characters that could break out of a header or inject formatting. */
 function clean(value: string, max = 200): string {
-  // eslint-disable-next-line no-control-regex
   return value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 }
 

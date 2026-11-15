@@ -3,7 +3,7 @@ import type { AppContext } from "@/lib/auth/session";
 import { PROMPT_VERSION, type PhotoExtraction, type PhotoMode, type VoiceExtraction } from "@/lib/ai/schemas";
 import type { ProviderResult } from "@/lib/ai/provider";
 import { todayIso } from "@/lib/domain/expiry";
-import { buildProposal, fromDetectedProduct, fromVoiceAction, type Proposal, type ProposalInput } from "@/lib/domain/proposals";
+import { buildProposal, fromDetectedProduct, fromVoiceAction, type ProposalInput } from "@/lib/domain/proposals";
 import { ApiError, fromDbError } from "@/lib/api/handler";
 import { loadCatalog } from "./catalog";
 import type { ExtractionOutcome, ReviewItemView } from "@/lib/review-types";
