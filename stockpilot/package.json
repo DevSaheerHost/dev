@@ -8,14 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --project unit",
-    "test:db": "bash scripts/pg-test.sh",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test:firebase": "firebase emulators:exec --project demo-stockpilot --only firestore,auth \"vitest run --project firebase\""
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.119.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "firebase": "^13.3.0",
+    "firebase-admin": "^14.5.1",
     "idb": "^8.0.4",
     "lucide-react": "^1.73.0",
     "next": "16.4.6",
@@ -32,14 +32,13 @@
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^22.20.5",
-    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "fake-indexeddb": "^6.2.8",
-    "pg": "^8.23.1",
+    "firebase-tools": "^15.36.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
     "vitest": "^5.1.0"

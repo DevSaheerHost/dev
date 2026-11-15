@@ -2,9 +2,11 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { biz, memberships as membershipsRef } from "@/lib/data/refs";
 import type { MemberRole } from "@/lib/domain/types";
+import { adminAuth } from "@/lib/firebase/admin";
 
+export const SESSION_COOKIE = "__session";
 export const ACTIVE_BUSINESS_COOKIE = "sp_business";
 
 export interface BusinessSummary {
@@ -16,7 +18,6 @@ export interface BusinessSummary {
   largeAdjustmentUnits: number;
   largeAdjustmentPercent: number;
   expiryWarningDays: number;
-  autoSendPurchaseOrders: boolean;
 }
 
 export interface Membership {
@@ -26,81 +27,77 @@ export interface Membership {
 }
 
 export interface AppContext {
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
   userId: string;
   email: string | null;
+  emailVerified: boolean;
   fullName: string | null;
   role: MemberRole;
   business: BusinessSummary;
   memberships: Membership[];
 }
 
-type ContextResult =
-  | { status: "ok"; context: AppContext }
-  | { status: "unauthenticated" }
-  | { status: "no_business"; userId: string; email: string | null };
+export interface SessionUser {
+  userId: string;
+  email: string | null;
+  emailVerified: boolean;
+  fullName: string | null;
+}
 
-/** Resolves the signed-in user, their memberships and the active business. */
-export const resolveContext = cache(async (): Promise<ContextResult> => {
-  const supabase = await createSupabaseServerClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  const userId = claims?.sub as string | undefined;
-  if (!userId) return { status: "unauthenticated" };
-  const email = (claims?.email as string | undefined) ?? null;
+type ContextResult = { status: "ok"; context: AppContext } | { status: "unauthenticated" } | ({ status: "no_business" } & SessionUser);
 
-  const { data: rows } = await supabase
-    .from("business_members")
-    .select("business_id, role, businesses(name)")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("created_at");
-
-  const memberships: Membership[] = (rows ?? []).map((r) => ({
-    businessId: r.business_id as string,
-    role: r.role as MemberRole,
-    businessName: ((r.businesses as unknown as { name: string } | null)?.name ?? "Business") as string,
-  }));
-  if (memberships.length === 0) return { status: "no_business", userId, email };
-
-  const preferred = (await cookies()).get(ACTIVE_BUSINESS_COOKIE)?.value;
-  const active = memberships.find((m) => m.businessId === preferred) ?? memberships[0];
-
-  const [{ data: business }, { data: profile }] = await Promise.all([
-    supabase
-      .from("businesses")
-      .select("id, name, business_type, currency, timezone, large_adjustment_units, large_adjustment_percent, expiry_warning_days, auto_send_purchase_orders")
-      .eq("id", active.businessId)
-      .single(),
-    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-  ]);
-  if (!business) return { status: "no_business", userId, email };
-
-  return {
-    status: "ok",
-    context: {
-      supabase,
-      userId,
-      email,
-      fullName: (profile?.full_name as string | null) || null,
-      role: active.role,
-      memberships,
-      business: {
-        id: business.id,
-        name: business.name,
-        businessType: business.business_type,
-        currency: business.currency,
-        timezone: business.timezone,
-        largeAdjustmentUnits: Number(business.large_adjustment_units),
-        largeAdjustmentPercent: Number(business.large_adjustment_percent),
-        expiryWarningDays: business.expiry_warning_days,
-        autoSendPurchaseOrders: business.auto_send_purchase_orders,
-      },
-    },
-  };
+/** Verifies the httpOnly session cookie with Firebase, including revocation. */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
+  const cookie = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!cookie || cookie.length > 4096) return null;
+  try {
+    const decoded = await adminAuth().verifySessionCookie(cookie, true);
+    return {
+      userId: decoded.uid,
+      email: decoded.email ?? null,
+      emailVerified: decoded.email_verified === true,
+      fullName: (decoded.name as string | undefined) ?? null,
+    };
+  } catch {
+    return null;
+  }
 });
 
-/** For pages: redirects to login/onboarding when there is no usable context. */
+/** Resolves the signed-in user, memberships and the active business (roles read from the source of truth). */
+export const resolveContext = cache(async (): Promise<ContextResult> => {
+  const user = await getSessionUser();
+  if (!user) return { status: "unauthenticated" };
+
+  const snap = await membershipsRef(user.userId).where("status", "==", "active").get();
+  const list: Membership[] = snap.docs.map((d) => ({ businessId: d.id, businessName: d.data().businessName, role: d.data().role }));
+  if (list.length === 0) return { status: "no_business", ...user };
+
+  const preferred = (await cookies()).get(ACTIVE_BUSINESS_COOKIE)?.value;
+  const candidates = [list.find((m) => m.businessId === preferred), ...list].filter((m): m is Membership => !!m);
+
+  for (const candidate of candidates) {
+    const ref = biz(candidate.businessId);
+    const [member, business] = await Promise.all([ref.members.doc(user.userId).get(), ref.doc.get()]);
+    const m = member.data();
+    const b = business.data();
+    // The membership mirror is only an index; the member doc decides access.
+    if (!m || m.status !== "active" || !b) continue;
+    return {
+      status: "ok",
+      context: {
+        ...user,
+        fullName: m.fullName ?? user.fullName,
+        role: m.role,
+        memberships: list,
+        business: {
+          id: business.id, name: b.name, businessType: b.businessType, currency: b.currency, timezone: b.timezone,
+          largeAdjustmentUnits: b.largeAdjustmentUnits, largeAdjustmentPercent: b.largeAdjustmentPercent, expiryWarningDays: b.expiryWarningDays,
+        },
+      },
+    };
+  }
+  return { status: "no_business", ...user };
+});
+
 export async function requireContext(): Promise<AppContext> {
   const result = await resolveContext();
   if (result.status === "unauthenticated") redirect("/login");
@@ -113,7 +110,6 @@ export function hasRole(role: MemberRole, min: MemberRole): boolean {
   return RANK[role] >= RANK[min];
 }
 
-/** For pages restricted to a role: sends others back to the dashboard. */
 export async function requireRole(min: MemberRole): Promise<AppContext> {
   const ctx = await requireContext();
   if (!hasRole(ctx.role, min)) redirect("/dashboard?denied=1");
