@@ -162,7 +162,7 @@
       },
       {
         title: "UNO Q CCTV System",
-        description: "A Linux CCTV recorder built on an Arduino UNO Q: USB camera, FFmpeg capture, dedicated USB storage and a systemd service, with a browser dashboard for live view. Build write-up and photos.",
+        description: "A Linux CCTV recorder built on an Arduino UNO Q: USB camera, FFmpeg capture, dedicated USB storage and a systemd service, with a Flask dashboard and WebRTC live view. Build write-up with annotated source.",
         url: "./uno-q-cctv/",
         tags: ["Hardware", "Linux", "Showcase"],
         status: "live",
