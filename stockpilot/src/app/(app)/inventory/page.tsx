@@ -9,7 +9,9 @@ import { Input, Select } from "@/components/ui/form";
 import { DataTable, PageHeader } from "@/components/ui/page";
 import { hasRole, requireContext } from "@/lib/auth/session";
 import { expiryBucket, todayIso } from "@/lib/domain/expiry";
-import { oneOf, pageNumber, postgrestSearchTerm } from "@/lib/search";
+import { loadProducts, listCategories } from "@/lib/data/catalog";
+import { matchProduct } from "@/lib/domain/matching";
+import { oneOf, pageNumber } from "@/lib/search";
 import { formatDate, formatMoney, formatNumber } from "@/lib/utils";
 
 export const metadata = { title: "Inventory" };
@@ -17,37 +19,30 @@ const PAGE = 50;
 const SORTS = ["name", "qty_asc", "qty_desc", "updated"] as const;
 const STATUSES = ["all", "low_stock", "out_of_stock", "ok", "archived"] as const;
 
-interface Row {
-  id: string; name: string; sku: string | null; barcode: string | null; brand: string | null; unit: string; current_quantity: number;
-  reorder_threshold: number; cost_price: number; selling_price: number; category: string | null; stock_status: "ok" | "low_stock" | "out_of_stock";
-  next_expiry: string | null; storage_location: string | null;
-}
-
 export default async function InventoryPage({ searchParams }: PageProps<"/inventory">) {
   const ctx = await requireContext();
   const sp = await searchParams;
-  const q = postgrestSearchTerm(sp.q);
+  const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 80);
   const status = oneOf(sp.status, STATUSES, "all");
   const sort = oneOf(sp.sort, SORTS, "name");
   const page = pageNumber(sp.page);
   const category = typeof sp.category === "string" ? sp.category.slice(0, 80) : "";
   const manager = hasRole(ctx.role, "manager");
 
-  let query = ctx.supabase.from("product_overview").select("*", { count: "exact" }).eq("business_id", ctx.business.id);
-  query = status === "archived" ? query.not("archived_at", "is", null) : query.is("archived_at", null);
-  if (status !== "all" && status !== "archived") query = query.eq("stock_status", status);
-  if (category) query = query.eq("category", category);
-  if (q) query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%,barcode.eq.${q},brand.ilike.%${q}%`);
-  query =
-    sort === "qty_asc" ? query.order("current_quantity", { ascending: true }) :
-    sort === "qty_desc" ? query.order("current_quantity", { ascending: false }) :
-    sort === "updated" ? query.order("updated_at", { ascending: false }) : query.order("name");
-  const [{ data, count, error }, { data: categories }] = await Promise.all([
-    query.range((page - 1) * PAGE, page * PAGE - 1),
-    ctx.supabase.from("product_categories").select("name").eq("business_id", ctx.business.id).order("name"),
-  ]);
-  const rows = (data ?? []) as Row[];
-  const total = count ?? 0;
+  const [all, categories] = await Promise.all([loadProducts(ctx.business.id, status === "archived"), listCategories(ctx.business.id)]);
+  let filtered = all.filter((p) => (status === "all" || status === "archived" || p.status === status) && (!category || p.categoryName === category));
+  if (q) {
+    const lower = q.toLowerCase();
+    const direct = new Set(filtered.filter((p) => p.nameLower.includes(lower) || p.skuLower === lower || p.barcode === q || (p.brand ?? "").toLowerCase().includes(lower)).map((p) => p.id));
+    for (const c of matchProduct(q, filtered, 50).candidates) if (c.score >= 0.6) direct.add(c.productId);
+    filtered = filtered.filter((p) => direct.has(p.id));
+  }
+  filtered.sort((a, b) =>
+    sort === "qty_asc" ? a.quantity - b.quantity : sort === "qty_desc" ? b.quantity - a.quantity : sort === "updated" ? b.updatedAt.localeCompare(a.updatedAt) : a.nameLower.localeCompare(b.nameLower),
+  );
+  const total = filtered.length;
+  const rows = filtered.slice((page - 1) * PAGE, page * PAGE);
+  const error = null;
   const today = todayIso(new Date(), ctx.business.timezone);
   const params = (patch: Record<string, string | number>) => {
     const u = new URLSearchParams();
@@ -85,7 +80,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
         </Select>
         <Select name="category" defaultValue={category} aria-label="Category" className="sm:w-44">
           <option value="">All categories</option>
-          {(categories ?? []).map((c) => <option key={c.name}>{c.name}</option>)}
+          {categories.map((c) => <option key={c.id}>{c.name}</option>)}
         </Select>
         <Select name="sort" defaultValue={sort} aria-label="Sort" className="sm:w-44">
           <option value="name">Name A–Z</option>
@@ -115,11 +110,11 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
                 <Link href={`/inventory/${p.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3.5 shadow-card">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{p.name}</p>
-                    <p className="truncate text-xs text-muted">{[p.sku, p.category, p.storage_location].filter(Boolean).join(" · ") || "—"}</p>
-                    <div className="mt-1.5"><StockBadge status={p.stock_status} /></div>
+                    <p className="truncate text-xs text-muted">{[p.sku, p.categoryName, p.storageLocation].filter(Boolean).join(" · ") || "—"}</p>
+                    <div className="mt-1.5"><StockBadge status={p.status} /></div>
                   </div>
                   <div className="text-right">
-                    <p className="tabular text-lg font-semibold">{formatNumber(Number(p.current_quantity))}</p>
+                    <p className="tabular text-lg font-semibold">{formatNumber(p.quantity)}</p>
                     <p className="text-xs text-muted">{p.unit}</p>
                   </div>
                 </Link>
@@ -136,19 +131,19 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
               </thead>
               <tbody>
                 {rows.map((p) => {
-                  const bucket = expiryBucket(p.next_expiry, today);
+                  const bucket = expiryBucket(p.nextExpiry, today);
                   return (
                     <tr key={p.id}>
                       <td>
                         <Link href={`/inventory/${p.id}`} className="font-medium hover:underline">{p.name}</Link>
                         <p className="text-xs text-muted">{[p.sku, p.brand].filter(Boolean).join(" · ")}</p>
                       </td>
-                      <td className="text-muted">{p.category ?? "—"}</td>
-                      <td className="tabular text-right font-semibold">{formatNumber(Number(p.current_quantity))} <span className="font-normal text-muted">{p.unit}</span></td>
-                      <td className="tabular text-right text-muted">{formatNumber(Number(p.reorder_threshold))}</td>
-                      <td><StockBadge status={p.stock_status} /></td>
-                      <td className={bucket === "expired" ? "font-medium text-critical" : bucket === "7" ? "font-medium text-warning" : "text-muted"}>{formatDate(p.next_expiry)}</td>
-                      {manager && <td className="tabular text-right">{formatMoney(Number(p.current_quantity) * Number(p.cost_price), ctx.business.currency)}</td>}
+                      <td className="text-muted">{p.categoryName ?? "—"}</td>
+                      <td className="tabular text-right font-semibold">{formatNumber(p.quantity)} <span className="font-normal text-muted">{p.unit}</span></td>
+                      <td className="tabular text-right text-muted">{formatNumber(p.reorderThreshold)}</td>
+                      <td><StockBadge status={p.status} /></td>
+                      <td className={bucket === "expired" ? "font-medium text-critical" : bucket === "7" ? "font-medium text-warning" : "text-muted"}>{formatDate(p.nextExpiry)}</td>
+                      {manager && <td className="tabular text-right">{formatMoney(p.quantity * p.costPrice, ctx.business.currency)}</td>}
                     </tr>
                   );
                 })}

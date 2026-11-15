@@ -8,6 +8,8 @@ import { DataTable, PageHeader } from "@/components/ui/page";
 import { requireRole } from "@/lib/auth/session";
 import { todayIso } from "@/lib/domain/expiry";
 import { REPORTS, type ReportKey } from "@/lib/reports";
+import { runReport } from "@/lib/data/reports";
+import { AppError } from "@/lib/errors";
 import { oneOf } from "@/lib/search";
 import { cn, formatDate, formatDateTime, formatMoney, formatNumber } from "@/lib/utils";
 
@@ -24,8 +26,13 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const from = isDate(sp.from) ? sp.from : type === "monthly_valuation" ? `${today.slice(0, 4)}-01-01` : monthAgo;
   const to = isDate(sp.to) ? sp.to : today;
   const report = REPORTS[type];
-  const { data, error } = await ctx.supabase.rpc("inventory_report", { p_business_id: ctx.business.id, p_report: type, p_from: from, p_to: to });
-  const rows = (data ?? []) as Record<string, unknown>[];
+  let error: string | null = null;
+  let rows: Record<string, unknown>[] = [];
+  try {
+    rows = await runReport(ctx, type, from, to);
+  } catch (e) {
+    error = e instanceof AppError ? e.message : "Couldn't run this report.";
+  }
 
   const fmt = (value: unknown, format: (typeof report.columns)[number]["format"]) => {
     if (value === null || value === undefined) return "—";
@@ -68,7 +75,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           <Card>
             <CardHeader title={report.title} description={report.description} />
             {error ? (
-              <div className="p-5"><Alert tone="critical">{error.message.startsWith("invalid_range") ? "Choose a range of at most two years." : "Couldn't run this report."}</Alert></div>
+              <div className="p-5"><Alert tone="critical">{error}</Alert></div>
             ) : rows.length === 0 ? (
               <EmptyState icon={BarChart3} title="No data for this period" description="Try a wider date range." />
             ) : (

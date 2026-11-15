@@ -11,42 +11,41 @@ import { DataTable, PageHeader } from "@/components/ui/page";
 import { hasRole, requireContext } from "@/lib/auth/session";
 import { daysUntil, expiryBucket, todayIso } from "@/lib/domain/expiry";
 import { stockStatus, suggestReorderQuantity } from "@/lib/domain/reorder";
-import { MOVEMENT_LABELS, type MovementType } from "@/lib/domain/types";
+import { MOVEMENT_LABELS } from "@/lib/domain/types";
 import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/lib/utils";
+import { listLocations } from "@/lib/data/business";
+import { getProduct, listBatches } from "@/lib/data/catalog";
+import { getSupplier } from "@/lib/data/purchasing";
+import { biz } from "@/lib/data/refs";
 
 export const metadata = { title: "Product" };
 
 export default async function ProductPage({ params }: PageProps<"/inventory/[id]">) {
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const ctx = await requireContext();
   const manager = hasRole(ctx.role, "manager");
-
-  const [{ data: p }, { data: batches }, { data: variants }, { data: movements }, { data: locations }] = await Promise.all([
-    ctx.supabase.from("products").select("*, product_categories(name), suppliers(name)").eq("id", id).eq("business_id", ctx.business.id).maybeSingle(),
-    ctx.supabase.from("inventory_batches").select("id, batch_number, expiry_date, quantity, received_at, unit_cost").eq("product_id", id).gt("quantity", 0).order("expiry_date", { ascending: true, nullsFirst: false }),
-    ctx.supabase.from("product_variants").select("id, name, unit, conversion_factor, barcode").eq("product_id", id).order("conversion_factor"),
-    ctx.supabase.from("inventory_movements").select("id, created_at, movement_type, source, quantity_change, quantity_after, reason, ai_confidence, actor_id, input_quantity, input_unit").eq("product_id", id).order("created_at", { ascending: false }).limit(25),
-    ctx.supabase.from("business_locations").select("id, name").eq("business_id", ctx.business.id).order("name"),
+  const [p, batches, movements, locations] = await Promise.all([
+    getProduct(ctx.business.id, id),
+    listBatches(ctx.business.id, id),
+    biz(ctx.business.id).movements.where("productId", "==", id).orderBy("createdAt", "desc").limit(25).get().then((s) => s.docs.map((d) => ({ ...d.data(), id: d.id }))),
+    listLocations(ctx.business.id),
   ]);
   if (!p) notFound();
+  const supplierName = p.preferredSupplierId ? (await getSupplier(ctx.business.id, p.preferredSupplierId))?.name ?? null : null;
 
-  const actorIds = [...new Set((movements ?? []).map((m) => m.actor_id).filter(Boolean))] as string[];
-  const { data: actors } = actorIds.length ? await ctx.supabase.from("profiles").select("id, full_name, email").in("id", actorIds) : { data: [] };
-  const actorName = new Map((actors ?? []).map((a) => [a.id, a.full_name || a.email]));
-
-  const qty = Number(p.current_quantity);
-  const status = stockStatus(qty, Number(p.reorder_threshold));
+  const qty = p.quantity;
+  const status = stockStatus(qty, p.reorderThreshold);
   const today = todayIso(new Date(), ctx.business.timezone);
-  const suggested = suggestReorderQuantity({ currentQuantity: qty, reorderThreshold: Number(p.reorder_threshold), reorderQuantity: p.reorder_quantity === null ? null : Number(p.reorder_quantity) });
-  const batchTotal = (batches ?? []).reduce((s, b) => s + Number(b.quantity), 0);
+  const suggested = suggestReorderQuantity({ currentQuantity: qty, reorderThreshold: p.reorderThreshold, reorderQuantity: p.reorderQuantity });
+  const batchTotal = batches.reduce((s, b) => s + b.quantity, 0);
+  const variants = p.variants;
 
   return (
     <>
       <PageHeader
         title={p.name}
         back={{ href: "/inventory", label: "Inventory" }}
-        description={[p.sku && `SKU ${p.sku}`, p.brand, (p.product_categories as { name: string } | null)?.name, p.storage_location].filter(Boolean).join(" · ") || undefined}
+        description={[p.sku && `SKU ${p.sku}`, p.brand, p.categoryName, p.storageLocation].filter(Boolean).join(" · ") || undefined}
         actions={
           <>
             <Button asChild variant="outline"><Link href={`/movements?product=${p.id}`}><History /> Full history</Link></Button>
@@ -54,7 +53,7 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
           </>
         }
       />
-      {p.archived_at && <div className="mb-4"><Badge tone="neutral">Archived {formatDate(p.archived_at)}</Badge></div>}
+      {p.archivedAt && <div className="mb-4"><Badge tone="neutral">Archived {formatDate(p.archivedAt)}</Badge></div>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-6">
@@ -67,22 +66,22 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
               </div>
               <div className="space-y-2 text-sm">
                 <StockBadge status={status} />
-                <p className="text-muted">Reorder below <span className="tabular font-medium text-foreground">{formatNumber(Number(p.reorder_threshold))}</span></p>
+                <p className="text-muted">Reorder below <span className="tabular font-medium text-foreground">{formatNumber(p.reorderThreshold)}</span></p>
                 {suggested > 0 && <p className="text-muted">Suggested order <span className="tabular font-medium text-foreground">{formatNumber(suggested)}</span></p>}
-                <p className="text-muted">Supplier: <span className="text-foreground">{(p.suppliers as { name: string } | null)?.name ?? "—"}</span></p>
+                <p className="text-muted">Supplier: <span className="text-foreground">{supplierName ?? "—"}</span></p>
               </div>
               {manager && (
                 <div className="col-span-2 grid grid-cols-3 gap-3 border-t border-border pt-4 text-sm">
-                  <div><p className="text-xs text-muted">Avg cost</p><p className="tabular font-medium">{formatMoney(Number(p.cost_price), ctx.business.currency)}</p></div>
-                  <div><p className="text-xs text-muted">Price</p><p className="tabular font-medium">{formatMoney(Number(p.selling_price), ctx.business.currency)}</p></div>
-                  <div><p className="text-xs text-muted">Stock value</p><p className="tabular font-medium">{formatMoney(qty * Number(p.cost_price), ctx.business.currency)}</p></div>
+                  <div><p className="text-xs text-muted">Avg cost</p><p className="tabular font-medium">{formatMoney(p.costPrice, ctx.business.currency)}</p></div>
+                  <div><p className="text-xs text-muted">Price</p><p className="tabular font-medium">{formatMoney(p.sellingPrice, ctx.business.currency)}</p></div>
+                  <div><p className="text-xs text-muted">Stock value</p><p className="tabular font-medium">{formatMoney(qty * p.costPrice, ctx.business.currency)}</p></div>
                 </div>
               )}
-              <p className="col-span-2 text-xs text-muted">Last counted {p.last_counted_at ? formatDateTime(p.last_counted_at, ctx.business.timezone) : "never"}</p>
+              <p className="col-span-2 text-xs text-muted">Last counted {p.lastCountedAt ? formatDateTime(p.lastCountedAt, ctx.business.timezone) : "never"}</p>
             </CardBody>
           </Card>
 
-          {!p.archived_at && (
+          {!p.archivedAt && (
             <StockAdjust
               productId={p.id}
               productName={p.name}
@@ -90,21 +89,21 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
               current={qty}
               role={ctx.role}
               businessId={ctx.business.id}
-              locations={locations ?? []}
-              batches={(batches ?? []).map((b) => ({ id: b.id, quantity: Number(b.quantity), label: [b.batch_number ?? "No batch no.", b.expiry_date ? `exp ${formatDate(b.expiry_date)}` : null].filter(Boolean).join(" · ") }))}
+              locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+              batches={batches.map((b) => ({ id: b.id, quantity: b.quantity, label: [b.batchNumber ?? "No batch no.", b.expiryDate ? `exp ${formatDate(b.expiryDate)}` : null].filter(Boolean).join(" · ") }))}
             />
           )}
 
           <Card>
             <CardHeader title="Packagings" description={`How package units convert to ${p.unit}. Used to understand “4 cases arrived”.`} />
             <CardBody className="space-y-4">
-              {(variants ?? []).length === 0 ? (
+              {variants.length === 0 ? (
                 <p className="text-sm text-muted">None yet. Without a packaging, StockPilot won&apos;t convert other units for this product.</p>
               ) : (
                 <ul className="divide-y divide-border rounded-lg border border-border">
-                  {variants!.map((v) => (
+                  {variants.map((v) => (
                     <li key={v.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                      <span><span className="font-medium">{v.name}</span> <span className="text-muted">· 1 {v.unit} = {formatNumber(Number(v.conversion_factor))} {p.unit}</span></span>
+                      <span><span className="font-medium">{v.name}</span> <span className="text-muted">· 1 {v.unit} = {formatNumber(v.conversionFactor)} {p.unit}</span></span>
                       {manager && <DeleteVariantButton id={v.id} productId={p.id} />}
                     </li>
                   ))}
@@ -117,7 +116,7 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
           {manager && (
             <Card>
               <CardHeader title="Manage" />
-              <CardBody><ProductDangerZone productId={p.id} archived={!!p.archived_at} isOwner={ctx.role === "owner"} /></CardBody>
+              <CardBody><ProductDangerZone productId={p.id} archived={!!p.archivedAt} isOwner={ctx.role === "owner"} /></CardBody>
             </Card>
           )}
         </div>
@@ -125,29 +124,29 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
         <div className="space-y-6">
           <Card>
             <CardHeader title="Batches" description={batchTotal < qty ? `${formatNumber(qty - batchTotal)} ${p.unit} have no batch recorded.` : "Oldest expiry is used first."} />
-            {(batches ?? []).length === 0 ? (
+            {batches.length === 0 ? (
               <CardBody><p className="text-sm text-muted">No batches. Record a batch and expiry date when receiving stock.</p></CardBody>
             ) : (
               <DataTable>
                 <thead><tr><th>Batch</th><th>Expiry</th><th className="text-right">Qty</th><th>Received</th>{manager && <th />}</tr></thead>
                 <tbody>
-                  {batches!.map((b) => {
-                    const bucket = expiryBucket(b.expiry_date, today);
+                  {batches.map((b) => {
+                    const bucket = expiryBucket(b.expiryDate, today);
                     return (
                       <tr key={b.id}>
-                        <td className="font-medium">{b.batch_number ?? "—"}</td>
+                        <td className="font-medium">{b.batchNumber ?? "—"}</td>
                         <td>
-                          {b.expiry_date ? (
+                          {b.expiryDate ? (
                             <span className="flex items-center gap-2">
-                              {formatDate(b.expiry_date)}
+                              {formatDate(b.expiryDate)}
                               {bucket === "expired" && <Badge tone="critical">Expired</Badge>}
-                              {(bucket === "7" || bucket === "15") && <Badge tone="warning">{daysUntil(b.expiry_date, today)}d left</Badge>}
+                              {(bucket === "7" || bucket === "15") && <Badge tone="warning">{daysUntil(b.expiryDate, today)}d left</Badge>}
                             </span>
                           ) : "—"}
                         </td>
-                        <td className="tabular text-right">{formatNumber(Number(b.quantity))}</td>
-                        <td className="text-muted">{formatDate(b.received_at)}</td>
-                        {manager && <td className="text-right"><EditBatchButton productId={p.id} batch={{ id: b.id, batchNumber: b.batch_number, expiryDate: b.expiry_date }} /></td>}
+                        <td className="tabular text-right">{formatNumber(b.quantity)}</td>
+                        <td className="text-muted">{formatDate(b.receivedAt)}</td>
+                        {manager && <td className="text-right"><EditBatchButton productId={p.id} batch={{ id: b.id, batchNumber: b.batchNumber, expiryDate: b.expiryDate }} /></td>}
                       </tr>
                     );
                   })}
@@ -158,26 +157,26 @@ export default async function ProductPage({ params }: PageProps<"/inventory/[id]
 
           <Card>
             <CardHeader title="Recent movements" action={<Link href={`/movements?product=${p.id}`} className="text-sm font-medium text-primary hover:underline">All</Link>} />
-            {(movements ?? []).length === 0 ? (
+            {movements.length === 0 ? (
               <CardBody><p className="text-sm text-muted">No stock changes yet.</p></CardBody>
             ) : (
               <ul className="divide-y divide-border">
-                {movements!.map((m) => (
+                {movements.map((m) => (
                   <li key={m.id} className="flex items-start gap-3 px-5 py-3 text-sm">
-                    <Badge tone={Number(m.quantity_change) > 0 ? "success" : Number(m.quantity_change) < 0 ? "warning" : "neutral"}>{MOVEMENT_LABELS[m.movement_type as MovementType]}</Badge>
+                    <Badge tone={m.quantityChange > 0 ? "success" : m.quantityChange < 0 ? "warning" : "neutral"}>{MOVEMENT_LABELS[m.type]}</Badge>
                     <div className="min-w-0 flex-1">
                       <p className="tabular">
-                        <span className={Number(m.quantity_change) > 0 ? "font-semibold text-success" : Number(m.quantity_change) < 0 ? "font-semibold text-critical" : "font-semibold"}>
-                          {Number(m.quantity_change) > 0 ? "+" : ""}{formatNumber(Number(m.quantity_change))}
+                        <span className={m.quantityChange > 0 ? "font-semibold text-success" : m.quantityChange < 0 ? "font-semibold text-critical" : "font-semibold"}>
+                          {m.quantityChange > 0 ? "+" : ""}{formatNumber(m.quantityChange)}
                         </span>
-                        <span className="text-muted"> → {formatNumber(Number(m.quantity_after))}</span>
-                        {m.input_unit && <span className="text-muted"> (said {formatNumber(Number(m.input_quantity))} {m.input_unit})</span>}
+                        <span className="text-muted"> → {formatNumber(m.quantityAfter)}</span>
+                        {m.inputUnit && <span className="text-muted"> (said {formatNumber(Number(m.inputQuantity))} {m.inputUnit})</span>}
                       </p>
                       <p className="truncate text-xs text-muted">
-                        {(m.actor_id && actorName.get(m.actor_id)) || (m.source === "pos" ? "POS" : "System")} · {m.source}{m.ai_confidence ? ` · AI ${Math.round(Number(m.ai_confidence) * 100)}%` : ""}{m.reason ? ` · ${m.reason}` : ""}
+                        {m.actorName ?? (m.source === "pos" ? "POS" : "System")} · {m.source}{m.aiConfidence ? ` · AI ${Math.round(m.aiConfidence * 100)}%` : ""}{m.reason ? ` · ${m.reason}` : ""}
                       </p>
                     </div>
-                    <time className="shrink-0 text-xs text-muted" dateTime={m.created_at}>{formatDateTime(m.created_at, ctx.business.timezone)}</time>
+                    <time className="shrink-0 text-xs text-muted" dateTime={m.createdAt}>{formatDateTime(m.createdAt, ctx.business.timezone)}</time>
                   </li>
                 ))}
               </ul>

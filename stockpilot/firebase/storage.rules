@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Photos and recordings are uploaded and read only through the server, which
+// issues short-lived signed URLs to members of the owning business.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

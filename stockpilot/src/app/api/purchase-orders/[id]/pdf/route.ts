@@ -1,18 +1,18 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { ApiError, authedRoute } from "@/lib/api/handler";
-import { loadPurchaseOrder } from "@/lib/services/purchase-order";
+import { getPurchaseOrder, getSupplier } from "@/lib/data/purchasing";
 import { formatMoney, formatNumber } from "@/lib/utils";
 
 /** WinAnsi-safe text for the standard PDF fonts. */
 const t = (s: string | null | undefined, max = 90) => (s ?? "").replace(/[^\x20-\x7E -ÿ]/g, "?").slice(0, max);
 
 export const GET = authedRoute<{ id: string }>({ minRole: "manager", rateLimit: { name: "pdf", limit: 60, windowSeconds: 600 } }, async (_req, ctx, { id }) => {
-  if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError(404, "not_found", "Not found.");
-  const po = await loadPurchaseOrder(ctx, id);
+  const po = await getPurchaseOrder(ctx.business.id, id);
   if (!po) throw new ApiError(404, "not_found", "Purchase order not found.");
+  const supplier = (await getSupplier(ctx.business.id, po.supplierId)) ?? { name: po.supplierName, contactPerson: null, address: null, email: null, phone: null, paymentTerms: null };
 
   const pdf = await PDFDocument.create();
-  pdf.setTitle(`${po.po_number} - ${t(po.suppliers.name)}`);
+  pdf.setTitle(`${po.poNumber} - ${t(supplier.name)}`);
   pdf.setProducer("StockPilot AI");
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -24,16 +24,16 @@ export const GET = authedRoute<{ id: string }>({ minRole: "manager", rateLimit: 
   const right = (s: string, x: number, size = 10, f = font) => page.drawText(s, { x: x - f.widthOfTextAtSize(s, size), y, size, font: f });
 
   text("PURCHASE ORDER", 50, 18, bold, indigo);
-  right(po.po_number, 545, 14, bold);
+  right(po.poNumber, 545, 14, bold);
   y -= 22;
   text(t(ctx.business.name), 50, 11, bold);
-  right(`Date: ${po.created_at.slice(0, 10)}`, 545, 10);
+  right(`Date: ${po.createdAt.slice(0, 10)}`, 545, 10);
   y -= 16;
-  if (po.expected_date) right(`Deliver by: ${po.expected_date}`, 545, 10);
+  if (po.expectedDate) right(`Deliver by: ${po.expectedDate}`, 545, 10);
   y -= 28;
   text("Supplier", 50, 9, bold, gray);
   y -= 14;
-  for (const line of [po.suppliers.name, po.suppliers.contact_person, po.suppliers.address, po.suppliers.email, po.suppliers.phone, po.suppliers.payment_terms && `Terms: ${po.suppliers.payment_terms}`].filter(Boolean)) {
+  for (const line of [supplier.name, supplier.contactPerson, supplier.address, supplier.email, supplier.phone, supplier.paymentTerms && `Terms: ${supplier.paymentTerms}`].filter(Boolean)) {
     text(t(line as string), 50);
     y -= 14;
   }
@@ -44,24 +44,24 @@ export const GET = authedRoute<{ id: string }>({ minRole: "manager", rateLimit: 
     y -= 24;
   };
   header();
-  for (const l of po.purchase_order_items) {
+  for (const l of po.lines) {
     if (y < 90) {
       page = pdf.addPage([595, 842]);
       y = 790;
       header();
     }
-    text(t(l.products.name, 52), 52);
-    right(formatNumber(Number(l.quantity)), 360);
-    text(t(l.products.unit, 12), 368);
-    right(t(formatMoney(Number(l.unit_cost), ctx.business.currency)), 470);
-    right(t(formatMoney(Number(l.line_total), ctx.business.currency)), 545);
+    text(t(l.productName, 52), 52);
+    right(formatNumber(l.quantity), 360);
+    text(t(l.unit, 12), 368);
+    right(t(formatMoney(l.unitCost, ctx.business.currency)), 470);
+    right(t(formatMoney(l.quantity * l.unitCost, ctx.business.currency)), 545);
     y -= 18;
   }
   y -= 6;
   page.drawLine({ start: { x: 360, y: y + 10 }, end: { x: 550, y: y + 10 }, thickness: 0.5, color: gray });
   y -= 8;
   text("Estimated total", 380, 10, bold);
-  right(t(formatMoney(Number(po.subtotal), ctx.business.currency)), 545, 10, bold);
+  right(t(formatMoney(po.subtotal, ctx.business.currency)), 545, 10, bold);
   if (po.notes) {
     y -= 34;
     text("Notes", 50, 9, bold, gray);
@@ -78,7 +78,7 @@ export const GET = authedRoute<{ id: string }>({ minRole: "manager", rateLimit: 
   return new Response(Buffer.from(bytes), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="${po.po_number}.pdf"`,
+      "content-disposition": `attachment; filename="${po.poNumber}.pdf"`,
       "cache-control": "no-store",
     },
   });

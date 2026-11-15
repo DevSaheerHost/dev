@@ -4,7 +4,7 @@ import { publicEnv, serverEnv } from "@/lib/env";
 import { getAdapter } from "@/lib/integrations";
 import { IntegrationError } from "@/lib/integrations/types";
 import { randomToken, sha256Hex } from "@/lib/security/crypto";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { oauthStates } from "@/lib/data/refs";
 
 /** Starts OAuth for a POS provider (owner only). State is single-use and bound to the user. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
@@ -19,10 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const shop = request.nextUrl.searchParams.get("shop")?.trim().toLowerCase() ?? undefined;
 
     const state = randomToken(24);
-    const { error } = await createSupabaseAdminClient().from("integration_oauth_states").insert({
-      state_hash: sha256Hex(state), business_id: ctx.business.id, provider, user_id: ctx.userId, shop_domain: shop ?? null,
-    });
-    if (error) return back("Couldn't start the connection. Please try again.");
+    await oauthStates().doc(sha256Hex(state)).set({ businessId: ctx.business.id, provider, userId: ctx.userId, shopDomain: shop ?? null, expiresAt: new Date(Date.now() + 10 * 60_000).toISOString() });
     const redirectUri = `${publicEnv().NEXT_PUBLIC_APP_URL}/api/integrations/${provider}/callback`;
     try {
       return NextResponse.redirect(adapter.authorizeUrl({ state, redirectUri, shop }));

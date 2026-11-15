@@ -6,18 +6,15 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/page";
 import { requireRole } from "@/lib/auth/session";
+import { listSuppliers } from "@/lib/data/purchasing";
+import { biz } from "@/lib/data/refs";
 
 export const metadata = { title: "Suppliers" };
 
 export default async function SuppliersPage() {
   const ctx = await requireRole("manager");
-  const { data } = await ctx.supabase
-    .from("suppliers")
-    .select("id, name, contact_person, email, phone, whatsapp_number, payment_terms, supplier_products(count)")
-    .eq("business_id", ctx.business.id)
-    .is("archived_at", null)
-    .order("name");
-  const suppliers = data ?? [];
+  const [suppliers, links] = await Promise.all([listSuppliers(ctx.business.id), biz(ctx.business.id).supplierProducts.get()]);
+  const count = (id: string) => links.docs.filter((d) => d.data().supplierId === id).length;
   return (
     <>
       <PageHeader title="Suppliers" description="Who you buy from, what they charge and how they pack it." actions={<SupplierFormDialog trigger={<Button><Plus /> Add supplier</Button>} />} />
@@ -28,13 +25,13 @@ export default async function SuppliersPage() {
           {suppliers.map((s) => (
             <Link key={s.id} href={`/suppliers/${s.id}`} className="rounded-xl border border-border bg-surface p-4 shadow-card transition-colors hover:border-border-strong">
               <p className="font-semibold">{s.name}</p>
-              <p className="text-sm text-muted">{s.contact_person ?? "No contact person"}{s.payment_terms ? ` · ${s.payment_terms}` : ""}</p>
+              <p className="text-sm text-muted">{s.contactPerson ?? "No contact person"}{s.paymentTerms ? ` · ${s.paymentTerms}` : ""}</p>
               <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
                 {s.email && <span className="flex items-center gap-1"><Mail className="size-3.5" /> {s.email}</span>}
                 {s.phone && <span className="flex items-center gap-1"><Phone className="size-3.5" /> {s.phone}</span>}
-                {s.whatsapp_number && <span className="flex items-center gap-1"><MessageCircle className="size-3.5" /> WhatsApp</span>}
+                {s.whatsappNumber && <span className="flex items-center gap-1"><MessageCircle className="size-3.5" /> WhatsApp</span>}
               </div>
-              <p className="mt-3 text-xs font-medium text-primary">{(s.supplier_products as unknown as { count: number }[])[0]?.count ?? 0} products</p>
+              <p className="mt-3 text-xs font-medium text-primary">{count(s.id)} products</p>
             </Link>
           ))}
         </div>

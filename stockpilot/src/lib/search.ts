@@ -1,9 +1,4 @@
-/** Make free text safe to embed in a PostgREST `or=(...)` filter. */
-export function postgrestSearchTerm(q: string | string[] | undefined, max = 80): string {
-  const value = Array.isArray(q) ? q[0] : q;
-  return (value ?? "").replace(/[,()*%\\:"']/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
-}
-
+/** Validation helpers for URL search params. */
 export function pageNumber(p: string | string[] | undefined): number {
   const n = Number(Array.isArray(p) ? p[0] : p);
   return Number.isInteger(n) && n > 0 && n < 10_000 ? n : 1;

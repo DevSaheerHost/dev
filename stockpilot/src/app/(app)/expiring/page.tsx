@@ -7,16 +7,12 @@ import { Alert, EmptyState } from "@/components/ui/feedback";
 import { DataTable, PageHeader } from "@/components/ui/page";
 import { hasRole, requireContext } from "@/lib/auth/session";
 import { daysUntil, EXPIRY_BUCKET_LABELS, expiryBucket, todayIso, type ExpiryBucket } from "@/lib/domain/expiry";
+import { listBatches, loadProducts } from "@/lib/data/catalog";
 import { oneOf } from "@/lib/search";
 import { cn, formatDate, formatMoney, formatNumber } from "@/lib/utils";
 
 export const metadata = { title: "Expiring stock" };
 const TABS = ["expired", "7", "15", "30", "all"] as const;
-
-interface Row {
-  id: string; product_id: string; product_name: string; unit: string; sku: string | null; batch_number: string | null; expiry_date: string;
-  quantity: number; unit_cost: number; value_at_risk: number; storage_location: string | null;
-}
 
 export default async function ExpiringPage({ searchParams }: PageProps<"/expiring">) {
   const ctx = await requireContext();
@@ -25,14 +21,16 @@ export default async function ExpiringPage({ searchParams }: PageProps<"/expirin
   const manager = hasRole(ctx.role, "manager");
   const horizon = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1, +today.slice(8, 10) + Math.max(30, ctx.business.expiryWarningDays))).toISOString().slice(0, 10);
 
-  const { data, error } = await ctx.supabase
-    .from("expiring_batches")
-    .select("id, product_id, product_name, unit, sku, batch_number, expiry_date, quantity, unit_cost, value_at_risk, storage_location")
-    .eq("business_id", ctx.business.id)
-    .lte("expiry_date", horizon)
-    .order("expiry_date")
-    .limit(500);
-  const all = (data ?? []) as Row[];
+  const [batches, products] = await Promise.all([listBatches(ctx.business.id), loadProducts(ctx.business.id)]);
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const error = null;
+  const all = batches
+    .filter((b) => b.expiryDate && b.expiryDate <= horizon && byId.has(b.productId))
+    .map((b) => {
+      const p = byId.get(b.productId)!;
+      const unitCost = b.unitCost ?? p.costPrice;
+      return { id: b.id, product_id: b.productId, product_name: p.name, unit: p.unit, sku: p.sku, batch_number: b.batchNumber, expiry_date: b.expiryDate!, quantity: b.quantity, unit_cost: unitCost, value_at_risk: Math.round(b.quantity * unitCost * 100) / 100, storage_location: p.storageLocation };
+    });
   const counts: Record<string, number> = { expired: 0, "7": 0, "15": 0, "30": 0 };
   for (const r of all) {
     const b = expiryBucket(r.expiry_date, today);

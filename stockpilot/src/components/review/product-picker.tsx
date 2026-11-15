@@ -11,7 +11,7 @@ export interface PickedProduct {
   currentQuantity: number | null;
 }
 
-/** Search the catalog (RLS-scoped) and pick a product. */
+/** Search the current business's catalog and pick a product. */
 export function ProductSearch({ onPick, autoFocus }: { onPick: (p: PickedProduct) => void; autoFocus?: boolean }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PickedProduct[]>([]);
