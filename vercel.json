@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/cctv-project-info",
+      "destination": "/uno-q-cctv/",
+      "permanent": true
+    },
+    {
+      "source": "/cctv-project-info/:path*",
+      "destination": "/uno-q-cctv/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
