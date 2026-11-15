@@ -93,7 +93,9 @@ language sql
 stable
 set search_path = ''
 as $$
-  select app.jwt_role() = 'service_role';
+  -- The JWT claim covers legacy service_role keys; the role GUC covers the
+  -- newer secret API keys. Neither can be set by an end user.
+  select app.jwt_role() = 'service_role' or current_setting('role', true) = 'service_role';
 $$;
 
 -- ---------------------------------------------------------------------------
