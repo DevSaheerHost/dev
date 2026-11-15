@@ -38,6 +38,8 @@ export function ConfirmDialog({
               try {
                 await onConfirm();
                 setOpen(false);
+              } catch {
+                // Keep the dialog open so the user can correct the input.
               } finally {
                 setBusy(false);
               }

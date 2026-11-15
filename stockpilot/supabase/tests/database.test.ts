@@ -441,3 +441,19 @@ describe("platform utilities", () => {
     expect(rows[0]).toEqual({ m: 0, b: 0 });
   });
 });
+
+describe("read views", () => {
+  it("respect RLS through security_invoker", async () => {
+    const own = await q(db.pool, ownerA, `select count(*)::int as n from public.product_overview`);
+    expect(own[0].n).toBeGreaterThan(0);
+    const other = await q(db.pool, ownerB, `select count(*)::int as n from public.product_overview where business_id = $1`, [bizA]);
+    expect(other[0].n).toBe(0);
+    const batches = await q(db.pool, ownerB, `select count(*)::int as n from public.expiring_batches where business_id = $1`, [bizA]);
+    expect(batches[0].n).toBe(0);
+  });
+
+  it("derives stock status", async () => {
+    const rows = await q(db.pool, ownerA, `select stock_status, count(*)::int from public.product_overview where business_id = $1 group by 1`, [bizA]);
+    expect(rows.map((r) => r.stock_status).sort()).toEqual(expect.arrayContaining(["out_of_stock"]));
+  });
+});
