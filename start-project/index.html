@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- Locked down: own script and styles only, no network calls, no form posts.
+       The enquiry leaves the page as a wa.me link the visitor opens themselves. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+
+  <title>Start a Website Project · Saheer's Lab</title>
+  <meta name="description" content="Need a website? Tell Saheer Babu what you want built — landing page, online store, web app or QR menu — and send the brief straight to WhatsApp.">
+  <meta name="author" content="Saheer Babu">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0e0f14">
+  <link rel="canonical" href="https://saheerlab.vercel.app/start-project/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Start a Website Project — Saheer's Lab">
+  <meta property="og:description" content="Tell me what you want built. Two minutes, no account, straight to WhatsApp.">
+  <meta property="og:url" content="https://saheerlab.vercel.app/start-project/">
+  <meta property="og:site_name" content="Saheer's Lab">
+  <meta property="og:image" content="https://saheerlab.vercel.app/og-image.png">
+
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <header class="top">
+    <a class="back" href="../">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      Saheer's Lab
+    </a>
+    <span class="pill"><i></i> Taking new projects</span>
+  </header>
+
+  <main class="wrap">
+    <section class="intro">
+      <h1>Let's build your <span>website</span>.</h1>
+      <p>Tell me what you need. It takes about two minutes, there's no account, and the brief opens in WhatsApp ready to send. I'll reply with a price and a timeline.</p>
+      <ol class="steps" aria-label="How it works">
+        <li><b>1</b> Fill in the brief</li>
+        <li><b>2</b> Check the summary</li>
+        <li><b>3</b> Send it on WhatsApp</li>
+      </ol>
+    </section>
+
+    <form id="enquiry" class="form" novalidate autocomplete="on">
+
+      <!-- ---------------- 1. About you ---------------- -->
+      <fieldset class="panel">
+        <legend><span class="num">01</span> About you</legend>
+
+        <div class="row two">
+          <label class="field">
+            <span class="lbl">Your name <em>*</em></span>
+            <input id="name" name="name" type="text" required maxlength="60" autocomplete="name" placeholder="e.g. Rashid K">
+            <small class="err" data-for="name"></small>
+          </label>
+
+          <label class="field">
+            <span class="lbl">WhatsApp / phone <em>*</em></span>
+            <input id="phone" name="phone" type="tel" required maxlength="16" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210">
+            <small class="err" data-for="phone"></small>
+          </label>
+        </div>
+
+        <div class="row two">
+          <label class="field">
+            <span class="lbl">Email <i>optional</i></span>
+            <input id="email" name="email" type="email" maxlength="80" autocomplete="email" placeholder="you@business.com">
+            <small class="err" data-for="email"></small>
+          </label>
+
+          <label class="field">
+            <span class="lbl">Business / brand <i>optional</i></span>
+            <input id="business" name="business" type="text" maxlength="60" autocomplete="organization" placeholder="e.g. Green Leaf Café, Manjeri">
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- ---------------- 2. The project ---------------- -->
+      <fieldset class="panel">
+        <legend><span class="num">02</span> The project</legend>
+
+        <div class="field">
+          <span class="lbl" id="typeLbl">What do you need? <em>*</em></span>
+          <div class="choices cards" role="radiogroup" aria-labelledby="typeLbl" data-group="type" data-single></div>
+          <small class="err" data-for="type"></small>
+        </div>
+
+        <div class="field">
+          <span class="lbl" id="featLbl">Features you want <i>pick any</i></span>
+          <div class="choices" role="group" aria-labelledby="featLbl" data-group="features"></div>
+        </div>
+
+        <div class="row two">
+          <div class="field">
+            <span class="lbl" id="pagesLbl">Roughly how many pages?</span>
+            <div class="choices" role="radiogroup" aria-labelledby="pagesLbl" data-group="pages" data-single></div>
+          </div>
+
+          <div class="field">
+            <span class="lbl" id="domainLbl">Domain name (yourname.com)</span>
+            <div class="choices" role="radiogroup" aria-labelledby="domainLbl" data-group="domain" data-single></div>
+          </div>
+        </div>
+
+        <label class="field">
+          <span class="lbl">Current website or a site you like <i>optional</i></span>
+          <input id="ref" name="ref" type="url" maxlength="200" inputmode="url" placeholder="https://example.com">
+          <small class="err" data-for="ref"></small>
+        </label>
+      </fieldset>
+
+      <!-- ---------------- 3. Budget & timing ---------------- -->
+      <fieldset class="panel">
+        <legend><span class="num">03</span> Budget &amp; timing</legend>
+
+        <div class="field">
+          <span class="lbl" id="budgetLbl">Budget <em>*</em></span>
+          <div class="choices" role="radiogroup" aria-labelledby="budgetLbl" data-group="budget" data-single></div>
+          <small class="err" data-for="budget"></small>
+        </div>
+
+        <div class="field">
+          <span class="lbl" id="timeLbl">When do you need it?</span>
+          <div class="choices" role="radiogroup" aria-labelledby="timeLbl" data-group="timeline" data-single></div>
+        </div>
+
+        <label class="field">
+          <span class="lbl">Tell me about it <em>*</em></span>
+          <textarea id="brief" name="brief" rows="5" required maxlength="1000" placeholder="What does your business do, who are your customers, and what should the website help them do?"></textarea>
+          <span class="meta"><small class="err" data-for="brief"></small><small class="count" id="briefCount">0 / 1000</small></span>
+        </label>
+
+        <!-- Honeypot: hidden from people, irresistible to form-filling bots. -->
+        <label class="hp" aria-hidden="true">Leave this empty
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </label>
+      </fieldset>
+
+      <div class="actions">
+        <p class="note">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Nothing is stored or sent from this page. Your brief only leaves when you press send in WhatsApp.
+        </p>
+        <button type="submit" class="btn primary">
+          Review my brief
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <!-- ---------------- Review dialog ---------------- -->
+  <dialog id="review" class="sheet" aria-labelledby="reviewTitle">
+    <div class="sheet-head">
+      <h2 id="reviewTitle">Your brief</h2>
+      <button type="button" class="icon-btn" id="closeReview" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+    <dl id="summary" class="summary"></dl>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost" id="copyBrief">Copy text</button>
+      <a class="btn wa" id="sendWa" href="#" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11 11 0 0 0 3.2 17.1L2 22l5-1.3A11 11 0 0 0 20.5 3.5zM12 20a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20z"/></svg>
+        Send on WhatsApp
+      </a>
+    </div>
+    <p class="sheet-foot" id="copyStatus" role="status" aria-live="polite"></p>
+  </dialog>
+
+  <footer class="foot">© <span id="year"></span> Saheer's Lab — Malappuram, Kerala</footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
