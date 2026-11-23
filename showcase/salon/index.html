@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Mehndi &amp; Mirror Salon — sample site by Saheer's Lab</title>
+<meta name="description" content="Sample salon website by Saheer's Lab: service menu with prices, stylist picker and WhatsApp booking.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../shared/bar.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="sl-bar">
+  <span><a class="sl-back" href="../">← Showcase</a><b>Sample site</b><span class="sl-note"> · fictional salon, built by Saheer's Lab</span></span>
+  <a class="sl-cta" href="../../start-project/?type=business&amp;sample=salon">Get a site like this</a>
+</div>
+
+<header class="nav wrap">
+  <a class="brand" href="#">Mehndi <i>&amp;</i> Mirror</a>
+  <nav>
+    <a href="#services">Services</a>
+    <a href="#team">Stylists</a>
+    <a href="#visit">Visit</a>
+    <a class="pill" href="#book">Book a slot</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <div class="copy">
+      <p class="eyebrow">Unisex salon &amp; bridal studio · Perinthalmanna</p>
+      <h1>Hair, skin and bridal looks, <em>done unhurried.</em></h1>
+      <p class="lede">Pick a service, pick your stylist, pick a time. Your booking lands on our WhatsApp already written out — no calls, no waiting on hold.</p>
+      <div class="cta">
+        <a class="btn" href="#book">Book a slot</a>
+        <a class="btn line" href="#services">See prices</a>
+      </div>
+    </div>
+    <div class="art" aria-hidden="true">
+      <div class="arch"><span></span></div>
+      <div class="badge"><b>Bridal</b><small>trials every Sunday</small></div>
+    </div>
+  </section>
+
+  <section id="services" class="wrap block">
+    <div class="head">
+      <h2>Service menu</h2>
+      <p>Prices are starting rates. Final price depends on hair length and products.</p>
+    </div>
+    <div class="menu">
+      <div class="col">
+        <h3>Hair</h3>
+        <ul>
+          <li><span>Haircut &amp; style</span><i></i><b>₹350</b></li>
+          <li><span>Global colour</span><i></i><b>₹1,800</b></li>
+          <li><span>Keratin smoothing</span><i></i><b>₹3,500</b></li>
+          <li><span>Hair spa</span><i></i><b>₹900</b></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Skin</h3>
+        <ul>
+          <li><span>Clean-up</span><i></i><b>₹600</b></li>
+          <li><span>Gold facial</span><i></i><b>₹1,400</b></li>
+          <li><span>De-tan pack</span><i></i><b>₹700</b></li>
+          <li><span>Threading</span><i></i><b>₹60</b></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Bridal</h3>
+        <ul>
+          <li><span>Engagement look</span><i></i><b>₹6,500</b></li>
+          <li><span>Wedding day</span><i></i><b>₹12,000</b></li>
+          <li><span>Mehndi, full hands</span><i></i><b>₹2,500</b></li>
+          <li><span>Trial session</span><i></i><b>₹1,500</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="team" class="wrap block">
+    <div class="head"><h2>Our stylists</h2></div>
+    <div class="team">
+      <article><div class="ph p1" aria-hidden="true">A</div><h3>Anjali</h3><p>Bridal &amp; makeup · 9 yrs</p></article>
+      <article><div class="ph p2" aria-hidden="true">F</div><h3>Fathima</h3><p>Colour &amp; keratin · 6 yrs</p></article>
+      <article><div class="ph p3" aria-hidden="true">R</div><h3>Rahul</h3><p>Men's cuts &amp; beard · 5 yrs</p></article>
+    </div>
+  </section>
+
+  <section id="book" class="wrap block">
+    <form class="booker demo-form" data-demo-note="Demo form — on your real site this sends the booking to your WhatsApp.">
+      <h2>Book a slot</h2>
+      <label>Service</label>
+      <div class="opts" data-pick>
+        <button type="button" aria-pressed="true">Haircut</button>
+        <button type="button" aria-pressed="false">Facial</button>
+        <button type="button" aria-pressed="false">Colour</button>
+        <button type="button" aria-pressed="false">Bridal trial</button>
+      </div>
+      <label>Stylist</label>
+      <div class="opts" data-pick>
+        <button type="button" aria-pressed="true">Any</button>
+        <button type="button" aria-pressed="false">Anjali</button>
+        <button type="button" aria-pressed="false">Fathima</button>
+        <button type="button" aria-pressed="false">Rahul</button>
+      </div>
+      <label>Time</label>
+      <div class="opts" data-pick>
+        <button type="button" aria-pressed="false">10:30</button>
+        <button type="button" aria-pressed="true">12:00</button>
+        <button type="button" aria-pressed="false">15:30</button>
+        <button type="button" aria-pressed="false">18:00</button>
+      </div>
+      <button class="btn wide" type="submit">Send booking on WhatsApp</button>
+    </form>
+
+    <aside id="visit" class="visit">
+      <h2>Visit</h2>
+      <p>2nd floor, Sky Plaza<br>Calicut Road, Perinthalmanna</p>
+      <dl>
+        <dt>Mon – Sat</dt><dd>9:30 am – 8:30 pm</dd>
+        <dt>Sunday</dt><dd>Bridal by appointment</dd>
+      </dl>
+      <a class="btn line" href="#" data-demo="Demo button — on your real site this opens Google Maps directions.">Get directions</a>
+    </aside>
+  </section>
+</main>
+
+<footer class="foot wrap">© <span id="year"></span> Mehndi &amp; Mirror — a fictional business. Site by Saheer's Lab.</footer>
+
+<script src="../shared/demo.js"></script>
+</body>
+</html>

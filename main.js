@@ -6,6 +6,15 @@
 
     const projects = [
       {
+        title: "Website Showcase",
+        description: "Sample sites for salons, gyms, homestays, tuition centres, cafés, clinics and shops. Open one, click around, and get one like it built for your business.",
+        url: "./showcase/",
+        tags: ["Business", "Web", "Hire me"],
+        status: "live",
+        color: "#4da3ff",
+        icon: "monitor"
+      },
+      {
         title: "Keyscope",
         description: "Keyboard test. Press any key and watch it light up, see exactly what the browser reports, and find the switch that stopped working.",
         url: "./keyboard-test/",

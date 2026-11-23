@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Ironcore Fitness — sample site by Saheer's Lab</title>
+<meta name="description" content="Sample gym website by Saheer's Lab: membership plans, class timetable and free-trial booking on WhatsApp.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../shared/bar.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="sl-bar">
+  <span><a class="sl-back" href="../">← Showcase</a><b>Sample site</b><span class="sl-note"> · fictional gym, built by Saheer's Lab</span></span>
+  <a class="sl-cta" href="../../start-project/?type=business&amp;sample=gym">Get a site like this</a>
+</div>
+
+<header class="nav wrap">
+  <a class="brand" href="#"><span>IRON</span>CORE</a>
+  <nav>
+    <a href="#plans">Plans</a>
+    <a href="#classes">Classes</a>
+    <a class="pill" href="#trial">Free trial</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <p class="tag">Manjeri · Open 5 am – 11 pm</p>
+    <h1>Stronger<br>every <span>week.</span></h1>
+    <p class="lede">Coached strength, cardio and group classes. Every new member gets a body assessment and a written plan in week one.</p>
+    <div class="cta">
+      <a class="btn" href="#trial">Book a free trial</a>
+      <a class="btn ghost" href="#plans">View plans</a>
+    </div>
+    <ul class="stats">
+      <li><b>3,000</b><span>sq ft floor</span></li>
+      <li><b>6</b><span>certified coaches</span></li>
+      <li><b>18</b><span>classes a week</span></li>
+    </ul>
+  </section>
+
+  <section id="plans" class="wrap block">
+    <h2 class="title">Membership plans</h2>
+    <div class="plans">
+      <article class="plan">
+        <h3>Monthly</h3>
+        <p class="price">₹1,200<small>/month</small></p>
+        <ul><li>Full gym floor</li><li>Locker &amp; shower</li><li>Monthly assessment</li></ul>
+        <a class="btn ghost wide" href="#" data-demo>Join monthly</a>
+      </article>
+      <article class="plan hot">
+        <span class="flag">Most picked</span>
+        <h3>Quarterly</h3>
+        <p class="price">₹3,000<small>/3 months</small></p>
+        <ul><li>Everything in Monthly</li><li>All group classes</li><li>Diet plan</li></ul>
+        <a class="btn wide" href="#" data-demo>Join quarterly</a>
+      </article>
+      <article class="plan">
+        <h3>Personal training</h3>
+        <p class="price">₹6,500<small>/month</small></p>
+        <ul><li>1-to-1 coach, 12 sessions</li><li>Weekly progress check</li><li>Custom diet</li></ul>
+        <a class="btn ghost wide" href="#" data-demo>Book PT</a>
+      </article>
+    </div>
+  </section>
+
+  <section id="classes" class="wrap block">
+    <h2 class="title">This week's classes</h2>
+    <div class="table" role="table" aria-label="Class timetable">
+      <div class="tr th" role="row"><span role="columnheader">Time</span><span role="columnheader">Mon</span><span role="columnheader">Wed</span><span role="columnheader">Fri</span></div>
+      <div class="tr" role="row"><span role="cell">6:00 am</span><span role="cell">HIIT</span><span role="cell">Strength</span><span role="cell">HIIT</span></div>
+      <div class="tr" role="row"><span role="cell">7:30 am</span><span role="cell">Yoga</span><span role="cell">Mobility</span><span role="cell">Yoga</span></div>
+      <div class="tr" role="row"><span role="cell">6:30 pm</span><span role="cell">Zumba</span><span role="cell">Boxing</span><span role="cell">CrossFit</span></div>
+    </div>
+  </section>
+
+  <section id="trial" class="wrap block">
+    <form class="trial demo-form" data-demo-note="Demo form — on your real site this books the trial on your WhatsApp.">
+      <div>
+        <h2 class="title">Your first session is free.</h2>
+        <p>Pick a goal and a time. A coach will meet you at the front desk.</p>
+      </div>
+      <div class="pick">
+        <span class="lbl">Goal</span>
+        <div class="opts" data-pick>
+          <button type="button" aria-pressed="true">Lose fat</button>
+          <button type="button" aria-pressed="false">Build muscle</button>
+          <button type="button" aria-pressed="false">Get fit</button>
+        </div>
+        <span class="lbl">Time</span>
+        <div class="opts" data-pick>
+          <button type="button" aria-pressed="false">Morning</button>
+          <button type="button" aria-pressed="true">Evening</button>
+        </div>
+        <button class="btn wide" type="submit">Book free trial on WhatsApp</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<footer class="foot wrap">© <span id="year"></span> Ironcore Fitness — a fictional business. Site by Saheer's Lab.</footer>
+
+<script src="../shared/demo.js"></script>
+</body>
+</html>

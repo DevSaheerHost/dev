@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>BrightPath Academy — sample site by Saheer's Lab</title>
+<meta name="description" content="Sample tuition centre website by Saheer's Lab: courses, batch timings, results and admission enquiries on WhatsApp.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../shared/bar.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="sl-bar">
+  <span><a class="sl-back" href="../">← Showcase</a><b>Sample site</b><span class="sl-note"> · fictional tuition centre, built by Saheer's Lab</span></span>
+  <a class="sl-cta" href="../../start-project/?type=business&amp;sample=tuition">Get a site like this</a>
+</div>
+
+<header class="nav wrap">
+  <a class="brand" href="#"><span class="logo" aria-hidden="true">B</span>BrightPath</a>
+  <nav>
+    <a href="#courses">Courses</a>
+    <a href="#results">Results</a>
+    <a class="pill" href="#admission">Admission 2027</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <div>
+      <span class="chip-new">Admissions open · Class 8 – 12 &amp; entrance</span>
+      <h1>Small batches.<br><span>Big results.</span></h1>
+      <p class="lede">Maximum 15 students a batch, weekly tests with parent reports on WhatsApp, and teachers who actually know your child's name.</p>
+      <div class="cta">
+        <a class="btn" href="#admission">Book a free demo class</a>
+        <a class="btn soft" href="#courses">Explore courses</a>
+      </div>
+    </div>
+    <div class="score" aria-label="Last year's results">
+      <p class="cap">Last year's batch</p>
+      <div class="big">94%</div>
+      <p>scored A+ in Physics, Chemistry &amp; Maths</p>
+      <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="years" aria-hidden="true"><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
+    </div>
+  </section>
+
+  <section id="courses" class="wrap block">
+    <h2 class="title">Courses</h2>
+    <div class="courses">
+      <article><span class="ico c1" aria-hidden="true">8–10</span><h3>Foundation</h3><p>Maths &amp; Science for State and CBSE. Builds the base for higher classes.</p><dl><dt>Batch</dt><dd>4:30 – 6:00 pm</dd><dt>Fee</dt><dd>₹1,500 / month</dd></dl></article>
+      <article><span class="ico c2" aria-hidden="true">+1 +2</span><h3>Higher Secondary</h3><p>Physics, Chemistry, Maths, Biology with chapter tests every Saturday.</p><dl><dt>Batch</dt><dd>6:00 – 8:00 pm</dd><dt>Fee</dt><dd>₹2,200 / month</dd></dl></article>
+      <article><span class="ico c3" aria-hidden="true">KEAM</span><h3>Entrance coaching</h3><p>KEAM &amp; NEET crash and long-term programmes with mock exams.</p><dl><dt>Batch</dt><dd>Weekends</dd><dt>Fee</dt><dd>₹18,000 / year</dd></dl></article>
+    </div>
+  </section>
+
+  <section id="results" class="wrap block">
+    <div class="quotes">
+      <figure><blockquote>“The weekly WhatsApp report told me exactly where my son was slipping. He went from a B to an A+ in Chemistry.”</blockquote><figcaption>Parent · Class 12</figcaption></figure>
+      <figure><blockquote>“Small batch meant I could actually ask questions. The mock tests felt harder than the real KEAM.”</blockquote><figcaption>Student · KEAM 2026</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="admission" class="wrap block">
+    <form class="admit demo-form" data-demo-note="Demo form — on your real site this sends the admission enquiry to your WhatsApp.">
+      <h2 class="title">Book a free demo class</h2>
+      <div class="grid">
+        <label>Student name<input type="text" maxlength="60" placeholder="e.g. Ameen"></label>
+        <label>Parent's phone<input type="tel" maxlength="16" placeholder="+91"></label>
+        <div class="span">
+          <span class="lbl">Class</span>
+          <div class="opts" data-pick>
+            <button type="button" aria-pressed="false">8</button>
+            <button type="button" aria-pressed="false">9</button>
+            <button type="button" aria-pressed="true">10</button>
+            <button type="button" aria-pressed="false">+1</button>
+            <button type="button" aria-pressed="false">+2</button>
+            <button type="button" aria-pressed="false">Entrance</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn" type="submit">Send enquiry on WhatsApp</button>
+    </form>
+  </section>
+</main>
+
+<footer class="foot wrap">© <span id="year"></span> BrightPath Academy — a fictional business. Site by Saheer's Lab.</footer>
+
+<script src="../shared/demo.js"></script>
+</body>
+</html>

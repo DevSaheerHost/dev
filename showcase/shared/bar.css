@@ -1,0 +1,44 @@
+/* =========================================================================
+   SAMPLE-SITE BAR — the strip at the top of every showcase demo, plus the
+   toast that explains a demo button. Namespaced .sl- so it never clashes
+   with a demo's own styles.
+   ========================================================================= */
+.sl-bar {
+  position: sticky; top: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 16px;
+  background: #0e0f14; color: #c9cdd8;
+  font: 500 12.5px/1.3 "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  border-bottom: 1px solid #262b38;
+}
+.sl-bar b { color: #fff; font-weight: 650; }
+.sl-bar .sl-back { color: #8a8fa3; text-decoration: none; margin-right: 10px; }
+.sl-bar .sl-back:hover { color: #fff; }
+.sl-bar .sl-cta {
+  flex-shrink: 0; white-space: nowrap;
+  color: #0a1120; background: #4da3ff; text-decoration: none; font-weight: 650;
+  padding: 7px 12px; border-radius: 8px;
+}
+.sl-bar .sl-cta:hover { filter: brightness(1.08); }
+.sl-bar :focus-visible { outline: 2px solid #4da3ff; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .sl-bar .sl-note { display: none; }
+}
+
+.sl-toast {
+  position: fixed; left: 50%; bottom: 20px; z-index: 1001;
+  transform: translate(-50%, 20px); opacity: 0;
+  width: max-content; max-width: calc(100vw - 32px);
+  padding: 12px 16px; border-radius: 12px;
+  background: #171a22; color: #e8eaf0; border: 1px solid #262b38;
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  font: 500 13.5px/1.45 "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.sl-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-toast { transition: none; }
+}

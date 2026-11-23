@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Palm Breeze Homestay — sample site by Saheer's Lab</title>
+<meta name="description" content="Sample homestay website by Saheer's Lab: rooms with prices, amenities and direct booking on WhatsApp without OTA commission.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=DM+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../shared/bar.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="sl-bar">
+  <span><a class="sl-back" href="../">← Showcase</a><b>Sample site</b><span class="sl-note"> · fictional homestay, built by Saheer's Lab</span></span>
+  <a class="sl-cta" href="../../start-project/?type=business&amp;sample=homestay">Get a site like this</a>
+</div>
+
+<header class="hero">
+  <nav class="nav wrap">
+    <a class="brand" href="#">Palm Breeze</a>
+    <div class="links">
+      <a href="#rooms">Rooms</a>
+      <a href="#stay">The stay</a>
+      <a class="pill" href="#book">Check dates</a>
+    </div>
+  </nav>
+  <div class="wrap hero-copy">
+    <p class="eyebrow">Backwater homestay · Alappuzha</p>
+    <h1>Wake up to the water, <em>not an alarm.</em></h1>
+    <p class="lede">Four rooms in a 60-year-old family home on the Punnamada backwaters. Home-cooked Kerala meals, canoe at sunrise, and a host who knows every shortcut.</p>
+    <a class="btn" href="#book">Book direct &amp; save 15%</a>
+  </div>
+  <div class="scene" aria-hidden="true"><span class="sun"></span><span class="hill h1"></span><span class="hill h2"></span><span class="water"></span></div>
+</header>
+
+<main>
+  <section id="rooms" class="wrap block">
+    <div class="head">
+      <h2>Rooms</h2>
+      <p>All rooms include breakfast, Wi-Fi and a canoe ride.</p>
+    </div>
+    <div class="rooms">
+      <article class="room">
+        <div class="img r1" aria-hidden="true"></div>
+        <div class="body">
+          <h3>Garden Room</h3>
+          <p>Queen bed · garden view · sleeps 2</p>
+          <div class="row"><b>₹2,800<small> / night</small></b><a href="#book">Select</a></div>
+        </div>
+      </article>
+      <article class="room">
+        <div class="img r2" aria-hidden="true"></div>
+        <div class="body">
+          <h3>Waterfront Suite</h3>
+          <p>King bed · private sit-out · sleeps 3</p>
+          <div class="row"><b>₹4,500<small> / night</small></b><a href="#book">Select</a></div>
+        </div>
+      </article>
+      <article class="room">
+        <div class="img r3" aria-hidden="true"></div>
+        <div class="body">
+          <h3>Family Loft</h3>
+          <p>2 beds · attic windows · sleeps 4</p>
+          <div class="row"><b>₹5,200<small> / night</small></b><a href="#book">Select</a></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="stay" class="wrap block">
+    <div class="perks">
+      <div><b>🛶</b><h3>Sunrise canoe</h3><p>Guided, every morning at 6.</p></div>
+      <div><b>🍛</b><h3>Home kitchen</h3><p>Karimeen, appam, stew — on request.</p></div>
+      <div><b>🚗</b><h3>Pickup</h3><p>From Alappuzha station, ₹300.</p></div>
+      <div><b>🌿</b><h3>Quiet hours</h3><p>No parties. Birds, not speakers.</p></div>
+    </div>
+  </section>
+
+  <section id="book" class="wrap block">
+    <form class="booking demo-form" data-demo-note="Demo form — on your real site this sends the dates and room straight to your WhatsApp.">
+      <div class="intro">
+        <h2>Check your dates</h2>
+        <p>Booking direct skips the 15–20% the big travel apps take. You pay us, and we pass it on.</p>
+      </div>
+      <div class="fields">
+        <label>Check-in<input type="date" required></label>
+        <label>Check-out<input type="date" required></label>
+        <label>Guests
+          <select><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
+        </label>
+        <label>Room
+          <select><option>Garden Room</option><option selected>Waterfront Suite</option><option>Family Loft</option></select>
+        </label>
+      </div>
+      <button class="btn" type="submit">Ask for availability on WhatsApp</button>
+    </form>
+  </section>
+</main>
+
+<footer class="foot wrap">© <span id="year"></span> Palm Breeze Homestay — a fictional business. Site by Saheer's Lab.</footer>
+
+<script src="../shared/demo.js"></script>
+</body>
+</html>
