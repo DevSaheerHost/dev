@@ -1,0 +1,107 @@
+:root {
+  --bg: #faf6f1;
+  --card: #fffdfa;
+  --ink: #2b1f1a;
+  --muted: #7d6c62;
+  --line: #eadfd4;
+  --rose: #b6536b;
+  --rose-soft: #f3dde2;
+  --gold: #c19a5b;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15.5px/1.6 Manrope, system-ui, sans-serif; }
+a { color: inherit; }
+h1, h2, h3 { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; margin: 0; line-height: 1.1; }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 3px; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; padding-top: 22px; padding-bottom: 22px; gap: 16px; }
+.brand { font: 600 26px/1 "Cormorant Garamond", serif; text-decoration: none; }
+.brand i { color: var(--rose); }
+.nav nav { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+.nav nav a { text-decoration: none; color: var(--muted); }
+.nav nav a:hover { color: var(--ink); }
+.nav .pill { color: #fff; background: var(--ink); padding: 9px 16px; border-radius: 999px; }
+.nav .pill:hover { color: #fff; background: var(--rose); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14.5px Manrope, sans-serif; padding: 13px 22px; border-radius: 999px; border: 1px solid var(--rose); background: var(--rose); color: #fff; text-decoration: none; cursor: pointer; transition: background .15s, color .15s; }
+.btn:hover { background: #9d4359; }
+.btn.line { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn.line:hover { background: var(--ink); color: #fff; }
+.btn.wide { width: 100%; margin-top: 22px; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; padding-top: 30px; padding-bottom: 60px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--rose); margin: 0 0 14px; font-weight: 600; }
+.hero h1 { font-size: clamp(40px, 6vw, 68px); letter-spacing: -.5px; }
+.hero h1 em { color: var(--rose); }
+.lede { color: var(--muted); max-width: 470px; margin: 20px 0 28px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.art { position: relative; height: 440px; }
+.arch { position: absolute; inset: 0 30px 0 30px; border-radius: 240px 240px 18px 18px; background: linear-gradient(160deg, #e7c6cd, #d79aa8 45%, #b6536b); overflow: hidden; }
+.arch span { position: absolute; left: 50%; top: 22%; width: 56%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; border: 2px solid rgba(255,255,255,.55); box-shadow: 0 0 0 18px rgba(255,255,255,.12), 0 0 0 40px rgba(255,255,255,.07); }
+.badge { position: absolute; left: 0; bottom: 34px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; box-shadow: 0 16px 40px rgba(43,31,26,.12); }
+.badge b { display: block; font: 600 22px "Cormorant Garamond", serif; }
+.badge small { color: var(--muted); font-size: 12.5px; }
+
+/* Blocks */
+.block { padding-top: 56px; padding-bottom: 20px; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.head h2 { font-size: 40px; }
+.head p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+.menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+.col h3 { font-size: 26px; color: var(--rose); margin-bottom: 10px; }
+.col ul { list-style: none; padding: 0; margin: 0; }
+.col li { display: flex; align-items: baseline; gap: 8px; padding: 9px 0; }
+.col li i { flex: 1; border-bottom: 1px dotted #cdbfb2; transform: translateY(-4px); }
+.col li b { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.team article { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+.ph { height: 200px; border-radius: 12px; display: grid; place-items: center; font: 600 64px "Cormorant Garamond", serif; color: rgba(255,255,255,.85); margin-bottom: 14px; }
+.p1 { background: linear-gradient(150deg, #d9a2ae, #9d4359); }
+.p2 { background: linear-gradient(150deg, #e1c08d, #a77b3c); }
+.p3 { background: linear-gradient(150deg, #a9a2c9, #574f86); }
+.team h3 { font-size: 24px; }
+.team p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+
+#book { display: grid; grid-template-columns: 1.3fr .7fr; gap: 28px; padding-bottom: 70px; }
+.booker, .visit { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 28px; }
+.booker h2, .visit h2 { font-size: 34px; margin-bottom: 8px; }
+.booker label { display: block; margin: 18px 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opts button { font: 500 14px Manrope, sans-serif; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.opts button:hover { border-color: var(--rose); }
+.opts button[aria-pressed="true"] { background: var(--rose-soft); border-color: var(--rose); color: #7c2a3e; }
+.visit { background: var(--ink); color: #f3ebe4; border-color: var(--ink); }
+.visit p { color: #cbbdb2; }
+.visit dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 18px 0 24px; font-size: 14px; }
+.visit dt { color: #a89789; }
+.visit dd { margin: 0; }
+.visit .btn.line { color: #fff; border-color: #fff; }
+.visit .btn.line:hover { background: #fff; color: var(--ink); }
+
+.foot { border-top: 1px solid var(--line); padding-top: 22px; padding-bottom: 30px; color: var(--muted); font-size: 13px; text-align: center; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 30px; }
+  .art { height: 300px; }
+  .menu, .team { grid-template-columns: 1fr; gap: 20px; }
+  .team { grid-template-columns: 1fr 1fr; }
+  #book { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .wrap { padding: 0 16px; }
+  .nav nav a:not(.pill) { display: none; }
+  .team { grid-template-columns: 1fr; }
+  .ph { height: 140px; }
+  .booker, .visit { padding: 22px 18px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

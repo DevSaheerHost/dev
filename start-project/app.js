@@ -31,6 +31,18 @@ const OPTIONS = {
   timeline: ['ASAP', 'Within 2 weeks', 'Within a month', 'Flexible'],
 };
 
+/* Showcase samples that can link here as ?sample=<id>. Only these ids are
+   accepted; anything else in the URL is ignored. */
+const SAMPLES = {
+  salon:    'Salon sample (Mehndi & Mirror)',
+  gym:      'Gym sample (Ironcore Fitness)',
+  homestay: 'Homestay sample (Palm Breeze)',
+  tuition:  'Tuition sample (BrightPath Academy)',
+  cafe:     'Café sample (Kerala Spice)',
+  clinic:   'Clinic sample (Pulse Clinic)',
+  store:    'Shop sample (Moonlight Mobiles)',
+};
+
 const LIMITS = { name: 60, phone: 16, email: 80, business: 60, ref: 200, brief: 1000 };
 
 /* ------------------------------------------------------------- HELPERS -- */
@@ -201,6 +213,7 @@ function readForm() {
     budget:   one('budget'),
     timeline: one('timeline'),
     trap:     val('website'),
+    sample:   inspiredBy,
   };
 }
 
@@ -234,6 +247,7 @@ function rows(d) {
     ['Email', d.email],
     ['Business', d.business],
     ['Project', d.type ? d.type.label : ''],
+    ['Inspired by', d.sample],
     ['Features', d.features.join(', ')],
     ['Pages', d.pages],
     ['Domain', d.domain],
@@ -311,5 +325,28 @@ $('#copyBrief').addEventListener('click', async () => {
   }
 });
 
+/* ----------------------------------------------------------- PREFILL ---- */
+/* Links from the showcase arrive as ?type=<id>&sample=<id>. Both values are
+   looked up in fixed lists, so the URL can choose an option but can never
+   inject text into the page or the message. */
+let inspiredBy = '';
+
+function prefillFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const typeId = params.get('type');
+  const sampleId = params.get('sample');
+
+  if (typeId && OPTIONS.type.some(t => t.id === typeId)) {
+    setChoice($('[data-group="type"]'), 'type', typeId, true);
+  }
+  if (sampleId && Object.hasOwn(SAMPLES, sampleId)) {
+    inspiredBy = SAMPLES[sampleId];
+    const note = $('#sampleNote');
+    $('#sampleName').textContent = inspiredBy;
+    note.hidden = false;
+  }
+}
+
 $('#year').textContent = new Date().getFullYear();
 initChoices();
+prefillFromUrl();

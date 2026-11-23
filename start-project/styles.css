@@ -233,3 +233,20 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
   * { transition: none !important; animation: none !important; }
 }
 .btn { text-decoration: none; }
+
+/* ---------- Showcase link-ins ---------- */
+.intro a.inline { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(77,163,255,.35); }
+.intro a.inline:hover { border-bottom-color: var(--accent); }
+
+.sample-note {
+  margin: 18px 0 0; display: flex; align-items: center; gap: 10px; max-width: 600px;
+  font-size: 13px; color: var(--text-dim);
+  background: rgba(124,242,156,.08); border: 1px solid rgba(124,242,156,.3);
+  padding: 8px 14px; border-radius: 12px;
+}
+.sample-note[hidden] { display: none; }
+.sample-note svg { width: 15px; height: 15px; color: var(--accent-2); }
+.sample-note span { flex: 1; min-width: 0; }
+.sample-note b { color: var(--text); font-weight: 600; }
+.sample-note a { flex-shrink: 0; color: var(--accent); text-decoration: none; font-weight: 600; }
+.sample-note a:hover { text-decoration: underline; }
